@@ -276,7 +276,7 @@ class Component extends DCLogic {
     const pt = D.term(previewId), ps = D.tsum(pt, prods);
     const pmax = Math.max(1, ...Object.values(ps.byProd));
     const pv = { name: pt.name, area: pt.area, kind: pt.kind, local: D.tm(D.NOW, pt.tz), caps: D.caps(pt), tanks: `${pt.tanks.length} tanks`, prods: D.PRODUCTS.filter(p => ps.byProd[p.code]).map(p => ({ label: p.label, color: p.color, v: D.fmt(ps.byProd[p.code]), w: (ps.byProd[p.code] / pmax * 100).toFixed(1) + '%' })), open: () => this.props.go('terminal', { terminalId: pt.id, scope: 'terminal' }) };
-    const mapJson = JSON.stringify(all.map(({ t, sm }) => ({ id: t.id, name: t.name, short: mapShort[t.id][0], lx: mapShort[t.id][1], ly: mapShort[t.id][2], label: true, lat: t.lat, lon: t.lon, sev: sm.top && sm.top.sev !== 'info' ? sm.top.sev : null, dim: !list.find(x => x.t.id === t.id) })));
+    const mapJson = JSON.stringify(all.map(({ t, sm }) => ({ id: t.id, name: t.name, short: (mapShort[t.id] || [t.name, 8, -7])[0], lx: (mapShort[t.id] || [t.name, 8, -7])[1], ly: (mapShort[t.id] || [t.name, 8, -7])[2], label: true, lat: t.lat, lon: t.lon, sev: sm.top && sm.top.sev !== 'info' ? sm.top.sev : null, dim: !list.find(x => x.t.id === t.id) })));
     const wide = ctx.vw >= 1500; const mapH = ctx.vw < 1700 ? '360px' : '420px';
     const filtered = !!(s.text || s.cap !== 'All capabilities' || s.status !== 'All statuses' || s.sev !== 'All severities');
     return {

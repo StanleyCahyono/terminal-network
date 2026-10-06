@@ -29,6 +29,26 @@ a:hover{text-decoration:underline}
 @keyframes tnshimmer{0%{background-position:-400px 0}100%{background-position:400px 0}}
 @keyframes tnin{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
 @keyframes tnslide{from{transform:translateX(24px);opacity:0}to{transform:none;opacity:1}}
+/* Motion layer: shared timing, press feedback and entrance animations (off with the motion toggle or reduced motion) */
+:root{--ease-out:cubic-bezier(.2,.7,.2,1);--ease-io:cubic-bezier(.4,0,.2,1);--t-fast:.12s;--t-med:.2s;--t-slow:.32s}
+button,select,input,textarea,a,[role="button"],[role="tab"]{transition:background-color var(--t-med) var(--ease-out),border-color var(--t-med) var(--ease-out),color var(--t-med) var(--ease-out),box-shadow var(--t-med) var(--ease-out),opacity var(--t-med) var(--ease-out),transform var(--t-fast) var(--ease-out)}
+button:not(:disabled):active,[role="button"]:active{transform:translateY(1px)}
+@keyframes tnpop{from{opacity:0;transform:translateY(4px) scale(.985)}to{opacity:1;transform:none}}
+@keyframes tnfade{from{opacity:0}to{opacity:1}}
+@keyframes tndrop{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+@keyframes tnrise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes tndrawer{from{opacity:0;transform:translateX(18px)}to{opacity:1;transform:none}}
+@keyframes tnglow{from{box-shadow:0 0 0 0 color-mix(in srgb,var(--acc) 40%,transparent)}to{box-shadow:0 0 0 8px transparent}}
+@keyframes tngrow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+.tn-pop{animation:tnpop var(--t-med) var(--ease-out) both}
+.tn-fade{animation:tnfade var(--t-med) var(--ease-out) both}
+.tn-drop{animation:tndrop var(--t-med) var(--ease-out) both}
+.tn-rise{animation:tnrise var(--t-slow) var(--ease-out) both}
+.tn-drawer{animation:tndrawer var(--t-slow) var(--ease-out) both}
+.tn-glow{animation:tnglow .6s var(--ease-out) 1}
+.tn-lift{transition:transform var(--t-med) var(--ease-out),box-shadow var(--t-med) var(--ease-out),background-color var(--t-med) var(--ease-out),border-color var(--t-med) var(--ease-out)}
+.tn-lift:hover{transform:translateY(-1px);box-shadow:0 2px 10px rgba(20,24,28,.10)}
+.tn-bar{transition:width var(--t-slow) var(--ease-out),background-color var(--t-med) var(--ease-out)}
 [data-motion="off"] *{animation:none!important;transition:none!important}
 @media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
 </style>
@@ -239,6 +259,7 @@ a:hover{text-decoration:underline}
         </div>
       </sc-if>
       <sc-if value="{{ show.network }}" hint-placeholder-val="{{ false }}"><dc-import name="Network" d="{{ D }}" ctx="{{ ctx }}" go="{{ go }}" set-ctx="{{ setCtx }}" toast="{{ toast }}" open-alarms="{{ openAlarms }}" style="position:absolute;inset:0" hint-size="100%,100%"></dc-import></sc-if>
+      <sc-if value="{{ show.superhub }}" hint-placeholder-val="{{ false }}"><dc-import name="Superhub" d="{{ D }}" ctx="{{ ctx }}" go="{{ go }}" set-ctx="{{ setCtx }}" toast="{{ toast }}" open-alarms="{{ openAlarms }}" style="position:absolute;inset:0" hint-size="100%,100%"></dc-import></sc-if>
       <sc-if value="{{ show.terminal }}" hint-placeholder-val="{{ false }}"><dc-import name="Terminal Workspace" d="{{ D }}" ctx="{{ ctx }}" go="{{ go }}" set-ctx="{{ setCtx }}" toast="{{ toast }}" open-alarms="{{ openAlarms }}" style="position:absolute;inset:0" hint-size="100%,100%"></dc-import></sc-if>
       <sc-if value="{{ show.transfers }}" hint-placeholder-val="{{ false }}"><dc-import name="Transfers" d="{{ D }}" ctx="{{ ctx }}" go="{{ go }}" set-ctx="{{ setCtx }}" toast="{{ toast }}" style="position:absolute;inset:0" hint-size="100%,100%"></dc-import></sc-if>
       <sc-if value="{{ show.blending }}" hint-placeholder-val="{{ false }}"><dc-import name="Blending" d="{{ D }}" ctx="{{ ctx }}" go="{{ go }}" set-ctx="{{ setCtx }}" toast="{{ toast }}" style="position:absolute;inset:0" hint-size="100%,100%"></dc-import></sc-if>
@@ -484,6 +505,7 @@ class Component extends DCLogic {
     const ph = { maint: [I.maint, 'Maintenance', 'Planned maintenance windows that affect operations are shown on the Scheduling board. Work orders open in the maintenance system.'], docs: [I.docs, 'Documents', 'Certificates and documents linked to batches can be traced from the Quality workspace.'], admin: [I.lock, 'Administration — access restricted', 'Your current role does not include user administration. Switch role from the user menu to explore permission-limited states.'] };
     const phx = ph[s.screen];
     show.placeholder = !loadingView && !!phx;
+    show.superhub = !!(show.terminal && t && t.superhub); if (show.superhub) show.terminal = false; // the lubricant superhub has its own specialised workspace
 
     const userInitials = role.name.split(/[ .]+/).filter(Boolean).map(x => x[0]).slice(0, 2).join('');
     return {
