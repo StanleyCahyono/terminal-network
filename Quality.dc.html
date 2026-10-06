@@ -172,7 +172,7 @@ class Component extends DCLogic {
     } else if (tb) tr.noneText = `No component trace recorded for ${tb}. Tank batches received directly from a vessel trace to their receipt documents in the Transfers workspace.`;
     return {
       ready: true, I, statusChips, rows, empty: !rows.length, hasSel: !!sel, sd, tr,
-      scopeText: net ? `All 14 terminals · ${list.length} samples` : `${t.name} · ${list.length} samples`,
+      scopeText: net ? `All ${D.TERMINALS.length} terminals · ${list.length} samples` : `${t.name} · ${list.length} samples`,
       toggleScope: () => this.upd({ net: !s.net }), scopeBtn: net ? 'Show this terminal only' : 'Show all terminals',
       cols: 'minmax(0,1.1fr) minmax(0,1.3fr) minmax(0,1.5fr) minmax(0,0.9fr) minmax(0,0.9fr) minmax(0,1fr)', cols2: ctx.tablet ? 'minmax(0,1fr)' : 'minmax(0,1fr) 440px',
       relDisabled, relOp: relDisabled ? 0.4 : 1, relTitle, relIcon: relDisabled ? I.lock : I.st.ok, holdDisabled, holdOp: holdDisabled ? 0.4 : 1,

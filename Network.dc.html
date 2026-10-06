@@ -222,11 +222,16 @@ class Component extends DCLogic {
     d.forEach((v, i) => { if (Math.abs(v) < 0.5) return; const hh = Math.max(1.5, Math.abs(v) / mx * (H / 2 - 1)); kids.push(h('rect', { key: i, x: i * bw + 0.5, width: Math.max(1, bw - 1.5), y: v > 0 ? H / 2 - hh : H / 2, height: hh, fill: v > 0 ? 'var(--ink)' : 'var(--ink3)' })); });
     return h('svg', { width: W, height: H, viewBox: `0 0 ${W} ${H}`, style: { display: 'block' }, role: 'img', 'aria-label': 'Hourly net movement, last 24 h' }, h('title', null, 'Hourly net movement · above line = receipts exceed dispatches'), ...kids);
   }
+  lubeFamilies(D, byProd) { // the superhub preview groups its grades by product family
+    const fam = {}; Object.entries(byProd).forEach(([c, v]) => { const p = D.prod(c); if (!p.lube || p.kind === 'component') return; const f = fam[p.fam] || (fam[p.fam] = { label: p.fam, color: p.color, v: 0 }); f.v += v; });
+    const list = Object.values(fam).sort((a, b) => b.v - a.v).slice(0, 6), max = Math.max(1, ...list.map(f => f.v));
+    return list.map(f => ({ label: f.label, color: f.color, v: D.fmt(f.v), w: (f.v / max * 100).toFixed(1) + '%' }));
+  }
   renderVals() {
     const D = this.props.d, ctx = this.props.ctx;
     if (!D || !ctx) return { ready: false };
     const I = ctx.I, s = this.state, prods = ctx.products;
-    const mapShort = { PLM: ['Plumpang', 8, -7], SBY: ['Surabaya', 8, -7], UPG: ['Ujung Pandang', 8, -7], BIK: ['Biak', 8, -7], BOY: ['Boyolali', -8, 13], SMB: ['Pulau Sambu', 8, -7], PLJ: ['Plaju', -8, -6], PNJ: ['Panjang', -8, 12], JUA: ['Juanda', 8, 13], CGK: ['CGK', -8, -6], DPS: ['DPS', 8, 12], KNO: ['KNO', 8, -7], BLG: ['Balongan', 6, -9], VPK: ['Vopak', 8, 13] };
+    const mapShort = { PLM: ['Plumpang', 8, -7], SBY: ['Surabaya', 8, -7], UPG: ['Ujung Pandang', 8, -7], BIK: ['Biak', 8, -7], BOY: ['Boyolali', -8, 13], SMB: ['Pulau Sambu', 8, -7], PLJ: ['Plaju', -8, -6], PNJ: ['Panjang', -8, 12], JUA: ['Juanda', 8, 13], CGK: ['CGK', -8, -6], DPS: ['DPS', 8, 12], KNO: ['KNO', 8, -7], BLG: ['Balongan', 6, -9], VPK: ['Vopak', 8, 13], MLB: ['Maiza Lubrika', 9, 4] };
     const all = D.TERMINALS.map(t => ({ t, sm: D.tsum(t, prods) }));
     let list = all.filter(({ t, sm }) => {
       if (prods.length && !sm.products.some(c => prods.includes(c))) return false;
@@ -266,6 +271,8 @@ class Component extends DCLogic {
     let inv = 0, cap = 0, held = 0, rx = 0, comp = 0, tanks = 0; const byProd = {};
     all.forEach(({ t, sm }) => { inv += sm.inv; cap += sm.cap; held += sm.held; rx += sm.rx; comp += sm.comp; Object.entries(sm.byProd).forEach(([c, v]) => byProd[c] = (byProd[c] || 0) + v); tanks += t.tanks.filter(k => k.kind === 'product' && (!prods.length || prods.includes(k.code))).length; });
     const prodBar = D.PRODUCTS.filter(p => byProd[p.code]).map(p => ({ color: p.color, short: p.short, w: (byProd[p.code] / inv * 100).toFixed(2) + '%', label: p.label, v: D.fmt(byProd[p.code]), pct: Math.round(byProd[p.code] / inv * 100) + '%', title: `${p.label}: ${D.fmt(byProd[p.code])} kL` }));
+    const lubeV = Object.entries(byProd).filter(([c]) => D.prod(c).lube).reduce((a, [, v]) => a + v, 0); // the superhub's 169 finished lubricant grades as one segment
+    if (lubeV > 0) prodBar.push({ color: 'oklch(0.66 0.14 55)', short: 'Lubes', w: (lubeV / inv * 100).toFixed(2) + '%', label: 'Finished lubricants · 169 grades', v: D.fmt(lubeV), pct: Math.round(lubeV / inv * 100) + '%', title: `Finished lubricants: ${D.fmt(lubeV)} kL` });
     const act = D.TRANSFERS.filter(tr => tr.active && (!prods.length || prods.includes(tr.code)));
     const types = {}; act.forEach(tr => types[tr.type] = (types[tr.type] || 0) + 1);
     const open = D.EXCEPTIONS.filter(e => e.status !== 'Resolved' && e.sev !== 'info');
@@ -275,21 +282,21 @@ class Component extends DCLogic {
     // preview
     const pt = D.term(previewId), ps = D.tsum(pt, prods);
     const pmax = Math.max(1, ...Object.values(ps.byProd));
-    const pv = { name: pt.name, area: pt.area, kind: pt.kind, local: D.tm(D.NOW, pt.tz), caps: D.caps(pt), tanks: `${pt.tanks.length} tanks`, prods: D.PRODUCTS.filter(p => ps.byProd[p.code]).map(p => ({ label: p.label, color: p.color, v: D.fmt(ps.byProd[p.code]), w: (ps.byProd[p.code] / pmax * 100).toFixed(1) + '%' })), open: () => this.props.go('terminal', { terminalId: pt.id, scope: 'terminal' }) };
+    const pv = { name: pt.name, area: pt.area, kind: pt.kind, local: D.tm(D.NOW, pt.tz), caps: D.caps(pt), tanks: `${pt.tanks.length} tanks`, prods: pt.superhub ? this.lubeFamilies(D, ps.byProd) : D.PRODUCTS.filter(p => ps.byProd[p.code]).map(p => ({ label: p.label, color: p.color, v: D.fmt(ps.byProd[p.code]), w: (ps.byProd[p.code] / pmax * 100).toFixed(1) + '%' })), open: () => this.props.go('terminal', { terminalId: pt.id, scope: 'terminal' }) };
     const mapJson = JSON.stringify(all.map(({ t, sm }) => ({ id: t.id, name: t.name, short: (mapShort[t.id] || [t.name, 8, -7])[0], lx: (mapShort[t.id] || [t.name, 8, -7])[1], ly: (mapShort[t.id] || [t.name, 8, -7])[2], label: true, lat: t.lat, lon: t.lon, sev: sm.top && sm.top.sev !== 'info' ? sm.top.sev : null, dim: !list.find(x => x.t.id === t.id) })));
     const wide = ctx.vw >= 1500; const mapH = ctx.vw < 1700 ? '360px' : '420px';
     const filtered = !!(s.text || s.cap !== 'All capabilities' || s.status !== 'All statuses' || s.sev !== 'All severities');
     return {
-      ready: true, I, f: s, subtitle: `14 terminals · ${D.SNAPSHOT} · live simulation with fictional values, not plant telemetry`,
+      ready: true, I, f: s, subtitle: `${D.TERMINALS.length} terminals · ${D.SNAPSHOT} · live simulation with fictional values, not plant telemetry`,
       onText: e => this.upd({ text: e.target.value }), onCap: e => this.upd({ cap: e.target.value }), onStatus: e => this.upd({ status: e.target.value }), onSev: e => this.upd({ sev: e.target.value }),
-      capOptions: ['All capabilities', 'Marine', 'Blending', 'Truck loading', 'Hydrant', 'Pipeline'], statusOptions: ['All statuses', 'Operating', 'Restricted'], sevOptions: ['All severities', 'Critical', 'Attention', 'No open exception'],
+      capOptions: ['All capabilities', 'Marine', 'Blending', 'Truck loading', 'Hydrant', 'Pipeline', 'Filling & packaging', 'Rail'], statusOptions: ['All statuses', 'Operating', 'Restricted'], sevOptions: ['All severities', 'Critical', 'Attention', 'No open exception'],
       filtered, clearFilters: () => this.upd({ text: '', cap: 'All capabilities', status: 'All statuses', sev: 'All severities' }),
       hasProdFilter: prods.length > 0, prodChips: prods.map(c => D.prod(c)),
       sumCols: ctx.tablet ? 'repeat(2,minmax(0,1fr))' : '1.5fr 1fr 0.9fr 1.1fr', sum, prodBar, trTypes: Object.entries(types).map(([type, n]) => ({ type, n })),
       goInventory: () => this.props.go('inventory', { scope: 'network' }), sortByRx: () => this.upd({ sort: 'rx', dir: -1 }), openAlarmsAll: () => this.props.openAlarms && this.props.openAlarms('network'),
       trListOpen: s.trList, toggleTrList: () => this.upd({ trList: !s.trList }), trListLabel: s.trList ? 'Hide records' : 'Show records', trRows,
       mainCols: ctx.vw < 1700 ? 'minmax(0,1fr)' : 'minmax(0,1fr) 400px', asideCols: ctx.vw < 1700 ? 'minmax(0,720px)' : '1fr', asideDir: ctx.vw < 1700 ? 'grid' : 'flex', cols: 'minmax(180px,1.6fr) 118px minmax(190px,1.5fr) 118px 62px 92px 64px minmax(200px,2.2fr) 96px',
-      heads, rows, empty: !rows.length, rowCount: `${rows.length} of 14`, tot,
+      heads, rows, empty: !rows.length, rowCount: `${rows.length} of ${D.TERMINALS.length}`, tot,
       showMap: !ctx.mobile, mapRef: this.mapRef, mapJson, previewId, pv, mapH, theme: ctx.theme,
     };
   }

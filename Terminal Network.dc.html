@@ -49,6 +49,26 @@ button:not(:disabled):active,[role="button"]:active{transform:translateY(1px)}
 .tn-lift{transition:transform var(--t-med) var(--ease-out),box-shadow var(--t-med) var(--ease-out),background-color var(--t-med) var(--ease-out),border-color var(--t-med) var(--ease-out)}
 .tn-lift:hover{transform:translateY(-1px);box-shadow:0 2px 10px rgba(20,24,28,.10)}
 .tn-bar{transition:width var(--t-slow) var(--ease-out),background-color var(--t-med) var(--ease-out)}
+/* Superhub workspace: pressable zones, tiles, rows and cells */
+.sh-zone{cursor:pointer;outline:none}
+.sh-zone .sh-zbg{transition:fill var(--t-med) var(--ease-out),stroke var(--t-med) var(--ease-out),stroke-width var(--t-fast) var(--ease-out)}
+.sh-zone:hover .sh-zbg{stroke:var(--acc);stroke-width:1.6}
+.sh-zone:focus-visible .sh-zbg{stroke:var(--acc);stroke-width:2.6}
+.sh-zone:active .sh-zbg{stroke-width:2.8}
+.sh-tile:active{transform:translateY(0) scale(.99)}
+.sh-tile[aria-pressed="true"]{box-shadow:0 0 0 1px var(--acc)}
+.sh-row[aria-pressed="false"]:hover{background:var(--surf2)!important}
+.sh-press:hover{border-color:var(--ink3)!important}
+.sh-seg[aria-pressed="false"]:hover{background:var(--surf2)!important}
+.sh-tab:hover{color:var(--ink)!important;background:var(--surf2)!important}
+.sh-cell:hover{border-color:var(--ink3)!important}
+.sh-cell:active{transform:scale(.94)}
+.sh-slot{transition:stroke-width var(--t-fast) var(--ease-out)}
+.sh-slot:hover{stroke:var(--acc);stroke-width:1.6}
+.sh-link:hover{text-decoration:underline}
+.sh-flow{animation:tnflow 1.4s linear infinite}
+.sh-blink{animation:tnpulse 1.2s ease-in-out infinite}
+.sh-tabs{scrollbar-width:thin}
 [data-motion="off"] *{animation:none!important;transition:none!important}
 @media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
 </style>
@@ -89,19 +109,19 @@ button:not(:disabled):active,[role="button"]:active{transform:translateY(1px)}
   </sc-if>
 
   <div style="flex:1;min-width:0;display:flex;flex-direction:column">
-    <header style="height:52px;flex:none;display:flex;align-items:center;gap:10px;padding:0 14px;background:var(--surf);border-bottom:1px solid var(--line);position:relative;z-index:30">
-      <div style="position:relative">
-        <button onClick="{{ toggleScope }}" aria-haspopup="listbox" style="height:34px;display:flex;align-items:center;gap:9px;padding:0 10px 0 11px;border:1px solid var(--line);border-radius:0;background:var(--surf);min-width:0;max-width:{{ scopeMaxW }};white-space:nowrap" style-hover="border-color:var(--ink4)">
-          <span style="font-size:10.5px;color:var(--ink3);letter-spacing:.07em">{{ scopeKicker }}</span>
-          <span style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ scopeLabel }}</span>
-          <span style="font-family:var(--fnum);font-size:11px;color:var(--ink3);border:1px solid var(--line);padding:0 4px;border-radius:0">{{ scopeTz }}</span>
+    <header style="height:52px;flex:none;display:flex;align-items:center;gap:{{ hdrGap }};padding:0 {{ hdrPad }};background:var(--surf);border-bottom:1px solid var(--line);position:relative;z-index:30;min-width:0">
+      <div style="position:relative;min-width:0;flex:0 1 auto">
+        <button onClick="{{ toggleScope }}" aria-haspopup="listbox" style="height:34px;display:flex;align-items:center;gap:9px;padding:0 10px 0 11px;border:1px solid var(--line);border-radius:0;background:var(--surf);min-width:0;max-width:min(100%, {{ scopeMaxW }});white-space:nowrap" style-hover="border-color:var(--ink4)">
+          <sc-if value="{{ showScopeMeta }}" hint-placeholder-val="{{ true }}"><span style="font-size:10.5px;color:var(--ink3);letter-spacing:.07em">{{ scopeKicker }}</span></sc-if>
+          <span style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0">{{ scopeLabel }}</span>
+          <sc-if value="{{ showScopeMeta }}" hint-placeholder-val="{{ true }}"><span style="font-family:var(--fnum);font-size:11px;color:var(--ink3);border:1px solid var(--line);padding:0 4px;border-radius:0">{{ scopeTz }}</span></sc-if>
           <span style="color:var(--ink3)">{{ I.chevD }}</span>
         </button>
         <sc-if value="{{ scopeOpen }}" hint-placeholder-val="{{ false }}">
           <div role="listbox" style="position:absolute;top:40px;left:0;width:380px;max-height:520px;overflow:auto;background:var(--surf);border:1px solid var(--pBd);box-shadow:var(--shadow);padding:6px;animation:tnin .12s ease">
             <button onClick="{{ pickNetwork }}" style="width:100%;display:flex;align-items:center;gap:10px;padding:9px 10px;border:0;border-radius:0;background:{{ netOptBg }};text-align:left" style-hover="background:var(--surf2)">
               <span style="color:var(--ink2)">{{ I.network }}</span>
-              <span style="flex:1;font-weight:600">Network · all 14 terminals</span>
+              <span style="flex:1;font-weight:600">{{ netAll }}</span>
               <span style="font-size:11px;color:var(--ink3)">Network views</span>
             </button>
             <div style="height:1px;background:var(--line2);margin:6px 4px"></div>
@@ -146,7 +166,7 @@ button:not(:disabled):active,[role="button"]:active{transform:translateY(1px)}
           <button onClick="{{ toggleRange }}" style="height:34px;display:flex;align-items:center;gap:8px;padding:0 10px;border:1px solid var(--line);border-radius:0;background:var(--surf);white-space:nowrap" style-hover="border-color:var(--ink4)">
             <span style="color:var(--ink3)">{{ I.clock }}</span>
             <span style="font-weight:500;white-space:nowrap">{{ rangeLabel }}</span>
-            <span style="font-family:var(--fnum);font-size:11px;color:var(--ink3);white-space:nowrap">{{ rangeSub }}</span>
+            <sc-if value="{{ showRangeSub }}" hint-placeholder-val="{{ true }}"><span style="font-family:var(--fnum);font-size:11px;color:var(--ink3);white-space:nowrap">{{ rangeSub }}</span></sc-if>
             <span style="color:var(--ink3)">{{ I.chevD }}</span>
           </button>
           <sc-if value="{{ rangeOpen }}" hint-placeholder-val="{{ false }}">
@@ -194,22 +214,24 @@ button:not(:disabled):active,[role="button"]:active{transform:translateY(1px)}
         </div>
       </sc-if>
 
-      <div title="{{ freshTitle }}" style="height:34px;display:flex;align-items:center;gap:8px;padding:0 10px;border:1px solid {{ freshBd }};border-radius:0;background:{{ freshBg }};white-space:nowrap">
+      <div title="{{ freshTitle }}" role="status" aria-label="{{ freshAria }}" style="height:34px;flex:none;display:flex;align-items:center;gap:8px;padding:0 {{ freshPad }};border:1px solid {{ freshBd }};border-radius:0;background:{{ freshBg }};white-space:nowrap">
         <span style="color:{{ freshFg }}">{{ freshIcon }}</span>
-        <span style="display:flex;flex-direction:column;line-height:1.15">
-          <span style="font-size:11.5px;font-weight:600;color:{{ freshFg }}">{{ freshLabel }}</span>
-          <span style="font-family:var(--fnum);font-size:10.5px;color:var(--ink3)">{{ freshSub }}</span>
-        </span>
+        <sc-if value="{{ showFreshText }}" hint-placeholder-val="{{ true }}">
+          <span style="display:flex;flex-direction:column;line-height:1.15">
+            <span style="font-size:11.5px;font-weight:600;color:{{ freshFg }}">{{ freshLabel }}</span>
+            <sc-if value="{{ showFreshSub }}" hint-placeholder-val="{{ true }}"><span style="font-family:var(--fnum);font-size:10.5px;color:var(--ink3)">{{ freshSub }}</span></sc-if>
+          </span>
+        </sc-if>
       </div>
 
-      <button onClick="{{ toggleAlarms }}" aria-label="Alarm centre" style="height:34px;display:flex;align-items:center;gap:7px;padding:0 10px;border:1px solid var(--line);border-radius:0;background:{{ alarmBtnBg }};white-space:nowrap" style-hover="border-color:var(--ink4)">
+      <button onClick="{{ toggleAlarms }}" aria-label="Alarm centre" style="height:34px;flex:none;display:flex;align-items:center;gap:7px;padding:0 10px;border:1px solid var(--line);border-radius:0;background:{{ alarmBtnBg }};white-space:nowrap" style-hover="border-color:var(--ink4)">
         <span>{{ I.bell }}</span>
         <sc-if value="{{ hasCrit }}" hint-placeholder-val="{{ false }}"><span style="display:flex;align-items:center;gap:4px;font-family:var(--fnum);font-size:11.5px;font-weight:600">{{ I.st.critical }}{{ critN }}</span></sc-if>
         <span style="display:flex;align-items:center;gap:4px;font-family:var(--fnum);font-size:11.5px;font-weight:600">{{ I.st.attention }}{{ warnN }}</span>
       </button>
 
       <div style="position:relative">
-        <button onClick="{{ toggleUser }}" style="height:34px;display:flex;align-items:center;gap:8px;padding:0 8px 0 4px;border:1px solid var(--line);border-radius:0;background:var(--surf);white-space:nowrap" style-hover="border-color:var(--ink4)">
+        <button onClick="{{ toggleUser }}" aria-label="User and settings" style="height:34px;flex:none;display:flex;align-items:center;gap:8px;padding:0 8px 0 4px;border:1px solid var(--line);border-radius:0;background:var(--surf);white-space:nowrap" style-hover="border-color:var(--ink4)">
           <span style="width:26px;height:26px;border-radius:0;background:var(--ink);color:var(--surf);display:grid;place-items:center;font-size:11px;font-weight:600">{{ userInitials }}</span>
           <sc-if value="{{ showUserText }}" hint-placeholder-val="{{ true }}">
             <span style="display:flex;flex-direction:column;line-height:1.1;text-align:left"><span style="font-weight:600;font-size:12px">{{ userName }}</span><span style="font-size:10.5px;color:var(--ink3)">{{ roleLabel }}</span></span>
@@ -485,7 +507,7 @@ class Component extends DCLogic {
         onAck: () => { D.ackEx(e.id, role.name, D.NOW); this.toast(`${e.id} acknowledged by ${role.name}. Condition remains open until resolved.`); this.bump(); },
         onResolve: () => this.setState({ resolving: e.id, resNote: '' }),
         confirmResolve: () => { D.resolveEx(e.id, role.name, D.NOW, s.resNote); this.setState({ resolving: null }); this.toast(`${e.id} marked resolved.`); this.bump(); },
-        onOpen: () => this.go('terminal', { terminalId: e.term, focus: e.asset.startsWith('T-') ? { type: 'tank', id: e.asset.slice(0, 4) } : null }),
+        onOpen: () => this.go('terminal', { terminalId: e.term, focus: e.hub ? { type: 'asset', id: e.asset } : e.asset.startsWith('T-') ? { type: 'tank', id: e.asset.slice(0, 4) } : null }),
       };
     });
     const tabs = [['active', 'Needs acknowledgement'], ['ack', 'Acknowledged'], ['resolved', 'Resolved']].map(([id, label]) => { const n = exAll.filter(e => id === 'active' ? e.status !== 'Resolved' && !e.ack : id === 'ack' ? e.status !== 'Resolved' && e.ack : e.status === 'Resolved').length; return { label: `${label} · ${n}`, onClick: () => this.setState({ alarmTab: id }), ...sel(s.alarmTab === id) }; });
@@ -505,24 +527,25 @@ class Component extends DCLogic {
     const ph = { maint: [I.maint, 'Maintenance', 'Planned maintenance windows that affect operations are shown on the Scheduling board. Work orders open in the maintenance system.'], docs: [I.docs, 'Documents', 'Certificates and documents linked to batches can be traced from the Quality workspace.'], admin: [I.lock, 'Administration — access restricted', 'Your current role does not include user administration. Switch role from the user menu to explore permission-limited states.'] };
     const phx = ph[s.screen];
     show.placeholder = !loadingView && !!phx;
-    show.superhub = !!(show.terminal && t && t.superhub); if (show.superhub) show.terminal = false; // the lubricant superhub has its own specialised workspace
+    // the lubricant superhub has its own specialised workspace; its blending and quality views open there too
+    show.superhub = !!(t && t.superhub && (show.terminal || show.blending || (show.quality && s.scope === 'terminal'))); if (show.superhub) { show.terminal = false; show.blending = false; show.quality = false; }
 
     const userInitials = role.name.split(/[ .]+/).filter(Boolean).map(x => x[0]).slice(0, 2).join('');
     return {
       I, theme: s.theme, motion: s.motion, ctx, D, go: this.go, setCtx: this.setCtx, toast: this.toast, openAlarms: this.openAlarms,
       showRail: !mobile, railOpen, railW: railOpen ? '216px' : '72px', toggleRail: () => this.set({ railOpen: !s.railOpen }), railToggleIcon: railOpen ? I.collapse : I.expand, railToggleLabel: railOpen ? 'Collapse navigation' : 'Expand navigation',
       navItems, navSecondary, showMobileNav: mobile,
-      scopeKicker: net ? 'Scope' : 'Terminal', scopeLabel: net ? 'Network · 14 terminals' : t.name, scopeTz: net ? 'WIB' : t.tz, scopeMaxW: mobile ? '200px' : '340px', scopeOpen: s.scopeOpen,
+      scopeKicker: net ? 'Scope' : 'Terminal', scopeLabel: net ? `Network · ${D.TERMINALS.length} terminals` : t.name, netAll: `Network · all ${D.TERMINALS.length} terminals`, scopeTz: net ? 'WIB' : t.tz, scopeMaxW: mobile ? '100%' : tablet ? '260px' : '340px', showScopeMeta: !mobile, scopeOpen: s.scopeOpen,
       toggleScope: () => this.setState({ scopeOpen: !s.scopeOpen, rangeOpen: false, prodOpen: false, userOpen: false }), scopeOptions, netOptBg: net ? 'var(--accSoft)' : 'transparent',
       pickNetwork: () => { this.set({ scope: 'network', scopeOpen: false }); if (['terminal', 'transfers', 'blending', 'schedule'].includes(s.screen)) this.go('network'); },
       showSearch: !mobile, q: s.q, searchRef: this.searchRef, searchOpen: s.searchOpen && q.length > 0, results, noResults: q.length > 0 && !results.length,
       onSearch: e => this.setState({ q: e.target.value, searchOpen: true, hi: 0 }), onSearchFocus: () => this.setState({ searchOpen: true }),
       onSearchKey: e => { if (e.key === 'ArrowDown') { e.preventDefault(); this.setState({ hi: Math.min(s.hi + 1, results.length - 1) }); } if (e.key === 'ArrowUp') { e.preventDefault(); this.setState({ hi: Math.max(0, s.hi - 1) }); } if (e.key === 'Enter' && this.results[s.hi]) this.results[s.hi].onClick(); if (e.key === 'Escape') { this.setState({ searchOpen: false }); e.target.blur(); } },
-      showRange: !mobile, rangeLabel: s.range, rangeSub: `${ranges[s.range]} · ${tz}`, rangeOpen: s.rangeOpen, toggleRange: () => this.setState({ rangeOpen: !s.rangeOpen, scopeOpen: false, prodOpen: false, userOpen: false }),
+      showRange: !mobile, showRangeSub: s.vw >= 1500, rangeLabel: s.range, rangeSub: `${ranges[s.range]} · ${tz}`, rangeOpen: s.rangeOpen, toggleRange: () => this.setState({ rangeOpen: !s.rangeOpen, scopeOpen: false, prodOpen: false, userOpen: false }),
       rangeOptions: Object.keys(ranges).map(r => ({ label: r, onClick: () => this.set({ range: r }), ...sel(s.range === r) })),
       shiftOptions: shifts.map(([id, sub]) => ({ label: 'Shift ' + id, sub, onClick: () => this.set({ shift: id, range: 'Current shift' }), ...sel(shift === id) })),
       showProdFilter: !tablet, prodOpen: s.prodOpen, toggleProd: () => this.setState({ prodOpen: !s.prodOpen, scopeOpen: false, rangeOpen: false, userOpen: false }), prodOptions, prodLabel, clearProd: () => this.set({ products: [] }), prodBd: s.products.length ? 'var(--ink)' : 'var(--line)', prodBg: s.products.length ? 'var(--surf2)' : 'var(--surf)',
-      freshLabel, freshSub, freshFg, freshBg, freshBd, freshIcon, freshTitle: `Terminal local time ${localNow}`,
+      freshLabel, freshSub, freshFg, freshBg, freshBd, freshIcon, freshTitle: `${freshLabel} · ${freshSub} · terminal local time ${localNow}`, freshAria: `${freshLabel}. ${freshSub}`, showFreshText: !mobile, showFreshSub: s.vw >= 1500, freshPad: mobile ? '8px' : '10px', hdrGap: mobile ? '6px' : '10px', hdrPad: mobile ? '8px' : '14px',
       critN, warnN, hasCrit: critN > 0, alarmBtnBg: critN ? 'var(--critSoft)' : 'var(--surf)', toggleAlarms: () => this.setState({ alarmsOpen: !s.alarmsOpen, resolving: null }), alarmsOpen: s.alarmsOpen, drawerW: mobile ? '100%' : '460px',
       alarmTabs: tabs, alarmList, alarmEmpty: !alarmList.length, toggleAlarmScope: () => this.setState({ alarmScope: s.alarmScope === 'network' ? 'terminal' : 'network' }), alarmScopeLabel: s.alarmScope === 'network' ? 'All terminals' : 'Only ' + t.id,
       resNote: s.resNote, onResNote: e => this.setState({ resNote: e.target.value }), resDisabled: !s.resNote.trim(), resOpacity: s.resNote.trim() ? 1 : 0.4, cancelResolve: () => this.setState({ resolving: null }),

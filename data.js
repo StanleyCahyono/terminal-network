@@ -107,6 +107,7 @@ const PLM_OVR = {
 
 if (SH.TERMINAL) TDEF.push(SH.TERMINAL);
 export const TERMINALS = TDEF.map(t => {
+  if (t.tanks) return { ...t, status: t.status || 'Operating' }; // the superhub brings its own bunds and tanks
   const r = rng(hash(t.id));
   const bunds = []; const tanks = []; let n = 0;
   t.spec.split('|').forEach((b, bi) => {
@@ -214,7 +215,7 @@ TRANSFERS.forEach(tr => {
 
 export function tankFlows(k) {
   const out = [];
-  TRANSFERS.filter(tr => tr.term === k.term).forEach(tr => {
+  TRANSFERS.filter(tr => tr.term === k.term && !tr.ext).forEach(tr => { // superhub vessel records move tanks through HUB.flow
     if (tr.dst === k.id) out.push({ tr, sign: 1, share: 1 });
     srcsOf(tr).forEach(([sid, sh]) => { if (sid === k.id) out.push({ tr, sign: -1, share: sh }); });
   });
@@ -441,6 +442,7 @@ export function invTrend(t, prods, hours = 24, step = 60) {
 export function caps(t) {
   const c = [];
   if (t.marine) c.push('Marine'); if (t.blend) c.push('Blending'); if (t.truck) c.push('Truck loading'); if (t.hydrant) c.push('Hydrant'); if (t.pipeIn || t.pipeOut) c.push('Pipeline');
+  if (t.superhub) c.push('Filling & packaging', 'Grease plant', 'ISO tanks', 'Rail');
   return c;
 }
 
@@ -650,6 +652,7 @@ function generate(s, ev) {
   QUEUE.sort((a, b) => a.at - b.at); while (QUEUE.length && QUEUE[0].at <= s) QUEUE.shift().run(s);
   CLEARS.forEach(([id, at, by, note, fix]) => { const e = EXCEPTIONS.find(x => x.id === id); if (e && e.status !== 'Resolved' && s >= at) { e.status = 'Resolved'; e.ack = e.ack || { by, at }; e.res = { by, at: s, note }; if (fix) fix(); ev.push(`${id} resolved · ${note}`); } });
   TRANSFERS.forEach(tr => {
+    if (tr.ext) return; // superhub records are run by the superhub
     if (tr.state === 'Delayed') { // waits while its cause is open, then berths
       if (EXCEPTIONS.some(e => e.status !== 'Resolved' && e.op.includes(tr.id))) { if (tr.start < s + 30) tr.start = Math.ceil(s / 15) * 15 + 60; }
       else { tr.state = 'Scheduled'; tr.start = Math.max(tr.start, Math.ceil(s / 15) * 15 + 60); ev.push(`${tr.vessel} cleared to berth at ${term(tr.term).name} · discharge from ${tm(tr.start, term(tr.term).tz)}.`); }
@@ -693,6 +696,7 @@ function advance(to, ev) {
     if (b.state === 'In progress' && !TRANSFERS.some(tr => tr.id === b.id)) blendTransfer(b);
   });
   TRANSFERS.forEach(tr => {
+    if (tr.ext) return;
     if (tr.state === 'Scheduled' && tr.start <= to) begin(tr, ev);
     if (tr.state === 'Paused' && tr.resumeAt != null && tr.resumeAt <= to) {
       const p = tr.pauses.find(x => x[1] == null), at = tr.resumeAt; if (p) p[1] = at;
@@ -722,7 +726,7 @@ function advance(to, ev) {
   });
   HUB.advance(from, to, ev);
   NOW = to;
-  TRANSFERS.forEach(tr => { if (tr.active) mark(tr); derive(tr); });
+  TRANSFERS.forEach(tr => { if (tr.active && !tr.ext) mark(tr); derive(tr); });
   TERMINALS.forEach(t => t.tanks.forEach(k => { k.temp = +(k.temp0 - diurnal(REF) + diurnal(NOW)).toFixed(1); }));
 }
 // Moves the network forward to the real clock. Returns events worth telling the operator about.
@@ -738,7 +742,7 @@ export function tick(to = Date.now() / 60000 - BASE) {
 }
 // the lubricant superhub: its own plant model and simulation, sharing the run's clock, random keys and records
 export const HUB = SH.createSuperhub({
-  REF, SLOT, now: () => NOW, R, between, pick, rng, hash, tm, hhmm, day, dur, fmt, ymd, seq,
+  REF, SLOT, BASE, now: () => NOW, R, between, pick, rng, hash, tm, hhmm, day, dur, fmt, ymd, seq,
   term, tank, prod, stock, room, spare, recipeFor, srcsOf, derive, mark, add, takeSample,
   TERMINALS, TRANSFERS, BLENDS, SAMPLES, EXCEPTIONS, TRACE, QUEUE, LOG,
 });

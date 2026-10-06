@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<div style="position:absolute;inset:0;display:flex;flex-direction:column;background:var(--bg);overflow:hidden;color:var(--ink)">
+<sc-if value="{{ ready }}" hint-placeholder-val="{{ true }}">
+  {{ header }}
+  {{ tabs }}
+  <div style="flex:1;min-height:0;display:flex;position:relative">
+    <main ref="{{ scrollRef }}" aria-label="{{ mainLabel }}" style="flex:1;min-width:0;overflow:auto;padding:{{ pad }}">{{ body }}</main>
+    {{ drawer }}
+  </div>
+</sc-if>
+<sc-if value="{{ loading }}" hint-placeholder-val="{{ false }}">
+  <div style="flex:1;display:flex;align-items:center;justify-content:center;padding:24px">
+    <div class="tn-fade" style="display:flex;flex-direction:column;gap:10px;align-items:center;color:var(--ink3);font-size:13px;text-align:center">
+      <div style="width:220px;height:6px;background:linear-gradient(90deg,var(--surf2) 0,var(--surf3) 50%,var(--surf2) 100%);background-size:400px 6px;animation:tnshimmer 1.2s linear infinite"></div>
+      <span>{{ loadingText }}</span>
+    </div>
+  </div>
+</sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  constructor(p) {
+    super(p);
+    const D = p.d;
+    this.state = { ...(D ? D.ui.load('hub', { tabBy: {}, tv: 'bot', fam: 'all', bf: 'live', tf: 'all', iv: 'IF', lf: 'open', pf: 'all', ps: 'cover', ev: 'events', ar: 'all', pv: 'cards', q: '' }) : {}), sel: null, zone: null, hv: {}, err: null };
+    this.scrollRef = React.createRef();
+    const act = {
+      tab: (id, extra) => { const scr = this.screen(); this.upd({ tabBy: { ...(this.state.tabBy || {}), [scr]: id }, ...(extra || {}) }); const el = this.scrollRef.current; if (el) el.scrollTop = 0; },
+      zone: id => this.setState(s => (s.zone === id && !s.sel ? { zone: null } : { zone: id, sel: null })),
+      sel: (kind, id) => this.setState(s => (s.sel && s.sel.kind === kind && s.sel.id === id ? { sel: null } : { sel: { kind, id } })),
+      set: patch => this.upd(patch),
+      hover: (key, v) => this.setState(s => ({ hv: { ...s.hv, [key]: v } })),
+      close: () => this.setState({ sel: null, zone: null }),
+      back: () => this.setState({ sel: null }),
+      alarms: () => this.props.openAlarms && this.props.openAlarms('terminal'),
+      go: (screen, patch) => this.props.go && this.props.go(screen, patch),
+    };
+    this.act = act;
+  }
+  componentDidMount() {
+    import(new URL('./superhub-ui.js', document.baseURI).href).then(m => { this.M = m; this.applyFocus(true); this.forceUpdate(); }).catch(e => this.setState({ err: String(e && e.message || e) }));
+    this.onKey = e => { if (e.key === 'Escape' && (this.state.sel || this.state.zone)) { const t = e.target; if (t && (t.tagName === 'INPUT' || t.tagName === 'SELECT')) return; this.setState({ sel: null, zone: null }); } };
+    window.addEventListener('keydown', this.onKey);
+  }
+  componentWillUnmount() { window.removeEventListener('keydown', this.onKey); }
+  componentDidUpdate() { this.applyFocus(); }
+  screen() { const c = this.props.ctx; return c && (c.screen === 'blending' || c.screen === 'quality') ? c.screen : 'terminal'; }
+  applyFocus(force) {
+    const f = this.props.ctx && this.props.ctx.focus, M = this.M;
+    if (!M || !f || (f.n === this.lastFocus && !force)) return; this.lastFocus = f.n;
+    const D = this.props.d, x = f.type === 'blend' || f.type === 'batch' ? { kind: 'batch', id: f.id } : f.type === 'sample' ? { kind: 'sample', id: f.id } : M.resolve(D, f.id);
+    if (x) this.setState({ sel: x, zone: null });
+  }
+  upd(p) { this.setState(p, () => { const { sel, zone, hv, err, ...rest } = this.state; this.props.d.ui.save('hub', rest); }); }
+
+  renderVals() {
+    const D = this.props.d, ctx = this.props.ctx, M = this.M;
+    if (this.state.err) return { ready: false, loading: true, loadingText: 'The superhub view could not load: ' + this.state.err };
+    if (!D || !ctx || !M || !D.HUB || !D.HUB.state || !D.HUB.state.ready) return { ready: false, loading: true, loadingText: 'Starting the superhub simulation…' };
+    const scr = this.screen(), def = scr === 'blending' ? 'blend' : scr === 'quality' ? 'lab' : 'plan';
+    const st = { ...this.state, tab: (this.state.tabBy || {})[scr] || def };
+    const v = M.view(React.createElement, D, ctx, st, this.act);
+    if (!v) return { ready: false, loading: true, loadingText: 'Starting the superhub simulation…' };
+    const tabLabel = (M.TABS.find(t => t[0] === st.tab) || ['', 'Superhub'])[1];
+    return { ready: true, loading: false, header: v.header, tabs: v.tabs, body: v.body, drawer: v.drawer, scrollRef: this.scrollRef, mainLabel: tabLabel, pad: ctx.mobile ? '10px 10px 28px' : '14px 18px 28px' };
+  }
+}
+</script>
+</body>
+</html>

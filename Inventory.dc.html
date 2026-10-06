@@ -136,7 +136,7 @@ class Component extends DCLogic {
     return { ...base, unavailable: false, available: true, rows, empty: !rows.length, compRows: comps, noComp: !comps.length,
       totals: [F(tot.open), F(tot.rec), F(tot.dis), D.sgn(tot.adj), F(tot.close), F(tot.held), F(tot.avail)], summary,
       balIcon: Math.abs(bal) < 1 ? I.st.ok : I.st.attention, balText: Math.abs(bal) < 1 ? `Balance closes: opening + receipts − dispatches ± adjustments equals closing (difference ${D.fmt(bal, 0)} ${unit}).` : `Balance difference ${D.fmt(bal, 1)} ${unit}.`,
-      periodText: `${net ? 'Network · 14 terminals' : t.name} · ${ctx.range}${ctx.range === 'Current shift' ? ' ' + ctx.shift : ''} · ${D.tm(a, tz, { date: true })} → ${D.tm(b, tz, { date: true })} · basis ${mass ? 'mass t (in vacuum)' : 'GSV kL @ 15 °C'}`,
+      periodText: `${net ? `Network · ${D.TERMINALS.length} terminals` : t.name} · ${ctx.range}${ctx.range === 'Current shift' ? ' ' + ctx.shift : ''} · ${D.tm(a, tz, { date: true })} → ${D.tm(b, tz, { date: true })} · basis ${mass ? 'mass t (in vacuum)' : 'GSV kL @ 15 °C'}`,
       cols: 'minmax(0,1.5fr) 70px minmax(0,1.2fr) repeat(7,minmax(0,0.85fr))' };
   }
 }
