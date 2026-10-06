@@ -95,7 +95,7 @@ function btn(label, onClick, o = {}) {
 function tile(o) {
   const tn = o.tone || 'idle', on = !!o.on;
   return h('button', { key: o.key, onClick: o.onClick, 'aria-pressed': on ? 'true' : 'false', title: o.title || (o.state ? `${o.id} · ${o.state}` : o.id), className: 'sh-tile tn-lift', style: { display: 'flex', flexDirection: 'column', gap: 5, padding: '9px 10px 10px', minWidth: 0, textAlign: 'left', font: 'inherit', color: 'var(--ink)', background: on ? 'var(--accSoft)' : 'var(--surf)', border: '1px solid ' + (on ? 'var(--acc)' : 'var(--line)'), borderTop: `3px solid ${TC[tn]}`, cursor: 'pointer', position: 'relative' } },
-    div({ display: 'flex', alignItems: 'center', gap: 7, minWidth: 0 }, o.sw || null, span({ fontFamily: 'var(--fid)', fontSize: 12.5, fontWeight: 600, flex: 'none' }, o.id), span({ ...ell, flex: 1, fontSize: 11.5, color: TINK[tn], textAlign: 'right' }, o.state || '')),
+    div({ display: 'flex', alignItems: 'center', gap: 7, minWidth: 0 }, o.sw || null, span({ fontFamily: o.sans ? 'var(--fsans)' : 'var(--fid)', fontSize: o.sans ? 13 : 12.5, fontWeight: 600, flex: '0 1 auto', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }, o.id), span({ ...ell, flex: 1, fontSize: 11.5, color: TINK[tn], textAlign: 'right' }, o.state || '')),
     o.line1 != null ? span({ ...ell, fontSize: 12.5 }, o.line1) : null,
     o.line2 != null ? span({ ...ell, fontSize: 11.5, color: 'var(--ink3)' }, o.line2) : null,
     o.frac != null ? bar(o.frac, o.barColor || TC[tn], 5) : null);
@@ -307,7 +307,7 @@ function tabBar(cur) {
 // ── site plan tab ──
 const ZONES = { marine: 'Marine · 9 jetties', bot: 'Base-oil tank farm', add: 'Additive store', lab: 'QC laboratory', util: 'Utilities', blend: 'Blend halls', grease: 'Grease plant', fpt: 'Finished-product tanks', fill: 'Filling halls', wh: 'Warehouse', docks: 'Dispatch docks', bulk: 'Bulk & receiving bays', iso: 'ISO station & yard', stuff: 'Container stuffing', rail: 'Rail & container yard', gate: 'Gate & truck park' };
 function zoneCards() { // phone: the zones as cards instead of the scaled plan
-  const K = S.kpi, z = (id, line1, line2, t) => tile({ key: 'zc' + id, id: ZONES[id], state: '', tone: t || 'idle', line1, line2, on: ST.zone === id, onClick: () => A.zone(id) });
+  const K = S.kpi, z = (id, line1, line2, t) => tile({ key: 'zc' + id, id: id === 'fpt' ? 'Finished products' : ZONES[id], title: ZONES[id], sans: true, state: '', tone: t || 'idle', line1, line2, on: ST.zone === id, onClick: () => A.zone(id) });
   return grid(160, [
     z('marine', `${K.berths.busy}/9 berths busy`, `${K.berths.anchorage} at anchorage`, K.berths.busy ? 'run' : 'idle'),
     z('bot', `≥ ${DAYS(Math.min(...K.base.map(b => b.days)))} base-oil cover`, `${S._tanks.BOT.filter(t => t.status === 'Receiving').length} receiving`, 'run'),
