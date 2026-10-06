@@ -326,6 +326,35 @@ function hourly(key, hours, color, label) {
   const xt = []; for (let x = Math.ceil(pts[0].t / 360) * 360; x <= D.NOW; x += 360) xt.push({ t: x, label: D.tm(x, tz, { tz: false }) });
   return D.lineChart(h, { w: 560, h: 170, l: 46, series: [{ pts, color, label, unit: 't/h', area: true }], y0: 0, y1: Math.ceil(Math.max(10, ...pts.map(p => p.v)) * 1.1 / 100) * 100, xTicks: xt, hover: ST.hv && ST.hv[key], onHover: v => A.hover(key, v), tz, aria: label + ' per hour' });
 }
+// trend charts from the 15-minute history (48 h ring)
+const niceMax = v => { const x = Math.max(v, 1e-6) * 1.08, p = Math.pow(10, Math.floor(Math.log10(x))), m = x / p; return (m <= 1 ? 1 : m <= 2 ? 2 : m <= 2.5 ? 2.5 : m <= 5 ? 5 : 10) * p; };
+const ticksFor = (t0, hours) => { const xt = [], step = hours > 30 ? 720 : 360; for (let x = Math.ceil(t0 / step) * step; x <= D.NOW; x += step) xt.push({ t: x, label: D.tm(x, tz, { tz: false }) }); return xt; };
+function trend(title, specs, o = {}) {
+  const hours = o.hours || 24, hk = o.key || title;
+  const roll = (pts, n) => n > 1 && pts.length > n ? pts.map((p, i) => { const a = pts.slice(Math.max(0, i - n + 1), i + 1); return { t: p.t, v: a.reduce((x, q) => x + q.v, 0) / a.length }; }).slice(n - 1) : pts; // rolling mean for quantities booked when a batch ends
+  const series = specs.map(sp => ({ pts: roll(HUB.series(sp.key, hours).map(p => ({ t: p.t, v: p.v * (sp.mul || 1) })), sp.smooth || 0), color: sp.color, label: sp.label, unit: o.unit || '', dp: o.dp || 0, area: specs.length === 1 }));
+  const ok = series[0].pts.length >= 3, top = ok ? Math.max(...series.flatMap(x => x.pts.map(p => p.v))) : 0;
+  const body = ok ? [D.lineChart(h, { w: o.wide && !ctx.tablet ? 1120 : 560, h: o.h || (o.wide && !ctx.tablet ? 190 : 170), l: 46, series, y0: 0, y1: o.y1 || niceMax(top), xTicks: ticksFor(series[0].pts[0].t, hours), hover: ST.hv && ST.hv[hk], onHover: v => A.hover(hk, v), tz, aria: title }),
+    specs.length > 1 ? div({ display: 'flex', gap: '4px 14px', flexWrap: 'wrap', fontSize: 12, color: 'var(--ink2)' }, ...specs.map(sp => span({ display: 'inline-flex', alignItems: 'center', gap: 6 }, span({ width: 14, height: 2, background: sp.color, display: 'inline-block', flex: 'none' }), sp.label))) : null] : [empty('Collecting history…')];
+  return section(title, o.sub ? span({ fontSize: 12, color: 'var(--ink3)' }, o.sub) : null, body, { key: 'tr-' + hk });
+}
+// today's material flow, received → stocked → blended → filled → shipped; each stage opens its tab
+function flowStrip() {
+  const K = S.kpi, X = S.today, base = K.base.reduce((a, b) => a + b.t, 0), add = K.add.reduce((a, b) => a + b.t, 0);
+  const stage = (title, rows, col, tab) => h('button', { key: 'fs-' + tab, onClick: () => A.tab(tab), title: `Open ${TABS.find(t => t[0] === tab)[1]}`, className: 'sh-tile tn-lift', style: { display: 'flex', flexDirection: 'column', gap: 4, padding: '9px 11px 10px', minWidth: 0, textAlign: 'left', font: 'inherit', color: 'var(--ink)', background: 'var(--surf)', border: '1px solid var(--line)', borderTop: `3px solid ${col}`, cursor: 'pointer' } },
+    span({ fontSize: 12.5, fontWeight: 600 }, title),
+    ...rows.map(([l, v]) => div({ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8, minWidth: 0, fontSize: 12.5 }, span({ ...ell, color: 'var(--ink2)' }, l), span({ fontFamily: 'var(--fnum)', flex: 'none' }, v))));
+  const st = [
+    stage('Received', [['By sea', T0(K.rec.sea)], ['Rail ISO tanks', T0(K.rec.rail)], ['Road & feeder ISO', T0(K.rec.road + K.rec.iso)]], 'var(--ink3)', 'marine'),
+    stage('In stock', [['Base oils', T0(base)], ['Additives', T0(add)], ['Finished, released', T0(K.fin.rel)]], 'var(--ink3)', 'tanks'),
+    stage('Blended', [['Liquid blends', T0(K.blend.t)], ['Grease', T0(K.grease.t, 1)], ['Batches started', D.fmt(K.blend.batches)]], 'var(--acc)', 'blend'),
+    stage('Filled', [['Packed', T0(K.out.pkg)], ['Units', D.fmt(X.units)], ['Bulk & ISO loaded', T0(K.out.bulk)]], 'var(--acc)', 'fill'),
+    stage('Shipped', [['Road', T0(K.disp.road)], ['Rail', T0(K.disp.rail)], ['Sea', T0(K.disp.sea)]], 'var(--ok)', 'wh'),
+  ];
+  const arrow = i => span({ key: 'fa' + i, alignSelf: 'center', textAlign: 'center', color: 'var(--ink4)', fontSize: 16 }, '→');
+  const body = ctx.tablet ? grid(170, st, 8) : div({ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 16px minmax(0,1fr) 16px minmax(0,1fr) 16px minmax(0,1fr) 16px minmax(0,1fr)', gap: 6, alignItems: 'stretch', minWidth: 0 }, ...st.flatMap((x, i) => i ? [arrow(i), x] : [x]));
+  return section('Material flow today', span({ fontSize: 12, color: 'var(--ink3)' }, 'since 00:00 WIB · press a stage for details'), [body], { key: 'flow' });
+}
 function planTab() {
   const K = S.kpi;
   const planBox = section('Site plan', [span({ fontSize: 12, color: 'var(--ink3)' }, ctx.mobile ? 'Tap a zone for details' : 'Press a zone for details'), ctx.mobile ? seg([['cards', 'Zones'], ['map', 'Plan']], ST.pv || 'cards', v => A.set({ pv: v }), 'Plan view') : null], [
@@ -336,6 +365,7 @@ function planTab() {
   const disp = [['Road', K.disp.road, K.disp.roadPlan], ['Rail', K.disp.rail, K.disp.railPlan], ['Sea', K.disp.sea, K.disp.seaPlan]].map(([m, v, p]) => div({ key: m, display: 'flex', flexDirection: 'column', gap: 4 }, div({ display: 'flex', justifyContent: 'space-between', gap: 8, fontSize: 12.5 }, span({}, m), span({ fontFamily: 'var(--fnum)', ...ell }, `${T0(v)} of ${T0(p)} plan`)), bar(p ? v / p : 0, 'var(--ink3)', 7)));
   return div({ display: 'flex', flexDirection: 'column', gap: 12, minWidth: 0 },
     planBox,
+    flowStrip(),
     div({ display: 'grid', gridTemplateColumns: ctx.tablet ? 'minmax(0,1fr)' : 'minmax(0,1.2fr) minmax(0,1fr)', gap: 12, minWidth: 0 },
       section('Output, last 24 h', span({ fontSize: 12, color: 'var(--ink3)' }, 'packaged + bulk, t/h'), [hourly('out', 24, 'var(--acc)', 'Output')], { key: 'outc' }),
       section('Dispatch today by mode', span({ fontSize: 12, color: 'var(--ink3)', fontFamily: 'var(--fnum)' }, `${T0(K.disp.road + K.disp.rail + K.disp.sea)} shipped`), [...disp, kv('Receipts by sea', T0(K.rec.sea)), kv('Receipts by rail ISO', T0(K.rec.rail)), kv('Receipts by road and feeder ISO', T0(K.rec.road + K.rec.iso), { last: true })], { key: 'dispc' })),
@@ -385,6 +415,9 @@ function tanksTab() {
     const st = {}; tanks.forEach(t => { const x = t.free ? 'Free' : t.state; st[x] = (st[x] || 0) + 1; });
     body.push(div({ display: 'flex', gap: 8, flexWrap: 'wrap' }, ...Object.entries(st).map(([x, n]) => chip(`${x} ${n}`, x === 'Free' ? 'idle' : x === 'QC hold' ? 'warn' : tone(x)))));
   }
+  if (v === 'bot') body.push(trend('Base-oil stock, last 48 h', [{ key: 'boG1', label: 'Group I', color: 'oklch(0.66 0.12 70)' }, { key: 'boG2', label: 'Group II', color: 'oklch(0.60 0.10 125)' }, { key: 'boG3', label: 'Group III', color: 'oklch(0.58 0.09 190)' }, { key: 'boSP', label: 'Synthetics & specialty', color: 'oklch(0.56 0.11 285)' }], { hours: 48, unit: 't', sub: 'tonnes in tank', wide: true }));
+  if (v === 'add') body.push(trend('Additive stock, last 48 h', [{ key: 'addT', label: 'Additives in tank', color: 'oklch(0.58 0.11 310)' }], { hours: 48, unit: 't', sub: 'tonnes in the 20 heated tanks', wide: true }));
+  if (v === 'fpt') body.push(trend('Released finished product, last 48 h', [{ key: 'finRel', label: 'Released stock', color: 'var(--acc)' }], { hours: 48, unit: 't', sub: 'tonnes released in tanks', wide: true }));
   body.push(section(v === 'fpt' ? 'Finished-product tanks · 60 dedicated, 36 swing' : 'Tanks', span({ fontSize: 12, color: 'var(--ink3)' }, `${shown.length} tanks`), [grid(200, shown.map(tankTile), 8)]));
   return div({ display: 'flex', flexDirection: 'column', gap: 12, minWidth: 0 }, div({ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }, bar_), ...body);
 }
@@ -467,6 +500,7 @@ function blendTab() {
       kpi('Tank fills open', String(fills.length), `${fills.filter(k => k.fill.flowing).length} receiving product`),
       kpi('Grease today', T0(K.grease.t, 1), `${K.grease.inProcess} units busy · hoppers ${T0(K.grease.hoppers, 1)}`),
     ], 8),
+    trend('Blended per hour, last 24 h', [{ key: 'blendT', label: 'Liquid blends', color: 'var(--acc)', mul: 4, smooth: 8 }, { key: 'greaseT', label: 'Grease', color: 'oklch(0.70 0.13 92)', mul: 4, smooth: 8 }], { unit: 't/h', sub: 'rolling 2 h, t per hour', wide: true }),
     ...halls.map(([hall, sub]) => section(hall, note(sub), [grid(196, B.filter(b => b.hall === hall).map(blenderTile), 8)], { key: 'h-' + hall })),
     section('Grease plant', note('3 contactors and 2 open kettles saponify; 6 finishing kettles cut back, mill and deaerate into 4 hoppers'), [
       grid(196, S.grease.units.map(greaseTile), 8),
@@ -514,6 +548,9 @@ function fillTab() {
       kpi('Work orders today', String(X.wos), `${S.lines.filter(l => l.wo).length} open now`),
       kpi('Pallets to store', D.fmt(X.palIn), `${D.fmt(X.palOut)} picked for dispatch`),
     ], 8),
+    div({ display: 'grid', gridTemplateColumns: ctx.tablet ? 'minmax(0,1fr)' : 'minmax(0,1fr) minmax(0,1fr)', gap: 12, minWidth: 0 },
+      trend('Packed per hour, last 24 h', [{ key: 'pkgT', label: 'Packed', color: 'var(--acc)', mul: 4 }, { key: 'bulkT', label: 'Bulk & ISO', color: 'var(--ink3)', mul: 4 }], { unit: 't/h', sub: 't per hour' }),
+      trend('Lines running, last 24 h', [{ key: 'linesRun', label: 'Lines running', color: 'var(--acc)' }], { unit: 'lines', y1: 34, sub: 'of 34' })),
     ...['P', 'D', 'G'].map(hl => section(HUB.info.HALLS[hl], note(hallSub[hl]), [grid(196, L.filter(l => l.hall === hl).map(lineTile), 8)], { key: 'hall' + hl })),
     div({ display: 'grid', gridTemplateColumns: ctx.tablet ? 'minmax(0,1fr)' : 'minmax(0,1.3fr) minmax(0,1fr)', gap: 12, minWidth: 0 },
       section('Packaging materials', note('booked deliveries keep 40 h of cover; bottles and cans are blown on site'), [table([
@@ -582,6 +619,9 @@ function whTab() {
         kv('Gate system', G_.outage ? 'Outage · manual check-in' : 'Normal', { f: 'sans', color: G_.outage ? 'var(--warnInk)' : 'var(--ink)' }),
         kv('Turnaround · packaged', ta('PKG'), { f: 'sans' }), kv('Turnaround · bulk', ta('BLK'), { f: 'sans' }), kv('Turnaround · materials', ta('MAT'), { f: 'sans' }), kv('Turnaround · discharge', ta('UNL'), { f: 'sans', last: true }),
       ], { key: 'gate' })),
+    div({ display: 'grid', gridTemplateColumns: ctx.tablet ? 'minmax(0,1fr)' : 'minmax(0,1fr) minmax(0,1fr)', gap: 12, minWidth: 0 },
+      trend('Store fill, last 48 h', [{ key: 'whHBW', label: 'High-bay store', color: 'var(--acc)' }, { key: 'whDRM', label: 'Drum & IBC store', color: 'oklch(0.62 0.10 60)' }], { hours: 48, unit: '%', y1: 100, sub: '% of pallet places' }),
+      trend('Trucks, last 24 h', [{ key: 'onSite', label: 'On site', color: 'var(--acc)' }, { key: 'gateQ', label: 'Queue at the gate', color: 'var(--warn)' }, { key: 'docksPKG', label: 'Docks in use', color: 'var(--ink3)' }], { unit: 'trucks', sub: 'count' })),
     section('Truck bays · 140', note('press a bay for the truck or box in it'), zones.map(([cls, label, ids]) => {
       const list = S.bays.filter(b => b.cls === cls), busy = list.filter(b => b.state !== 'Free').length;
       return div({ key: 'z' + cls, display: 'flex', flexDirection: 'column', gap: 6, minWidth: 0 },
@@ -654,6 +694,9 @@ function isoTab() {
       kpi('Heating points', `${Y.heatUsed}/30`, 'Y-D steam points'),
       kpi('Rail moves today', D.fmt(K.rail.movesToday), `${D.fmt(K.rail.movesHour)} moves/h now`),
     ], 8),
+    div({ display: 'grid', gridTemplateColumns: ctx.tablet ? 'minmax(0,1fr)' : 'minmax(0,1fr) minmax(0,1fr)', gap: 12, minWidth: 0 },
+      trend('ISO yard, last 48 h', [{ key: 'isoOcc', label: 'Tanks in the yard', color: 'var(--acc)' }], { hours: 48, unit: 'tanks', y1: 250, sub: 'of 250 slots' }),
+      trend('Rail crane moves per hour, last 48 h', [{ key: 'railMoves', label: 'Moves', color: 'oklch(0.58 0.09 250)', mul: 4, smooth: 4 }], { hours: 48, unit: 'moves/h', sub: '4 rail-mounted gantries' })),
     section('ISO station · 18 positions', note('A base-oil discharge & mineral fill · B mineral & synthetic fill · C heated additive discharge & heavy fill · D clean, food-grade & PAG fill'), [grid(196, S.isoCranes.map(isoCraneTile), 8)], { key: 'cranes' }),
     div({ display: 'grid', gridTemplateColumns: ctx.tablet ? 'minmax(0,1fr)' : 'minmax(0,1.25fr) minmax(0,1fr)', gap: 12, minWidth: 0 },
       section('ISO yard · 5 blocks × 25 rows × 2 tiers', note('press a tank'), [
@@ -710,6 +753,7 @@ function labTab() {
       kpi('On time', K.lab.onTime == null ? '—' : PCT(K.lab.onTime), 'within 5 h · turbine oils 9 h', K.lab.onTime != null && K.lab.onTime < .9 ? 'warn' : null),
       kpi('Right first time', K.blend.rft == null ? '—' : PCT(K.blend.rft, 1), 'release and grease tests', K.blend.rft != null && K.blend.rft < .95 ? 'warn' : null),
     ], 8),
+    trend('Samples in the lab, last 24 h', [{ key: 'labQ', label: 'Queued and in test', color: 'var(--acc)' }], { unit: 'samples', sub: '24 parallel test streams', wide: true }),
     section('Instruments', note('an instrument out of service slows the tests that need it'), [div({ display: 'flex', gap: 6, flexWrap: 'wrap' }, ...Lb.instruments.map(x => chip(`${x.label} · ${x.n - x.down}/${x.n}${x.down ? ' · back ' + hh(x.until) : ''}`, x.down ? 'warn' : 'ok')))], { key: 'inst' }),
     section('Awaiting release', note(`${holds.length} tanks and ${hop.length} hoppers held for results`), [holds.length || hop.length ? table([
       { label: 'Where', w: '72px', f: r => r.id, mono: true },

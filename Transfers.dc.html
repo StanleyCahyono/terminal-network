@@ -7,84 +7,144 @@
 </head>
 <body>
 <x-dc>
-<div style="position:absolute;inset:0;display:flex;background:var(--bg);overflow:hidden">
+<div ref="{{ rootRef }}" style="position:absolute;inset:0;display:flex;background:var(--bg);overflow:hidden">
 <sc-if value="{{ ready }}" hint-placeholder-val="{{ true }}">
-  <sc-if value="{{ allView }}" hint-placeholder-val="{{ false }}">
-    <div style="flex:1;min-width:0;overflow:auto">
-      <div style="padding:22px 28px 40px;display:flex;flex-direction:column;gap:16px;min-width:0">
-        <div style="display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap">
-          <div style="flex:1;min-width:260px">
-            <div style="font-size:22px;font-weight:600">All ongoing transfers</div>
-            <div style="font-size:13px;color:var(--ink2);margin-top:2px">{{ bsub }}</div>
+  <sc-if value="{{ showAll }}" hint-placeholder-val="{{ false }}">
+    <div aria-hidden="{{ allHidden }}" onAnimationEnd="{{ xfEnd }}" style="{{ allWrap }}">
+      <div style="padding:{{ bPad }};display:flex;flex-direction:column;gap:16px;min-width:0">
+        <div style="display:flex;align-items:flex-end;gap:12px 16px;flex-wrap:wrap">
+          <div style="flex:1 1 260px;min-width:0">
+            <div style="font-size:22px;font-weight:600;line-height:1.25">All ongoing transfers</div>
+            <div style="font-size:13px;color:var(--ink2);margin-top:2px;text-wrap:pretty">{{ bsub }}</div>
           </div>
-          <div role="group" aria-label="Transfers view" style="display:flex">
-          <sc-for list="{{ viewOpts }}" as="v" hint-placeholder-count="2"><button onClick="{{ v.onClick }}" aria-pressed="{{ v.pressed }}" style="flex:1;height:28px;padding:0 12px;border:1px solid {{ v.bd }};margin-left:-1px;border-radius:0;background:{{ v.bg }};color:{{ v.fg }};font-size:12px;white-space:nowrap">{{ v.label }}</button></sc-for>
+          <div role="group" aria-label="Transfers view" style="display:flex;flex:{{ bToggleFlex }}">
+            <sc-for list="{{ viewOpts }}" as="v" hint-placeholder-count="2"><button onClick="{{ v.onClick }}" aria-pressed="{{ v.pressed }}" style="flex:1;height:30px;padding:0 12px;border:1px solid {{ v.bd }};margin-left:{{ v.ml }};border-radius:0;background:{{ v.bg }};color:{{ v.fg }};font-size:12px;white-space:nowrap;--hbg:{{ v.hbg }}" style-hover="background:var(--hbg)">{{ v.label }}</button></sc-for>
+          </div>
         </div>
-        </div>
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));background:var(--surf);border:1px solid var(--pBd)">
+        <div style="display:grid;grid-template-columns:{{ kpiCols }};gap:1px;background:var(--line2);border:1px solid var(--pBd)">
           <sc-for list="{{ kpis }}" as="k" hint-placeholder-count="6">
-            <div style="padding:12px 16px;border-right:1px solid var(--line2);min-width:0">
-              <div style="font-size:12px;color:var(--ink3)">{{ k.k }}</div>
-              <div style="font-family:var(--fnum);font-size:22px;font-weight:600;margin-top:2px;white-space:nowrap">{{ k.v }}<span style="font-size:12px;font-weight:400;color:var(--ink3);margin-left:5px">{{ k.unit }}</span></div>
-              <div style="font-size:12px;color:var(--ink2);margin-top:2px">{{ k.sub }}</div>
+            <div style="padding:12px 16px;background:var(--surf);min-width:0">
+              <div>
+                <div style="font-size:12px;color:var(--ink3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ k.k }}</div>
+                <div style="font-family:var(--fnum);font-size:22px;font-weight:600;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ k.v }}<span style="font-size:12px;font-weight:400;color:var(--ink3);margin-left:5px">{{ k.unit }}</span></div>
+                <div style="font-size:12px;color:var(--ink2);margin-top:2px">{{ k.sub }}</div>
+              </div>
             </div>
           </sc-for>
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-          <sc-for list="{{ stateChips }}" as="c" hint-placeholder-count="4">
-            <button onClick="{{ c.onClick }}" aria-pressed="{{ c.pressed }}" style="height:30px;padding:0 10px;border:1px solid {{ c.bd }};border-radius:0;background:{{ c.bg }};color:{{ c.fg }};display:flex;align-items:center;gap:6px;font-size:12px;white-space:nowrap">{{ c.icon }}{{ c.label }}<span style="font-family:var(--fnum);font-size:11px;opacity:.75">{{ c.n }}</span></button>
-          </sc-for>
-          <span style="flex:1"></span>
-          <select value="{{ typeVal }}" onChange="{{ onType }}" aria-label="Transfer type" style="height:30px;border:1px solid var(--line);border-radius:0;background:var(--surf);padding:0 8px;font-size:12.5px">
-            <sc-for list="{{ typeOpts }}" as="o" hint-placeholder-count="6"><option value="{{ o }}">{{ o }}</option></sc-for>
-          </select>
-          <select value="{{ sortVal }}" onChange="{{ onSort }}" aria-label="Sort transfers" style="height:30px;border:1px solid var(--line);border-radius:0;background:var(--surf);padding:0 8px;font-size:12.5px">
-            <sc-for list="{{ sortOpts }}" as="o" hint-placeholder-count="4"><option value="{{ o }}">{{ o }}</option></sc-for>
-          </select>
-        </div>
-        <section aria-label="Ongoing transfers across all terminals" style="background:var(--surf);border:1px solid var(--pBd);overflow:auto">
-          <div style="display:grid;grid-template-columns:{{ cols }};column-gap:12px;min-width:1180px;padding:8px 14px;font-size:12.5px;color:var(--ink3);border-bottom:1px solid var(--line)">
-            <span>Terminal</span><span>Transfer</span><span>Product</span><span>Route</span><span>Progress</span><span style="text-align:right">kL done / planned</span><span style="text-align:right">kL/h</span><span>Finish · start</span><span>State</span>
+          <div role="group" aria-label="Filter by state" style="{{ chipWrap }}">
+            <sc-for list="{{ stateChips }}" as="c" hint-placeholder-count="4">
+              <button onClick="{{ c.onClick }}" aria-pressed="{{ c.pressed }}" style="height:32px;padding:0 10px;border:1px solid {{ c.bd }};border-radius:0;background:{{ c.bg }};color:{{ c.fg }};display:flex;align-items:center;gap:6px;font-size:12.5px;white-space:nowrap;min-width:0;--hbg:{{ c.hbg }}" style-hover="background:var(--hbg)">{{ c.icon }}<span style="min-width:0;overflow:hidden;text-overflow:ellipsis">{{ c.label }}</span><span style="font-family:var(--fnum);font-size:11px;opacity:.75;margin-left:{{ c.nml }}">{{ c.n }}</span></button>
+            </sc-for>
           </div>
-          <sc-if value="{{ noRows }}" hint-placeholder-val="{{ false }}"><div style="padding:18px 14px;font-size:13px;color:var(--ink3)">No transfers match these filters.</div></sc-if>
-          <sc-for list="{{ rows }}" as="r" hint-placeholder-count="10">
-            <button onClick="{{ r.onClick }}" style="width:100%;display:grid;grid-template-columns:{{ cols }};column-gap:12px;min-width:1180px;align-items:center;padding:8px 14px;border:0;border-top:{{ r.bt }};border-bottom:1px solid var(--line2);background:transparent;text-align:left" style-hover="background:var(--surf2)">
-              <span style="min-width:0"><span style="display:block;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.term }}</span><span style="display:block;font-size:11.5px;color:var(--ink3)">{{ r.termSub }}</span></span>
-              <span style="min-width:0"><span style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.title }}</span><span style="display:block;font-family:var(--fid);font-size:11px;letter-spacing:-.02em;color:var(--ink3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.sub }}</span></span>
-              <span style="display:flex;align-items:center;gap:6px;white-space:nowrap"><span style="width:9px;height:9px;flex:none;background:{{ r.color }}"></span>{{ r.prod }}</span>
-              <span style="font-family:var(--fnum);font-size:11.5px;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.route }}</span>
-              <span style="display:flex;align-items:center;gap:8px"><span style="flex:1;height:4px;background:var(--surf3)"><span style="display:block;height:4px;width:{{ r.pctW }};background:{{ r.barBg }}"></span></span><span style="font-family:var(--fnum);font-size:11px;width:34px;text-align:right">{{ r.pct }}</span></span>
-              <span style="font-family:var(--fnum);font-size:12px;text-align:right;white-space:nowrap">{{ r.qty }}</span>
-              <span style="font-family:var(--fnum);font-size:12px;text-align:right">{{ r.flow }}</span>
-              <span style="min-width:0"><span style="display:block;font-family:var(--fnum);font-size:12px;white-space:nowrap">{{ r.when }}</span><span style="display:block;font-size:11.5px;color:var(--ink3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.whenSub }}</span></span>
-              <span style="display:flex;align-items:center;gap:5px;font-size:12.5px;white-space:nowrap">{{ r.icon }}{{ r.state }}</span>
-            </button>
-          </sc-for>
+          <sc-if value="{{ chipSpacer }}" hint-placeholder-val="{{ true }}"><span style="flex:1"></span></sc-if>
+          <div style="{{ selWrap }}">
+            <select value="{{ typeVal }}" onChange="{{ onType }}" aria-label="Transfer type" style="height:32px;min-width:0;border:1px solid var(--line);border-radius:0;background:var(--surf);padding:0 8px;font-size:12.5px" style-hover="border-color:var(--ink3)">
+              <sc-for list="{{ typeOpts }}" as="o" hint-placeholder-count="6"><option value="{{ o }}">{{ o }}</option></sc-for>
+            </select>
+            <select value="{{ sortVal }}" onChange="{{ onSort }}" aria-label="Sort transfers" style="height:32px;min-width:0;border:1px solid var(--line);border-radius:0;background:var(--surf);padding:0 8px;font-size:12.5px" style-hover="border-color:var(--ink3)">
+              <sc-for list="{{ sortOpts }}" as="o" hint-placeholder-count="4"><option value="{{ o }}">{{ o }}</option></sc-for>
+            </select>
+          </div>
+        </div>
+        <section aria-label="Ongoing transfers across all terminals" style="background:var(--surf);border:1px solid var(--pBd);{{ secOv }}">
+          <sc-if value="{{ isWide }}" hint-placeholder-val="{{ true }}">
+            <div style="display:grid;grid-template-columns:{{ cols }};column-gap:12px;min-width:{{ wideMin }};padding:8px 14px;font-size:12.5px;color:var(--ink3);border-bottom:1px solid var(--line)">
+              <span>Terminal</span><span>Transfer</span><span>Product</span><span>Route</span><span>Progress</span><span style="text-align:right;white-space:nowrap">kL done / planned</span><span style="text-align:right">kL/h</span><span style="white-space:nowrap">Finish · start</span><span>State</span>
+            </div>
+          </sc-if>
+          <sc-if value="{{ isMid }}" hint-placeholder-val="{{ false }}">
+            <div style="display:grid;grid-template-columns:{{ midCols }};column-gap:12px;padding:8px 12px;font-size:12.5px;color:var(--ink3);border-bottom:1px solid var(--line)">
+              <span>Transfer</span><span>Product · route</span><span>Progress · kL</span><span style="white-space:nowrap">Finish · start</span><span>State · kL/h</span>
+            </div>
+          </sc-if>
+          <sc-if value="{{ noRows }}" hint-placeholder-val="{{ false }}"><div style="padding:18px 14px;font-size:13px;color:var(--ink3);animation:{{ emptyAnim }}">No transfers match these filters.</div></sc-if>
+          <div key="{{ listKey }}">
+            <sc-for list="{{ rows }}" as="r" hint-placeholder-count="10">
+              <sc-if value="{{ r.group }}" hint-placeholder-val="{{ false }}">
+                <div style="{{ groupStyle }};border-top:{{ r.gbt }};animation:{{ r.ganim }}">
+                  <span style="font-weight:600;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.gName }}</span>
+                  <span style="font-size:11.5px;color:var(--ink3);white-space:nowrap">{{ r.gSub }}</span>
+                  <span style="margin-left:auto;font-family:var(--fnum);font-size:11.5px;color:var(--ink3);white-space:nowrap">{{ r.gCount }}</span>
+                </div>
+              </sc-if>
+              <sc-if value="{{ isWide }}" hint-placeholder-val="{{ true }}">
+                <button onClick="{{ r.onClick }}" title="{{ r.tip }}" style="width:100%;display:grid;grid-template-columns:{{ cols }};column-gap:12px;min-width:{{ wideMin }};align-items:center;padding:8px 14px;border:0;border-top:{{ r.bt }};border-bottom:1px solid var(--line2);border-radius:0;background:transparent;text-align:left;animation:{{ r.anim }}" style-hover="background:var(--surf2)" style-active="background:var(--surf3)">
+                  <span style="min-width:0"><span style="display:block;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.term }}</span><span style="display:block;font-size:11.5px;color:var(--ink3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.termSub }}</span></span>
+                  <span style="min-width:0"><span style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.title }}</span><span style="display:block;font-family:var(--fid);font-size:11px;letter-spacing:-.02em;color:var(--ink3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.sub }}</span></span>
+                  <span style="min-width:0;display:flex;align-items:center;gap:6px;white-space:nowrap"><span style="width:9px;height:9px;flex:none;background:{{ r.color }}"></span><span style="min-width:0;overflow:hidden;text-overflow:ellipsis">{{ r.prod }}</span></span>
+                  <span style="min-width:0;font-family:var(--fnum);font-size:11.5px;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.route }}</span>
+                  <span style="min-width:0;display:flex;align-items:center;gap:8px"><span style="flex:1;min-width:0;height:4px;background:var(--surf3);overflow:hidden"><span class="tn-bar" style="display:block;height:4px;width:{{ r.pctW }};background:{{ r.barBg }};transform-origin:left;animation:{{ r.banim }}"></span></span><span style="font-family:var(--fnum);font-size:11px;width:34px;flex:none;text-align:right">{{ r.pct }}</span></span>
+                  <span style="min-width:0;font-family:var(--fnum);font-size:12px;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.qty }}</span>
+                  <span style="min-width:0;font-family:var(--fnum);font-size:12px;text-align:right;white-space:nowrap">{{ r.flow }}</span>
+                  <span style="min-width:0"><span style="display:block;font-family:var(--fnum);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.when }}</span><span style="display:block;font-size:11.5px;color:var(--ink3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.whenSub }}</span></span>
+                  <span style="min-width:0;display:flex;align-items:center;gap:5px;font-size:12.5px;white-space:nowrap;color:{{ r.stFg }}">{{ r.icon }}<span style="min-width:0;overflow:hidden;text-overflow:ellipsis">{{ r.state }}</span></span>
+                </button>
+              </sc-if>
+              <sc-if value="{{ isMid }}" hint-placeholder-val="{{ false }}">
+                <button onClick="{{ r.onClick }}" title="{{ r.tip }}" style="width:100%;display:grid;grid-template-columns:{{ midCols }};column-gap:12px;align-items:center;padding:9px 12px;border:0;border-bottom:1px solid var(--line2);border-radius:0;background:transparent;text-align:left;animation:{{ r.anim }}" style-hover="background:var(--surf2)" style-active="background:var(--surf3)">
+                  <span style="min-width:0">
+                    <sc-if value="{{ r.showTerm }}" hint-placeholder-val="{{ false }}"><span style="display:block;font-size:11.5px;color:var(--ink3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.termLine }}</span></sc-if>
+                    <span style="display:block;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.title }}</span>
+                    <span style="display:block;font-family:var(--fid);font-size:11px;letter-spacing:-.02em;color:var(--ink3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.sub }}</span>
+                  </span>
+                  <span style="min-width:0">
+                    <span style="display:flex;align-items:center;gap:6px;white-space:nowrap"><span style="width:9px;height:9px;flex:none;background:{{ r.color }}"></span><span style="min-width:0;overflow:hidden;text-overflow:ellipsis">{{ r.prod }}</span></span>
+                    <span style="display:block;font-family:var(--fnum);font-size:11.5px;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.route }}</span>
+                  </span>
+                  <span style="min-width:0">
+                    <span style="display:flex;align-items:center;gap:8px"><span style="flex:1;min-width:0;height:4px;background:var(--surf3);overflow:hidden"><span class="tn-bar" style="display:block;height:4px;width:{{ r.pctW }};background:{{ r.barBg }};transform-origin:left;animation:{{ r.banim }}"></span></span><span style="font-family:var(--fnum);font-size:11px;width:34px;flex:none;text-align:right">{{ r.pct }}</span></span>
+                    <span style="display:block;margin-top:3px;font-family:var(--fnum);font-size:11.5px;color:var(--ink3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.qtyKl }}</span>
+                  </span>
+                  <span style="min-width:0"><span style="display:block;font-family:var(--fnum);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.when }}</span><span style="display:block;font-size:11.5px;color:var(--ink3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.whenSub }}</span></span>
+                  <span style="min-width:0">
+                    <span style="display:flex;align-items:center;gap:5px;font-size:12.5px;white-space:nowrap;color:{{ r.stFg }}">{{ r.icon }}<span style="min-width:0;overflow:hidden;text-overflow:ellipsis">{{ r.state }}</span></span>
+                    <span style="display:block;margin-top:2px;font-family:var(--fnum);font-size:11.5px;color:var(--ink3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.flowKl }}</span>
+                  </span>
+                </button>
+              </sc-if>
+              <sc-if value="{{ isCards }}" hint-placeholder-val="{{ false }}">
+                <button onClick="{{ r.onClick }}" title="{{ r.tip }}" style="width:100%;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:5px 12px;align-items:center;padding:12px 14px;border:0;border-bottom:1px solid var(--line2);border-radius:0;background:transparent;text-align:left;animation:{{ r.anim }}" style-hover="background:var(--surf2)" style-active="background:var(--surf3)">
+                  <sc-if value="{{ r.showTerm }}" hint-placeholder-val="{{ false }}"><span style="grid-column:1 / -1;min-width:0;font-size:11.5px;color:var(--ink3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.termLine }}</span></sc-if>
+                  <span style="min-width:0;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.title }}</span>
+                  <span style="display:flex;align-items:center;gap:5px;font-size:12.5px;white-space:nowrap;justify-self:end;color:{{ r.stFg }}">{{ r.icon }}{{ r.state }}</span>
+                  <span style="min-width:0;display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--ink2);white-space:nowrap"><span style="width:9px;height:9px;flex:none;background:{{ r.color }}"></span><span style="flex:none">{{ r.prod }}</span><span style="flex:none;color:var(--ink4)">·</span><span style="min-width:0;font-family:var(--fnum);overflow:hidden;text-overflow:ellipsis">{{ r.route }}</span></span>
+                  <span style="font-family:var(--fnum);font-size:12px;color:var(--ink2);white-space:nowrap;justify-self:end">{{ r.flowKl }}</span>
+                  <span style="grid-column:1 / -1;display:flex;align-items:center;gap:8px;margin:2px 0"><span style="flex:1;min-width:0;height:4px;background:var(--surf3);overflow:hidden"><span class="tn-bar" style="display:block;height:4px;width:{{ r.pctW }};background:{{ r.barBg }};transform-origin:left;animation:{{ r.banim }}"></span></span><span style="font-family:var(--fnum);font-size:11.5px;width:36px;flex:none;text-align:right">{{ r.pct }}</span></span>
+                  <span style="grid-column:1 / -1;min-width:0;display:flex;justify-content:space-between;gap:12px;font-size:12px;color:var(--ink2)"><span style="flex:none;font-family:var(--fnum)">{{ r.qtyKl }}</span><span style="min-width:0;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.whenLine }}</span></span>
+                </button>
+              </sc-if>
+            </sc-for>
+          </div>
         </section>
       </div>
     </div>
   </sc-if>
-  <sc-if value="{{ termView }}" hint-placeholder-val="{{ true }}">
+  <sc-if value="{{ showTerm }}" hint-placeholder-val="{{ true }}">
+  <div aria-hidden="{{ termHidden }}" onAnimationEnd="{{ xfEnd }}" style="{{ termWrap }}">
   <sc-if value="{{ showList }}" hint-placeholder-val="{{ true }}">
     <aside aria-label="Transfers at terminal" style="width:{{ listW }};flex:none;border-right:1px solid var(--line);background:var(--surf);display:flex;flex-direction:column;min-height:0">
       <div style="padding:18px 18px 14px;border-bottom:1px solid var(--line)">
         <div style="font-size:18px;font-weight:600">Transfers</div>
-        <div style="font-size:13px;color:var(--ink2);margin-top:2px">{{ t.name }}</div>
+        <div title="{{ t.name }}" style="font-size:13px;color:var(--ink2);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ t.name }}</div>
         <div role="group" aria-label="Transfers view" style="display:flex;margin-top:12px">
-          <sc-for list="{{ viewOpts }}" as="v" hint-placeholder-count="2"><button onClick="{{ v.onClick }}" aria-pressed="{{ v.pressed }}" style="flex:1;height:28px;padding:0 12px;border:1px solid {{ v.bd }};margin-left:-1px;border-radius:0;background:{{ v.bg }};color:{{ v.fg }};font-size:12px;white-space:nowrap">{{ v.label }}</button></sc-for>
+          <sc-for list="{{ viewOpts }}" as="v" hint-placeholder-count="2"><button onClick="{{ v.onClick }}" aria-pressed="{{ v.pressed }}" style="flex:1;min-width:0;height:28px;padding:0 8px;border:1px solid {{ v.bd }};margin-left:{{ v.ml }};border-radius:0;background:{{ v.bg }};color:{{ v.fg }};font-size:12px;white-space:nowrap;--hbg:{{ v.hbg }}" style-hover="background:var(--hbg)">{{ v.label }}</button></sc-for>
         </div>
       </div>
-      <div style="flex:1;overflow:auto">
+      <div style="flex:1;min-height:0;overflow:auto">
         <sc-for list="{{ groups }}" as="g" hint-placeholder-count="2">
           <div style="font-size:12.5px;font-weight:600;color:var(--ink2);padding:14px 18px 6px;background:var(--surf2);border-bottom:1px solid var(--line2)">{{ g.label }}</div>
           <sc-if value="{{ g.empty }}" hint-placeholder-val="{{ false }}"><div style="padding:10px 18px;font-size:12.5px;color:var(--ink3)">{{ g.emptyText }}</div></sc-if>
           <sc-for list="{{ g.items }}" as="x" hint-placeholder-count="3">
-            <button onClick="{{ x.onClick }}" aria-pressed="{{ x.pressed }}" style="width:100%;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;padding:11px 18px;border:0;border-bottom:1px solid var(--line2);background:{{ x.bg }};text-align:left;box-shadow:{{ x.sh }}" style-hover="background:var(--surf2)">
-              <span style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ x.title }}</span>
-              <span style="font-size:12.5px;white-space:nowrap;color:var(--ink2)">{{ x.pct }}</span>
-              <span style="font-size:12.5px;color:var(--ink3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ x.sub }}</span>
-              <span style="font-size:12.5px;white-space:nowrap;display:flex;align-items:center;gap:5px;justify-content:flex-end">{{ x.icon }}{{ x.state }}</span>
-              <span style="grid-column:1 / -1;height:3px;background:var(--surf3);margin-top:6px;display:block"><span style="display:block;height:3px;width:{{ x.pct }};background:var(--ink)"></span></span>
+            <button onClick="{{ x.onClick }}" aria-pressed="{{ x.pressed }}" title="{{ x.tip }}" style="width:100%;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:3px 10px;padding:11px 18px 12px;border:0;border-bottom:1px solid var(--line2);border-radius:0;background:{{ x.bg }};text-align:left;box-shadow:{{ x.sh }};--hbg:{{ x.hbg }}" style-hover="background:var(--hbg)">
+              <span style="min-width:0;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ x.title }}</span>
+              <span style="font-family:var(--fnum);font-size:12.5px;white-space:nowrap;color:var(--ink2)">{{ x.pct }}</span>
+              <span style="grid-column:1 / -1;min-width:0;font-size:12.5px;color:var(--ink3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ x.sub }}</span>
+              <span style="grid-column:1 / -1;min-width:0;display:flex;align-items:center;gap:10px;margin-top:4px">
+                <span style="display:flex;align-items:center;gap:5px;font-size:12px;white-space:nowrap;color:{{ x.stFg }}">{{ x.icon }}{{ x.state }}</span>
+                <span style="flex:1;min-width:24px;height:3px;background:var(--surf3);overflow:hidden"><span class="tn-bar" style="display:block;height:3px;width:{{ x.pctW }};background:{{ x.barBg }}"></span></span>
+              </span>
             </button>
           </sc-for>
         </sc-for>
@@ -94,128 +154,194 @@
   </sc-if>
 
   <div style="flex:1;min-width:0;overflow:auto">
-    <sc-if value="{{ mobileToggle }}" hint-placeholder-val="{{ false }}">
-      <div role="group" aria-label="Transfers view" style="display:flex;padding:12px 16px 0">
-        <sc-for list="{{ viewOpts }}" as="v" hint-placeholder-count="2"><button onClick="{{ v.onClick }}" aria-pressed="{{ v.pressed }}" style="flex:1;height:30px;padding:0 12px;border:1px solid {{ v.bd }};margin-left:-1px;border-radius:0;background:{{ v.bg }};color:{{ v.fg }};font-size:12px;white-space:nowrap">{{ v.label }}</button></sc-for>
+    <sc-if value="{{ mobileTop }}" hint-placeholder-val="{{ false }}">
+      <div style="padding:12px 16px 0;display:flex;flex-direction:column;gap:12px">
+        <div role="group" aria-label="Transfers view" style="display:flex">
+          <sc-for list="{{ viewOpts }}" as="v" hint-placeholder-count="2"><button onClick="{{ v.onClick }}" aria-pressed="{{ v.pressed }}" style="flex:1;min-width:0;height:32px;padding:0 12px;border:1px solid {{ v.bd }};margin-left:{{ v.ml }};border-radius:0;background:{{ v.bg }};color:{{ v.fg }};font-size:12px;white-space:nowrap;--hbg:{{ v.hbg }}" style-hover="background:var(--hbg)">{{ v.label }}</button></sc-for>
+        </div>
+        <div style="display:flex;align-items:baseline;gap:8px;min-width:0">
+          <span style="font-weight:600;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ t.name }}</span>
+          <span style="margin-left:auto;font-size:12px;color:var(--ink3);white-space:nowrap">{{ stripCount }}</span>
+        </div>
+        <div role="group" aria-label="Transfers at terminal" style="display:flex;gap:8px;overflow-x:auto;scroll-snap-type:x proximity;scroll-padding:0 16px;margin:0 -16px;padding:0 16px 6px">
+          <sc-for list="{{ strip }}" as="x" hint-placeholder-count="3">
+            <button onClick="{{ x.onClick }}" aria-pressed="{{ x.pressed }}" title="{{ x.tip }}" style="flex:none;width:{{ stripW }};scroll-snap-align:start;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:3px 8px;padding:10px 12px;border:1px solid {{ x.sbd }};border-radius:0;background:{{ x.cbg }};text-align:left;box-shadow:{{ x.sh }};--hbg:{{ x.hbg }}" style-hover="background:var(--hbg)">
+              <span style="min-width:0;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ x.title }}</span>
+              <span style="font-family:var(--fnum);font-size:12px;white-space:nowrap;color:var(--ink2)">{{ x.pct }}</span>
+              <span style="grid-column:1 / -1;min-width:0;font-size:12px;color:var(--ink3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ x.sub }}</span>
+              <span style="grid-column:1 / -1;min-width:0;display:flex;align-items:center;gap:8px;margin-top:3px">
+                <span style="display:flex;align-items:center;gap:5px;font-size:12px;white-space:nowrap;color:{{ x.stFg }}">{{ x.icon }}{{ x.state }}</span>
+                <span style="flex:1;min-width:20px;height:3px;background:var(--surf3);overflow:hidden"><span class="tn-bar" style="display:block;height:3px;width:{{ x.pctW }};background:{{ x.barBg }}"></span></span>
+              </span>
+            </button>
+          </sc-for>
+        </div>
+        <div style="font-size:12px;color:var(--ink3);text-wrap:pretty">{{ marineNote }}</div>
       </div>
     </sc-if>
     <sc-if value="{{ noneSelected }}" hint-placeholder-val="{{ false }}">
-      <div style="padding:48px 40px;max-width:560px;display:flex;flex-direction:column;gap:10px">
+      <div style="padding:{{ dPad }};max-width:600px;display:flex;flex-direction:column;gap:10px">
         <div style="font-size:22px;font-weight:600">No transfers at this terminal</div>
-        <div style="color:var(--ink2)">{{ marineNote }}</div>
-        <button onClick="{{ goNetwork }}" style="align-self:flex-start;height:34px;padding:0 14px;border:1px solid var(--line);background:var(--surf);white-space:nowrap">Choose another terminal</button>
+        <div style="color:var(--ink2);text-wrap:pretty">{{ marineNote }}</div>
+        <button onClick="{{ goNetwork }}" style="align-self:flex-start;height:34px;padding:0 14px;border:1px solid var(--line);border-radius:0;background:var(--surf);white-space:nowrap" style-hover="background:var(--surf2)">Choose another terminal</button>
       </div>
     </sc-if>
     <sc-if value="{{ hasSel }}" hint-placeholder-val="{{ true }}">
-    <div style="padding:28px 36px 48px;display:flex;flex-direction:column;gap:24px">
-      <div style="display:flex;align-items:flex-end;gap:24px;flex-wrap:wrap">
-        <div style="display:flex;flex-direction:column;gap:6px;min-width:0">
-          <h1 style="margin:0;font-size:30px;font-weight:500;letter-spacing:-.015em;line-height:1.1">{{ x.title }}</h1>
-          <div style="display:flex;gap:18px;flex-wrap:wrap;font-size:13.5px;color:var(--ink2);align-items:center">
-            <span style="display:flex;align-items:center;gap:6px;font-weight:600;color:{{ x.stFg }}">{{ x.stIcon }}{{ x.state }}</span>
-            <span style="font-family:var(--fid);font-size:12.5px">{{ x.id }}</span>
-            <span style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;background:{{ x.color }}"></span>{{ x.prod }}</span>
-            <span>Batch <span style="font-family:var(--fid);font-size:12.5px">{{ x.batch }}</span></span>
-            <span>{{ x.where }}</span>
+    <div key="{{ detailKey }}" style="padding:{{ dPad }};display:flex;flex-direction:column;gap:{{ dGap }};min-width:0">
+      <div style="display:flex;align-items:flex-end;gap:14px 24px;flex-wrap:wrap;animation:{{ dA0 }}">
+        <div style="display:flex;flex-direction:column;gap:6px;min-width:0;flex:1 1 320px">
+          <h1 style="margin:0;font-size:{{ h1Fs }};font-weight:500;letter-spacing:-.015em;line-height:1.15;overflow-wrap:anywhere">{{ x.title }}</h1>
+          <div style="display:flex;gap:6px 18px;flex-wrap:wrap;font-size:13.5px;color:var(--ink2);align-items:center;min-width:0">
+            <span style="display:flex;align-items:center;gap:6px;font-weight:600;white-space:nowrap;color:{{ x.stFg }}">{{ x.stIcon }}{{ x.state }}</span>
+            <span style="font-family:var(--fid);font-size:12.5px;white-space:nowrap">{{ x.id }}</span>
+            <span style="display:flex;align-items:center;gap:6px;white-space:nowrap"><span style="width:10px;height:10px;flex:none;background:{{ x.color }}"></span>{{ x.prod }}</span>
+            <span style="white-space:nowrap">Batch <span style="font-family:var(--fid);font-size:12.5px">{{ x.batch }}</span></span>
+            <span style="min-width:0">{{ x.where }}</span>
           </div>
         </div>
-        <div style="flex:1"></div>
-        <div style="display:flex;align-items:center;gap:18px;flex-wrap:wrap">
-          <span style="display:flex;align-items:center;gap:7px;font-size:12.5px;color:{{ x.frFg }}">{{ x.frIcon }}<span><b style="font-weight:600">{{ x.frLabel }}</b> · {{ x.frSub }}</span></span>
+        <div style="display:flex;align-items:center;gap:10px 14px;flex-wrap:wrap;min-width:0">
+          <span style="display:flex;align-items:center;gap:7px;min-height:34px;padding:6px 10px;border:1px solid {{ x.frBd }};background:{{ x.frBg }};font-size:12.5px;color:{{ x.frFg }};min-width:0">{{ x.frIcon }}<span style="min-width:0"><b style="font-weight:600">{{ x.frLabel }}</b> · {{ x.frSub }}</span></span>
           <sc-if value="{{ x.canSim }}" hint-placeholder-val="{{ false }}">
-            <button onClick="{{ toggleLoss }}" style="border:0;background:transparent;padding:0;color:var(--acc);font-size:12.5px;white-space:nowrap">{{ lossLabel }}</button>
+            <button onClick="{{ toggleLoss }}" style="border:0;background:transparent;padding:0;color:var(--acc);font-size:12.5px;white-space:nowrap" style-hover="text-decoration:underline">{{ lossLabel }}</button>
           </sc-if>
-          <button onClick="{{ logEvent }}" disabled="{{ noAct }}" title="{{ actTitle }}" style="height:34px;padding:0 14px;border:0;background:var(--ink);color:var(--surf);font-weight:600;display:flex;align-items:center;gap:7px;white-space:nowrap;opacity:{{ actOp }}">{{ actIcon }}{{ logLabel }}</button>
+          <button onClick="{{ logEvent }}" disabled="{{ noAct }}" title="{{ actTitle }}" style="height:34px;padding:0 14px;border:0;border-radius:0;background:var(--ink);color:var(--surf);font-weight:600;display:flex;align-items:center;gap:7px;white-space:nowrap;opacity:{{ actOp }};cursor:{{ actCur }}" style-enabled:hover="background:var(--ink2)">{{ actIcon }}{{ logLabel }}</button>
         </div>
       </div>
 
-      <section aria-label="Transfer route" style="background:var(--surf);border:1px solid var(--pBd)">
-        <div style="background:var(--bar);color:var(--barInk);padding:9px 14px;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap"><span style="font-weight:600">Route</span><span style="font-size:12px;color:var(--barInk3);font-weight:400">{{ x.routeText }}</span><div style="flex:1"></div><span style="font-size:12px;color:var(--barInk3);font-weight:400">Select the vessel or tank to inspect its readings</span></div>
-        <div>{{ routeSvg }}</div>
+      <section aria-label="Transfer route" style="background:var(--surf);border:1px solid var(--pBd);animation:{{ dA1 }}">
+        <div style="background:var(--bar);color:var(--barInk);padding:9px 14px;display:flex;align-items:baseline;gap:4px 10px;flex-wrap:wrap"><span style="font-weight:600">Route</span><span style="min-width:0;font-size:12px;color:var(--barInk3);font-weight:400">{{ x.routeText }}</span><div style="flex:1"></div><span style="font-size:12px;color:var(--barInk3);font-weight:400">{{ routeHint }}</span></div>
+        <sc-if value="{{ routeSvgOn }}" hint-placeholder-val="{{ true }}"><div>{{ routeSvg }}</div></sc-if>
+        <sc-if value="{{ routeListOn }}" hint-placeholder-val="{{ false }}">
+          <div style="padding:14px 14px 16px;display:flex;flex-direction:column">
+            <sc-for list="{{ rl }}" as="n" hint-placeholder-count="7">
+              <sc-if value="{{ n.node }}" hint-placeholder-val="{{ true }}">
+                <div role="{{ n.role }}" tabIndex="{{ n.tab }}" aria-pressed="{{ n.pressed }}" aria-label="{{ n.aria }}" onClick="{{ n.onClick }}" onKeyDown="{{ n.onKey }}" style="display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 12px;padding:10px 12px;border:1px solid {{ n.bd }};background:{{ n.bg }};box-shadow:{{ n.sh }};cursor:{{ n.cursor }}">
+                  <span style="min-width:0;font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ n.kicker }}</span>
+                  <span style="font-size:11.5px;white-space:nowrap;color:{{ n.asideFg }}">{{ n.aside }}</span>
+                  <span style="grid-column:1 / -1;min-width:0;font-weight:600;overflow-wrap:anywhere">{{ n.title }}</span>
+                  <span style="grid-column:1 / -1;min-width:0;font-size:12.5px;color:var(--ink2)">{{ n.sub }}</span>
+                  <sc-if value="{{ n.hasBar }}" hint-placeholder-val="{{ false }}">
+                    <span style="grid-column:1 / -1;min-width:0;display:flex;align-items:center;gap:8px;margin-top:4px"><span style="flex:1;min-width:20px;height:6px;background:var(--surf3);overflow:hidden"><span class="tn-bar" style="display:block;height:6px;width:{{ n.barW }};background:{{ n.barC }}"></span></span><span style="font-size:12px;color:var(--ink2);white-space:nowrap">{{ n.barT }}</span></span>
+                  </sc-if>
+                  <span style="grid-column:1 / -1;min-width:0;display:flex;flex-wrap:wrap;gap:2px 14px;font-size:12.5px;margin-top:2px">
+                    <sc-for list="{{ n.metrics }}" as="m" hint-placeholder-count="2"><span style="white-space:nowrap"><span style="color:var(--ink3)">{{ m.k }}</span> <b style="font-weight:600;color:{{ m.fg }};font-style:{{ m.fs }}">{{ m.v }}</b></span></sc-for>
+                  </span>
+                </div>
+              </sc-if>
+              <sc-if value="{{ n.conn }}" hint-placeholder-val="{{ false }}">
+                <div style="display:flex;align-items:center;gap:10px;height:26px;padding-left:19px">{{ n.svg }}<span style="min-width:0;font-size:11.5px;color:var(--ink3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ n.label }}</span></div>
+              </sc-if>
+            </sc-for>
+          </div>
+        </sc-if>
       </section>
 
-      <div style="display:grid;grid-template-columns:{{ mainCols }};gap:24px;align-items:start">
-        <div style="display:flex;flex-direction:column;gap:24px;min-width:0">
+      <div style="display:grid;grid-template-columns:{{ mainCols }};gap:{{ dGap }};align-items:start;animation:{{ dA2 }}">
+        <div style="display:flex;flex-direction:column;gap:{{ dGap }};min-width:0">
           <section aria-label="Progress" style="background:var(--surf);border:1px solid var(--pBd)">
             <div style="background:var(--bar);color:var(--barInk);padding:9px 14px;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap"><span style="font-weight:600">Progress</span></div>
-            <div style="padding:18px 18px 16px;display:flex;flex-direction:column;gap:16px">
-              <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr)) minmax(0,1.3fr);gap:20px">
-                <div><div style="font-size:13px;color:var(--ink3)">Planned</div><div style="font-size:28px;font-weight:500;line-height:1.15">{{ x.planned }}</div></div>
-                <div><div style="font-size:13px;color:var(--ink3)">{{ x.recvWord }}</div><div style="font-size:28px;font-weight:600;line-height:1.15">{{ x.recv }}</div><div style="font-size:12.5px;color:var(--ink2)">{{ x.pctText }}</div></div>
-                <div><div style="font-size:13px;color:var(--ink3)">Remaining</div><div style="font-size:28px;font-weight:500;line-height:1.15">{{ x.remaining }}</div></div>
-                <div style="border-left:1px solid var(--line);padding-left:20px"><div style="font-size:13px;color:var(--ink3)">Estimated completion</div><div style="font-size:28px;font-weight:500;line-height:1.15;color:{{ x.etaFg }};font-style:{{ x.etaFs }}">{{ x.eta }}</div><div style="font-size:12.5px;color:var(--ink2);text-wrap:pretty">{{ x.etaNote }}</div></div>
+            <div style="padding:{{ secPad }};display:flex;flex-direction:column;gap:16px">
+              <div style="display:flex;flex-wrap:wrap;gap:14px 20px;align-items:stretch">
+                <div style="flex:1 1 {{ numB }}"><div style="font-size:13px;color:var(--ink3)">Planned</div><div style="font-family:var(--fnum);font-size:{{ numFs }};font-weight:500;line-height:1.15;white-space:nowrap">{{ x.planned }}</div></div>
+                <div style="flex:1 1 {{ numB }}"><div style="font-size:13px;color:var(--ink3)">{{ x.recvWord }}</div><div style="font-family:var(--fnum);font-size:{{ numFs }};font-weight:600;line-height:1.15;white-space:nowrap">{{ x.recv }}</div><div style="font-size:12.5px;color:var(--ink2)">{{ x.pctText }}</div></div>
+                <div style="flex:1 1 {{ numB }}"><div style="font-size:13px;color:var(--ink3)">Remaining</div><div style="font-family:var(--fnum);font-size:{{ numFs }};font-weight:500;line-height:1.15;white-space:nowrap">{{ x.remaining }}</div></div>
+                <div style="flex:1.6 1 210px;padding:10px 14px;background:var(--surf2)"><div style="font-size:13px;color:var(--ink3)">Estimated completion</div><div style="font-size:{{ numFs }};font-weight:500;line-height:1.15;color:{{ x.etaFg }};font-style:{{ x.etaFs }}">{{ x.eta }}</div><div style="font-size:12.5px;color:var(--ink2);text-wrap:pretty">{{ x.etaNote }}</div></div>
               </div>
               <div style="display:flex;flex-direction:column;gap:6px">
                 <div style="position:relative;height:14px;background:var(--surf3)">
-                  <div style="position:absolute;left:0;top:0;bottom:0;width:{{ x.pct }};background:var(--ink)"></div>
-                  <div style="position:absolute;left:{{ x.pct }};top:0;bottom:0;width:{{ x.pausedW }};background:var(--warn)"></div>
-                  <div title="Destination limit at max. operating capacity" style="position:absolute;top:-4px;bottom:-4px;left:{{ x.capPos }};width:2px;background:var(--crit)"></div>
+                  <div class="tn-bar" style="position:absolute;left:0;top:0;bottom:0;width:{{ x.pct }};background:var(--ink);transform-origin:left;animation:{{ dBar }}"></div>
+                  <div style="position:absolute;left:{{ x.pct }};top:0;bottom:0;width:{{ x.pausedW }};background:var(--warn);transition:left var(--t-slow) var(--ease-out)"></div>
+                  <div title="Destination limit at max. operating capacity" style="position:absolute;top:-4px;bottom:-4px;left:{{ x.capPos }};width:2px;background:var(--crit);transition:left var(--t-slow) var(--ease-out)"></div>
                 </div>
-                <div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:12.5px;color:var(--ink2)"><span>{{ x.capText }}</span><span style="display:flex;align-items:center;gap:6px"><span style="width:2px;height:12px;background:var(--crit)"></span>Destination limit</span></div>
+                <div style="display:flex;justify-content:space-between;gap:4px 12px;flex-wrap:wrap;font-size:12.5px;color:var(--ink2)"><span style="min-width:0">{{ x.capText }}</span><span style="display:flex;align-items:center;gap:6px;white-space:nowrap"><span style="width:2px;height:12px;background:var(--crit)"></span>Destination limit</span></div>
               </div>
-              <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:0 28px;border-top:1px solid var(--line);padding-top:6px">
+              <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,220px),1fr));gap:0 28px;border-top:1px solid var(--line);padding-top:6px">
                 <sc-for list="{{ x.kpis }}" as="k" hint-placeholder-count="6">
-                  <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:7px 0;border-bottom:1px solid var(--line2)"><span style="color:var(--ink2)">{{ k.k }}</span><span style="text-align:right;white-space:nowrap"><b style="font-weight:600;color:{{ k.fg }};font-style:{{ k.fs }}">{{ k.v }}</b> <span style="font-size:12px;color:var(--ink3)">{{ k.u }}</span></span></div>
+                  <div style="display:flex;justify-content:space-between;align-items:baseline;gap:4px 10px;padding:7px 0;border-bottom:1px solid var(--line2)"><span style="flex:none;color:var(--ink2)">{{ k.k }}</span><span style="min-width:0;text-align:right"><b style="font-weight:600;color:{{ k.fg }};font-style:{{ k.fs }};white-space:nowrap">{{ k.v }}</b> <span style="font-size:12px;color:var(--ink3)">{{ k.u }}</span></span></div>
                 </sc-for>
               </div>
             </div>
           </section>
 
           <section aria-label="Flow rate trend" style="background:var(--surf);border:1px solid var(--pBd)">
-            <div style="background:var(--bar);color:var(--barInk);padding:9px 14px;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap"><span style="font-weight:600">Flow rate</span><span style="font-size:12px;color:var(--barInk3);font-weight:400">{{ x.flowCaption }}</span></div>
-            <div style="padding:12px 16px">{{ chart }}</div>
+            <div style="background:var(--bar);color:var(--barInk);padding:9px 14px;display:flex;align-items:baseline;gap:4px 10px;flex-wrap:wrap"><span style="font-weight:600">Flow rate</span><span style="min-width:0;font-size:12px;color:var(--barInk3);font-weight:400">{{ x.flowCaption }}</span></div>
+            <sc-if value="{{ chart }}" hint-placeholder-val="{{ true }}"><div style="padding:12px 16px">{{ chart }}</div></sc-if>
           </section>
 
           <section aria-label="Measurement basis" style="background:var(--surf);border:1px solid var(--pBd)">
             <div style="background:var(--bar);color:var(--barInk);padding:9px 14px;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap"><span style="font-weight:600">Quantities by measurement basis</span></div>
-            <div style="display:grid;grid-template-columns:minmax(0,1.6fr) repeat(3,minmax(0,1fr));padding:9px 16px;font-weight:600;border-bottom:2px solid var(--line)"><span>Basis</span><span style="text-align:right">Planned</span><span style="text-align:right">{{ x.recvWord }}</span><span style="text-align:right">Remaining</span></div>
-            <sc-for list="{{ x.basis }}" as="b" hint-placeholder-count="3">
-              <div style="display:grid;grid-template-columns:minmax(0,1.6fr) repeat(3,minmax(0,1fr));padding:9px 16px;border-bottom:1px solid var(--line2);align-items:baseline">
-                <span>{{ b.label }} <span style="font-size:12.5px;color:var(--ink3)">{{ b.unit }}</span></span>
-                <span style="text-align:right">{{ b.p }}</span><span style="text-align:right;font-weight:600">{{ b.r }}</span><span style="text-align:right">{{ b.m }}</span>
-              </div>
-            </sc-for>
-            <div style="padding:9px 16px;font-size:12.5px;color:var(--ink3)">{{ x.basisNote }}</div>
+            <sc-if value="{{ basisTable }}" hint-placeholder-val="{{ true }}">
+              <div style="display:grid;grid-template-columns:{{ basisCols }};column-gap:12px;padding:9px 16px;font-weight:600;border-bottom:2px solid var(--line)"><span>Basis</span><span style="text-align:right">Planned</span><span style="text-align:right">{{ x.recvWord }}</span><span style="text-align:right">Remaining</span></div>
+              <sc-for list="{{ x.basis }}" as="b" hint-placeholder-count="3">
+                <div style="display:grid;grid-template-columns:{{ basisCols }};column-gap:12px;padding:9px 16px;border-bottom:1px solid var(--line2);align-items:baseline">
+                  <span style="min-width:0">{{ b.label }} <span style="font-size:12.5px;color:var(--ink3)">{{ b.unit }}</span></span>
+                  <span style="text-align:right;white-space:nowrap">{{ b.p }}</span><span style="text-align:right;font-weight:600;white-space:nowrap">{{ b.r }}</span><span style="text-align:right;white-space:nowrap">{{ b.m }}</span>
+                </div>
+              </sc-for>
+            </sc-if>
+            <sc-if value="{{ basisStack }}" hint-placeholder-val="{{ false }}">
+              <sc-for list="{{ x.basis }}" as="b" hint-placeholder-count="3">
+                <div style="padding:10px 16px;border-bottom:1px solid var(--line2)">
+                  <div style="min-width:0">{{ b.label }} <span style="font-size:12.5px;color:var(--ink3)">{{ b.unit }}</span></div>
+                  <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:4px">
+                    <span style="min-width:0"><span style="display:block;font-size:11.5px;color:var(--ink3)">Planned</span><span style="font-family:var(--fnum);white-space:nowrap">{{ b.p }}</span></span>
+                    <span style="min-width:0"><span style="display:block;font-size:11.5px;color:var(--ink3)">{{ x.recvWord }}</span><span style="font-family:var(--fnum);font-weight:600;white-space:nowrap">{{ b.r }}</span></span>
+                    <span style="min-width:0"><span style="display:block;font-size:11.5px;color:var(--ink3)">Remaining</span><span style="font-family:var(--fnum);white-space:nowrap">{{ b.m }}</span></span>
+                  </div>
+                </div>
+              </sc-for>
+            </sc-if>
+            <div style="padding:9px 16px;font-size:12.5px;color:var(--ink3);text-wrap:pretty">{{ x.basisNote }}</div>
           </section>
 
           <section aria-label="Reconciliation" style="background:var(--surf);border:1px solid var(--pBd)">
-            <div style="background:var(--bar);color:var(--barInk);padding:9px 14px;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap"><span style="font-weight:600">Reconciliation</span><span style="font-size:12px;color:var(--barInk3);font-weight:400">{{ x.reconState }} · {{ x.reconNote }}</span></div>
-            <div style="overflow-x:auto"><div style="min-width:760px">
-              <div style="display:grid;grid-template-columns:minmax(0,2fr) repeat(4,minmax(0,0.8fr)) minmax(0,1.3fr);padding:9px 16px;font-weight:600;gap:10px;border-bottom:2px solid var(--line)"><span>Figure</span><span style="text-align:right">kL @ 15 °C</span><span style="text-align:right">Mass t</span><span style="text-align:right">Δ kL</span><span style="text-align:right">Δ %</span><span>Document</span></div>
+            <div style="background:var(--bar);color:var(--barInk);padding:9px 14px;display:flex;align-items:baseline;gap:4px 10px;flex-wrap:wrap"><span style="font-weight:600">Reconciliation</span><span style="min-width:0;font-size:12px;color:var(--barInk3);font-weight:400">{{ x.reconState }} · {{ x.reconNote }}</span></div>
+            <sc-if value="{{ reconTable }}" hint-placeholder-val="{{ true }}">
+              <div style="display:grid;grid-template-columns:{{ reconCols }};column-gap:12px;padding:9px 16px;font-weight:600;border-bottom:2px solid var(--line)"><span>Figure</span><span style="text-align:right;white-space:nowrap">kL @ 15 °C</span><span style="text-align:right;white-space:nowrap">Mass t</span><span style="text-align:right;white-space:nowrap">Δ kL</span><span style="text-align:right;white-space:nowrap">Δ %</span></div>
               <sc-for list="{{ x.recon }}" as="r" hint-placeholder-count="5">
-                <div style="display:grid;grid-template-columns:minmax(0,2fr) repeat(4,minmax(0,0.8fr)) minmax(0,1.3fr);padding:9px 16px;gap:10px;border-bottom:1px solid var(--line2);align-items:baseline;background:{{ r.bg }}">
-                  <span style="font-weight:{{ r.fw }}">{{ r.label }}</span>
-                  <span style="text-align:right;font-style:{{ r.fs }};color:{{ r.vf }}">{{ r.v }}</span>
-                  <span style="text-align:right;color:var(--ink2)">{{ r.mass }}</span>
-                  <span style="text-align:right;color:{{ r.dFg }}">{{ r.d }}</span>
-                  <span style="text-align:right;color:{{ r.dFg }}">{{ r.dp }}</span>
-                  <span style="font-size:12.5px;color:var(--ink3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.doc }}</span>
+                <div style="display:grid;grid-template-columns:{{ reconCols }};column-gap:12px;padding:9px 16px;border-bottom:1px solid var(--line2);align-items:baseline;background:{{ r.bg }}">
+                  <span style="min-width:0"><span style="display:block;font-weight:{{ r.fw }}">{{ r.label }}</span><span style="display:block;font-size:12px;color:var(--ink3);overflow-wrap:anywhere">{{ r.doc }}</span></span>
+                  <span style="text-align:right;white-space:{{ r.ws }};font-style:{{ r.fs }};color:{{ r.vf }}">{{ r.v }}</span>
+                  <span style="text-align:right;white-space:nowrap;color:var(--ink2)">{{ r.mass }}</span>
+                  <span style="text-align:right;white-space:nowrap;color:{{ r.dFg }}">{{ r.d }}</span>
+                  <span style="text-align:right;white-space:nowrap;color:{{ r.dFg }}">{{ r.dp }}</span>
                 </div>
               </sc-for>
-            </div></div>
-            <div style="padding:9px 16px;font-size:12.5px;color:var(--ink3)">Δ = figure − vessel arrival quantity. Negative means lower than the vessel figure. Tolerance ±0.30 %.</div>
+            </sc-if>
+            <sc-if value="{{ reconStack }}" hint-placeholder-val="{{ false }}">
+              <sc-for list="{{ x.recon }}" as="r" hint-placeholder-count="5">
+                <div style="display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 12px;padding:10px 16px;border-bottom:1px solid var(--line2);align-items:baseline;background:{{ r.bg }}">
+                  <span style="min-width:0;font-weight:{{ r.fw }}">{{ r.label }}</span>
+                  <span style="text-align:right;white-space:nowrap;font-style:{{ r.fs }};color:{{ r.vf }}">{{ r.vU }}</span>
+                  <sc-if value="{{ r.line2 }}" hint-placeholder-val="{{ true }}"><span style="grid-column:1 / -1;min-width:0;font-size:12.5px;color:{{ r.dFg }}">{{ r.line2 }}</span></sc-if>
+                  <span style="grid-column:1 / -1;min-width:0;font-size:12px;color:var(--ink3);overflow-wrap:anywhere">{{ r.doc }}</span>
+                </div>
+              </sc-for>
+            </sc-if>
+            <sc-if value="{{ x.hasRecon }}" hint-placeholder-val="{{ true }}">
+              <div style="padding:9px 16px;font-size:12.5px;color:var(--ink3);text-wrap:pretty">Δ = figure − vessel arrival quantity. Negative means lower than the vessel figure. Tolerance ±0.30 %.</div>
+            </sc-if>
           </section>
         </div>
 
-        <div style="display:flex;flex-direction:column;gap:24px;min-width:0">
+        <div style="{{ sideCol }};gap:{{ dGap }};min-width:0">
           <section aria-label="Readings" style="background:var(--surf);border:1px solid var(--pBd)">
-            <div role="tablist" style="display:flex;background:var(--bar)">
+            <div role="tablist" aria-label="Inspect" style="display:flex;background:var(--bar)">
               <sc-for list="{{ inspTabs }}" as="tb" hint-placeholder-count="2">
-                <button role="tab" aria-selected="{{ tb.on }}" onClick="{{ tb.onClick }}" style="flex:1;height:38px;border:0;background:{{ tb.bg }};color:{{ tb.fg }};font-weight:600;white-space:nowrap">{{ tb.label }}</button>
+                <button role="tab" aria-selected="{{ tb.on }}" onClick="{{ tb.onClick }}" style="flex:1;min-width:0;height:38px;padding:0 10px;border:0;border-radius:0;background:{{ tb.bg }};color:{{ tb.fg }};font-weight:600;--hbg:{{ tb.hbg }}" style-hover="background:var(--hbg)"><span style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ tb.label }}</span></button>
               </sc-for>
             </div>
-            <div style="padding:14px 16px 10px">
-              <div style="font-weight:600;font-size:15px">{{ insp.title }}</div>
+            <div key="{{ inspKey }}" style="padding:14px 16px 10px;animation:{{ inspAnim }}">
+              <div style="font-weight:600;font-size:15px;overflow-wrap:anywhere">{{ insp.title }}</div>
               <div style="font-size:12.5px;color:var(--ink3);margin:2px 0 8px">{{ insp.sub }}</div>
               <sc-for list="{{ insp.rows }}" as="m" hint-placeholder-count="6">
-                <div style="display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;padding:7px 0;border-bottom:1px solid var(--line2);align-items:baseline">
-                  <span>{{ m.k }}</span>
+                <div style="display:flex;justify-content:space-between;align-items:baseline;gap:2px 10px;padding:7px 0;border-bottom:1px solid var(--line2)">
+                  <span style="min-width:0">{{ m.k }}</span>
                   <span style="text-align:right;font-weight:600;font-style:{{ m.fs }};color:{{ m.vf }};white-space:nowrap">{{ m.v }}</span>
-                  
                 </div>
               </sc-for>
               <sc-if value="{{ insp.link }}" hint-placeholder-val="{{ false }}">
-                <button onClick="{{ insp.onLink }}" style="margin-top:10px;border:0;background:transparent;color:var(--acc);padding:0;display:flex;gap:5px;align-items:center;white-space:nowrap">{{ insp.link }} {{ I.arrowR }}</button>
+                <button onClick="{{ insp.onLink }}" style="margin-top:10px;border:0;background:transparent;color:var(--acc);padding:0;display:flex;gap:5px;align-items:center;text-align:left" style-hover="text-decoration:underline">{{ insp.link }} {{ I.arrowR }}</button>
               </sc-if>
             </div>
           </section>
@@ -224,8 +350,8 @@
             <div style="background:var(--bar);color:var(--barInk);padding:9px 14px;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap"><span style="font-weight:600">Event timeline</span></div>
             <div style="padding:14px 16px 4px">
               <sc-for list="{{ x.events }}" as="e" hint-placeholder-count="9">
-                <div style="display:grid;grid-template-columns:62px 14px minmax(0,1fr);gap:10px;padding-bottom:14px">
-                  <span style="font-size:12.5px;color:{{ e.tf }};text-align:right;white-space:nowrap;padding-top:1px">{{ e.time }}</span>
+                <div key="{{ e.key }}" style="display:grid;grid-template-columns:68px 14px minmax(0,1fr);gap:10px;padding-bottom:14px;animation:{{ e.anim }}">
+                  <span style="min-width:0;text-align:right;padding-top:1px;line-height:1.3"><span style="display:block;font-size:12.5px;color:{{ e.tf }};white-space:nowrap">{{ e.time }}</span><span style="display:block;font-size:11.5px;color:var(--ink3);white-space:nowrap">{{ e.date }}</span></span>
                   <span style="position:relative;display:flex;justify-content:center"><span style="position:absolute;top:13px;bottom:-14px;width:1px;background:{{ e.lineBg }}"></span><span style="position:relative;margin-top:4px;width:10px;height:10px;border-radius:{{ e.r }};border:2px solid {{ e.dotBd }};background:{{ e.dotBg }}"></span></span>
                   <span style="min-width:0"><span style="display:block;font-weight:{{ e.fw }};color:{{ e.fg }}">{{ e.label }}</span><span style="display:block;font-size:12.5px;color:var(--ink3);text-wrap:pretty">{{ e.note }}</span></span>
                 </div>
@@ -235,31 +361,34 @@
         </div>
       </div>
 
-      <section aria-label="Berth occupancy" style="background:var(--surf);border:1px solid var(--pBd)">
-        <div style="background:var(--bar);color:var(--barInk);padding:9px 14px;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap"><span style="font-weight:600">Berth occupancy</span><span style="font-size:12px;color:var(--barInk3);font-weight:400">{{ berthRange }}</span><div style="flex:1"></div><button onClick="{{ goSchedule }}" style="border:0;background:transparent;color:var(--barAcc);display:flex;gap:5px;align-items:center;padding:0;white-space:nowrap">Scheduling board {{ I.arrowR }}</button></div>
+      <section aria-label="Berth occupancy" style="background:var(--surf);border:1px solid var(--pBd);animation:{{ dA3 }}">
+        <div style="background:var(--bar);color:var(--barInk);padding:9px 14px;display:flex;align-items:baseline;gap:4px 10px;flex-wrap:wrap"><span style="font-weight:600">Berth occupancy</span><span style="min-width:0;font-size:12px;color:var(--barInk3);font-weight:400">{{ berthRange }}</span><div style="flex:1"></div><button onClick="{{ goSchedule }}" style="border:0;background:transparent;color:var(--barAcc);display:flex;gap:5px;align-items:center;padding:0;white-space:nowrap" style-hover="text-decoration:underline">Scheduling board {{ I.arrowR }}</button></div>
         <sc-if value="{{ noBerths }}" hint-placeholder-val="{{ false }}"><div style="padding:16px;color:var(--ink3)">This terminal has no berths configured.</div></sc-if>
+        <sc-if value="{{ hasBerths }}" hint-placeholder-val="{{ true }}">
         <div style="overflow-x:auto">
           <div style="min-width:820px;padding:10px 16px 14px">
             <div style="display:grid;grid-template-columns:110px 1fr;height:22px">
-              <span></span>
-              <div style="position:relative"><sc-for list="{{ bTicks }}" as="k" hint-placeholder-count="7"><span style="position:absolute;left:{{ k.x }};transform:translateX(-50%);font-size:12px;color:var(--ink3);white-space:nowrap">{{ k.label }}</span></sc-for></div>
+              <span style="position:sticky;left:0;z-index:4;margin-left:-16px;background:var(--surf)"></span>
+              <div style="position:relative"><sc-for list="{{ bTicks }}" as="k" hint-placeholder-count="7"><span style="position:absolute;left:{{ k.x }};transform:translateX({{ k.tx }});font-size:12px;font-weight:{{ k.fw }};color:{{ k.fg }};white-space:nowrap">{{ k.label }}</span></sc-for></div>
             </div>
             <sc-for list="{{ bLanes }}" as="ln" hint-placeholder-count="2">
-              <div style="display:grid;grid-template-columns:110px 1fr;height:40px;border-top:1px solid var(--line2)">
-                <span style="align-self:center;font-weight:600">{{ ln.name }}</span>
+              <div style="display:grid;grid-template-columns:110px 1fr;height:{{ ln.h }};border-top:1px solid var(--line2)">
+                <span style="position:sticky;left:0;z-index:4;align-self:stretch;display:flex;align-items:center;min-width:0;margin-left:-16px;padding:0 8px 0 16px;background:var(--surf);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ ln.name }}</span>
                 <div style="position:relative;background:repeating-linear-gradient(90deg,transparent 0,transparent calc(100%/12 - 1px),var(--line2) calc(100%/12 - 1px),var(--line2) calc(100%/12))">
                   <sc-for list="{{ ln.items }}" as="b" hint-placeholder-count="2">
-                    <button onClick="{{ b.onClick }}" title="{{ b.title }}" style="position:absolute;top:7px;bottom:7px;left:{{ b.x }};width:{{ b.w }};border:1px solid {{ b.bd }};background:{{ b.bg }};color:{{ b.fg }};padding:0 7px;font-size:12px;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ b.label }}</button>
+                    <button onClick="{{ b.onClick }}" title="{{ b.title }}" aria-pressed="{{ b.pressed }}" style="position:absolute;top:{{ b.top }};height:26px;left:{{ b.x }};width:{{ b.w }};display:flex;align-items:center;min-width:0;border:1px solid {{ b.bd }};border-radius:0;background:{{ b.bg }};color:{{ b.fg }};padding:0 7px;font-size:12px;text-align:left;overflow:hidden" style-hover="box-shadow:0 0 0 2px var(--accLine);z-index:2"><span style="flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ b.label }}</span></button>
                   </sc-for>
-                  <div style="position:absolute;top:-4px;bottom:-4px;left:{{ nowX }};width:2px;background:var(--acc)"></div>
+                  <div style="position:absolute;top:-4px;bottom:-4px;left:{{ nowX }};width:2px;background:var(--acc);z-index:3;pointer-events:none"></div>
                 </div>
               </div>
             </sc-for>
           </div>
         </div>
+        </sc-if>
       </section>
     </div>
     </sc-if>
+  </div>
   </div>
   </sc-if>
 </sc-if>
@@ -269,73 +398,100 @@
 class Component extends DCLogic {
   constructor(p) {
     super(p);
-    this.state = { ...(p.d ? p.d.ui.load('trf', { sel: {}, insp: 'dst', loss: {} }) : {}), hover: null, logs: {} };
+    this.state = { ...(p.d ? p.d.ui.load('trf', { sel: {}, insp: 'dst', loss: {} }) : {}), hover: null, logs: {}, xo: null, xi: null, pw: 0 };
+    this.xfEnd = e => { if (e.target !== e.currentTarget) return; if (e.animationName === 'tnpop' && this.state.xo) this.setState({ xo: null }); if (e.animationName === 'tnfade' && this.state.xi) this.setState({ xi: null }); };
+    this.rootRef = React.createRef();
   }
-  componentDidMount() { this.applyFocus(); }
-  componentDidUpdate() { this.applyFocus(); }
-  applyFocus() { const f = this.props.ctx && this.props.ctx.focus; if (!f || f.n === this.lf) return; this.lf = f.n; if (f.type === 'transfer') this.upd({ view: 'term', sel: { ...this.state.sel, [this.props.ctx.terminalId]: f.id } }); }
-  upd(p) { this.setState(p, () => { const { hover, logs, ...rest } = this.state; this.props.d.ui.save('trf', rest); }); }
+  componentDidMount() { this.watch(); this.applyFocus(false); }
+  componentDidUpdate() { this.watch(); this.applyFocus(true); }
+  componentWillUnmount() { if (this.ro) this.ro.disconnect(); this.ro = null; this.roEl = null; clearTimeout(this.xfT); }
+  // page width drives the layout (board table / compact table / cards, one or two columns), whatever the nav rail does
+  watch() {
+    const el = this.rootRef.current;
+    if (!el || el === this.roEl || typeof ResizeObserver === 'undefined') return;
+    if (this.ro) this.ro.disconnect();
+    this.roEl = el;
+    this.ro = new ResizeObserver(es => { const w = Math.round(es[0].contentRect.width); if (w > 0 && w !== this.state.pw) this.setState({ pw: w }); });
+    this.ro.observe(el);
+  }
+  applyFocus(anim) { const f = this.props.ctx && this.props.ctx.focus; if (!f || f.n === this.lf) return; this.lf = f.n; if (f.type === 'transfer') this.setView('term', { sel: { ...this.state.sel, [this.props.ctx.terminalId]: f.id } }, anim); }
+  upd(p) { this.setState(p, () => { const { hover, logs, xo, xi, pw, ...rest } = this.state; this.props.d.ui.save('trf', rest); }); }
+  calm() { try { return !!document.querySelector('[data-motion="off"]') || matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; } }
+  // switch between the network board and the terminal view: the outgoing view stays on top and fades out while the
+  // incoming one fades in underneath; each layer is released when its own animation ends (timer only as a fallback)
+  setView(v, patch = {}, anim = true) {
+    const cur = this.state.view === 'term' ? 'term' : 'all';
+    if (v === cur) { if (Object.keys(patch).length) this.upd(patch); return; }
+    this.upd({ ...patch, view: v });
+    clearTimeout(this.xfT);
+    if (!anim || this.calm()) { if (this.state.xo || this.state.xi) this.setState({ xo: null, xi: null }); return; }
+    this.setState({ xo: cur, xi: v });
+    this.xfT = setTimeout(() => this.setState({ xo: null, xi: null }), 400);
+  }
   routeSvg(D, ctx, t, tr, dst, st, p, flow, meterLost, insp) {
     const h = React.createElement, dark = ctx.theme === 'dark';
     const C = dark ? { bg: '#24282c', water: '#1e2a33', quay: '#3a4046', line: '#4b5259', pipe: '#59616a', act: '#e5e8eb', sel: '#7fb0ff', selSoft: 'rgba(127,176,255,.14)', pause: '#f2a531', txt: '#e5e8eb', mute: '#a4abb2', faint: '#7f878f', eq: '#30353a', eqBd: '#a3aab1', hull: '#2f353b', shell: '#353a40', hatch: 'rgba(0,0,0,.38)' } : { bg: '#dcdfe2', water: '#c6d0d8', quay: '#b9bec3', line: '#9ea4aa', pipe: '#9aa0a6', act: '#23272b', sel: '#1f63c4', selSoft: 'rgba(31,99,196,.12)', pause: '#c27a00', txt: '#23272b', mute: '#4f575f', faint: '#6f777e', eq: '#f4f5f6', eqBd: '#5b636b', hull: '#eef0f1', shell: '#f4f5f6', hatch: 'rgba(0,0,0,.30)' };
+    const SANS = 'Barlow, system-ui, sans-serif', MONO = "'Overpass Mono', ui-monospace, monospace";
     const W = 1200, H = 310, Y = 140, K = []; let n = 0; const k = () => 'r' + (n++);
-    const T = (x, y, s, o = {}) => K.push(h('text', { key: k(), x, y, fontFamily: 'Barlow', fontSize: 15, fill: C.mute, ...o }, s));
+    const T = (x, y, s, o = {}) => K.push(h('text', { key: k(), x, y, fontFamily: SANS, fontSize: 15, fill: C.mute, ...o }, s));
     const val = (x, y, label, v, o = {}) => { T(x, y, label, { fontSize: 14, fill: C.faint, textAnchor: o.a || 'middle' }); T(x, y + 20, v == null ? 'Unavailable' : v, { fontSize: 17, fontWeight: 600, fill: v == null ? C.faint : C.txt, fontStyle: v == null ? 'italic' : 'normal', textAnchor: o.a || 'middle' }); };
     const paused = tr.state === 'Paused', live = tr.active && !paused && !meterLost, done = tr.state === 'Completed';
     const lineSt = paused ? { stroke: C.pause, strokeWidth: 3, strokeDasharray: '8 6' } : live || (tr.active && meterLost) ? { stroke: C.act, strokeWidth: 3 } : done ? { stroke: C.faint, strokeWidth: 3 } : { stroke: C.pipe, strokeWidth: 2, strokeDasharray: '3 5' };
     K.push(h('defs', { key: k() }, h('pattern', { id: 'trHold', width: 6, height: 6, patternUnits: 'userSpaceOnUse', patternTransform: 'rotate(45)' }, h('line', { x1: 0, y1: 0, x2: 0, y2: 6, stroke: C.hatch, strokeWidth: 2.2 }))));
     K.push(h('rect', { key: k(), x: 0, y: 0, width: W, height: H, fill: C.bg }));
     const seg = (x1, x2) => { K.push(h('line', { key: k(), x1, x2, y1: Y, y2: Y, ...lineSt })); if (live) { K.push(h('line', { key: k(), x1, x2, y1: Y, y2: Y, stroke: dark ? '#111' : '#fff', strokeWidth: 1.2, strokeDasharray: '3 14', style: { animation: 'tnflow 1.1s linear infinite' } })); const mx = (x1 + x2) / 2; K.push(h('path', { key: k(), d: 'M-6 -5L5 0L-6 5Z', fill: C.act, transform: `translate(${mx},${Y})` })); } };
-    const sel = (x, y, w, hh, on) => on && K.push(h('rect', { key: k(), x, y, width: w, height: hh, fill: C.selSoft, stroke: C.sel, strokeWidth: 1.6 }));
-    const g = (kids, onClick, label) => K.push(h('g', { key: k(), style: { cursor: 'pointer' }, onClick, role: 'button', tabIndex: 0, onKeyDown: e => { if (e.key === 'Enter') onClick(); }, 'aria-label': label }, ...kids));
+    // selection outline: stable keys so switching the inspector does not re-create the rest of the drawing
+    const sel = (key, x, y, w, hh, on) => on && K.push(h('rect', { key, x, y, width: w, height: hh, fill: C.selSoft, stroke: C.sel, strokeWidth: 1.6, style: { animation: 'tnfade var(--t-med) var(--ease-out) both' } }));
+    const g = (kids, onClick, label) => K.push(h('g', { key: k(), style: { cursor: 'pointer' }, onClick, role: 'button', tabIndex: 0, onKeyDown: e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(); } }, 'aria-label': label }, ...kids));
     const tankX = 1000, tw = 110, th = 150, tTop = 60, tBase = tTop + th;
     if (tr.marine) {
       K.push(h('rect', { key: k(), x: 0, y: 0, width: 420, height: H, fill: C.water }));
       K.push(h('rect', { key: k(), x: 420, y: 0, width: 10, height: H, fill: C.quay }));
-      T(16, 22, 'Harbour basin', { fontSize: 12, fill: C.faint });
-      sel(24, 40, 360, 200, insp === 'src');
-      const x0 = 40, x1 = 360, y0 = 82, y1 = 198;
+      T(16, 20, 'Harbour basin', { fontSize: 12, fill: C.faint });
+      sel('selSrc', 24, 30, 360, 240, insp === 'src');
+      const x0 = 40, x1 = 360, y0 = 88, y1 = 200;
       const hull = `${x0},${(y0 + y1) / 2} ${x0 + 50},${y0} ${x1 - 8},${y0} ${x1},${y0 + 8} ${x1},${y1 - 8} ${x1 - 8},${y1} ${x0 + 50},${y1}`;
       const m = tr.comp.match(/(\d)\s*[–-]\s*(\d)/); const act = new Set();
       if (m) { for (let i = +m[1]; i <= +m[2]; i++) { act.add(i + 'P'); act.add(i + 'S'); } } else (tr.comp.match(/\d[PSC]/g) || []).forEach(x => { act.add(x); if (x.endsWith('C')) { act.add(x[0] + 'P'); act.add(x[0] + 'S'); } });
       const frac = done ? 0 : 1 - tr.recv / tr.planned;
       const kids = [h('polygon', { key: 'h', points: hull, fill: C.hull, stroke: C.eqBd, strokeWidth: 1.4 })];
       const cx0 = x0 + 62, cw = 34;
-      for (let i = 0; i < 6; i++) ['P', 'S'].forEach((sd, j) => { const id = (6 - i) + sd; const on = act.has(id); const cx = cx0 + i * (cw + 4), cy = j ? (y0 + y1) / 2 + 2 : y0 + 10, chh = ((y1 - y0) / 2) - 12; kids.push(h('rect', { key: id + 'b', x: cx, y: cy, width: cw, height: chh, fill: 'none', stroke: on ? C.act : C.line, strokeWidth: on ? 1.4 : 1 })); if (on && frac > 0) kids.push(h('rect', { key: id + 'f', x: cx, y: cy + chh * (1 - frac), width: cw, height: chh * frac, fill: p.color, fillOpacity: 0.8 })); kids.push(h('text', { key: id + 't', x: cx + cw / 2, y: cy + 14, textAnchor: 'middle', fontFamily: 'Overpass Mono', fontSize: 10, fill: on ? C.txt : C.faint }, id)); });
+      for (let i = 0; i < 6; i++) ['P', 'S'].forEach((sd, j) => { const id = (6 - i) + sd; const on = act.has(id); const cx = cx0 + i * (cw + 4), cy = j ? (y0 + y1) / 2 + 2 : y0 + 10, chh = ((y1 - y0) / 2) - 12; kids.push(h('rect', { key: id + 'b', x: cx, y: cy, width: cw, height: chh, fill: 'none', stroke: on ? C.act : C.line, strokeWidth: on ? 1.4 : 1 })); if (on && frac > 0) kids.push(h('rect', { key: id + 'f', x: cx, y: cy + chh * (1 - frac), width: cw, height: chh * frac, fill: p.color, fillOpacity: 0.8 })); kids.push(h('text', { key: id + 't', x: cx + cw / 2, y: cy + 14, textAnchor: 'middle', fontFamily: MONO, fontSize: 10, fill: on ? C.txt : C.faint }, id)); });
       kids.push(h('rect', { key: 'br', x: x1 - 46, y: y0 + 14, width: 32, height: y1 - y0 - 28, fill: C.quay, stroke: C.eqBd }));
       g(kids, () => this.upd({ insp: 'src' }), `Source vessel ${tr.vessel}`);
-      T(x0, y0 - 16, tr.vessel, { fontSize: 19, fontWeight: 600, fill: C.txt });
-      T(x1, y0 - 16, `${tr.voyage} · ${tr.comp}`, { fontSize: 14, textAnchor: 'end' });
+      // vessel name and voyage on their own lines so long cargo-tank lists never run into the name
+      T(x0, 52, tr.vessel, { fontSize: 19, fontWeight: 600, fill: C.txt });
+      T(x0, 73, `${tr.voyage} · ${tr.comp}`, { fontSize: 14 });
       val(x0 + 70, y1 + 30, 'Cargo pump', tr.vesselPress != null && tr.active && !paused ? D.fmt(tr.vesselPress, 1) + ' bar' : (tr.active ? (paused ? '0.0 bar' : null) : '—'));
       val(x0 + 240, y1 + 30, 'Cargo temperature', tr.vesselTemp != null ? D.fmt(tr.vesselTemp, 1) + ' °C' : null);
       seg(x1, 470);
       K.push(h('circle', { key: k(), cx: 480, cy: Y, r: 10, fill: C.eq, stroke: C.eqBd, strokeWidth: 1.4 }));
-      T(480, Y - 22, tr.arm, { fontFamily: 'Overpass Mono', fontSize: 13.5, textAnchor: 'middle', fill: C.txt });
+      T(480, Y - 22, tr.arm, { fontFamily: MONO, fontSize: 13.5, textAnchor: 'middle', fill: C.txt });
       val(480, Y + 34, 'Marine arm', tr.active || done ? 'Connected' : 'Free');
       seg(490, 610);
       T(550, Y - 12, 'Jetty line 16"', { fontSize: 12, textAnchor: 'middle', fill: C.faint });
     } else {
-      sel(24, 60, 300, 160, insp === 'src');
+      sel('selSrc', 24, 60, 300, 160, insp === 'src');
       const srcT = t.tanks.find(k2 => k2.id === tr.src);
-      g([h('rect', { key: 'b', x: 60, y: Y - 40, width: 200, height: 80, fill: C.eq, stroke: C.eqBd, strokeWidth: 1.4 }), h('text', { key: 't', x: 160, y: Y - 6, textAnchor: 'middle', fontFamily: 'Barlow', fontSize: 15, fontWeight: 600, fill: C.txt }, tr.src), h('text', { key: 's', x: 160, y: Y + 14, textAnchor: 'middle', fontFamily: 'Barlow', fontSize: 12.5, fill: C.mute }, srcT ? D.prod(srcT.code).label : (t.pipeIn || 'Upstream pipeline'))], () => this.upd({ insp: 'src' }), 'Source ' + tr.src);
+      g([h('rect', { key: 'b', x: 60, y: Y - 40, width: 200, height: 80, fill: C.eq, stroke: C.eqBd, strokeWidth: 1.4 }), h('text', { key: 't', x: 160, y: Y - 6, textAnchor: 'middle', fontFamily: SANS, fontSize: 15, fontWeight: 600, fill: C.txt }, tr.src), h('text', { key: 's', x: 160, y: Y + 14, textAnchor: 'middle', fontFamily: SANS, fontSize: 12.5, fill: C.mute }, srcT ? D.prod(srcT.code).label : (t.pipeIn || 'Upstream pipeline'))], () => this.upd({ insp: 'src' }), 'Source ' + tr.src);
       seg(260, 610);
     }
     K.push(h('rect', { key: k(), x: 610, y: Y - 30, width: 24, height: 60, fill: C.eq, stroke: C.eqBd, strokeWidth: 1.4 }));
-    T(622, Y - 40, tr.marine ? 'M-01' : (tr.type.includes('receipt') ? 'M-01' : 'M-02'), { fontFamily: 'Overpass Mono', fontSize: 13.5, textAnchor: 'middle', fill: C.txt });
+    T(622, Y - 40, tr.marine ? 'M-01' : (tr.type.includes('receipt') ? 'M-01' : 'M-02'), { fontFamily: MONO, fontSize: 13.5, textAnchor: 'middle', fill: C.txt });
     val(622, Y + 52, 'Manifold', (tr.press != null || !tr.marine) && tr.active ? D.fmt(tr.press != null ? tr.press : 3.1 + (tr.flow % 4) / 10, 1) + ' bar(g)' : (tr.active ? null : '—'));
     seg(634, 730);
     const mid = tr.marine ? (tr.meter || 'FM') : (tr.pump || 'P');
     K.push(h(tr.marine ? 'rect' : 'circle', tr.marine ? { key: k(), x: 730, y: Y - 18, width: 60, height: 36, fill: C.eq, stroke: meterLost ? C.pause : C.eqBd, strokeWidth: meterLost ? 2 : 1.4 } : { key: k(), cx: 760, cy: Y, r: 18, fill: tr.active ? C.act : C.eq, stroke: C.eqBd, strokeWidth: 1.4 }));
     if (tr.marine) T(760, Y + 5, 'FQ', { fontSize: 13, fontWeight: 600, textAnchor: 'middle', fill: C.txt });
-    T(760, Y - 28, mid, { fontFamily: 'Overpass Mono', fontSize: 13.5, textAnchor: 'middle', fill: C.txt });
+    T(760, Y - 28, mid, { fontFamily: MONO, fontSize: 13.5, textAnchor: 'middle', fill: C.txt });
     val(760, Y + 42, tr.truck ? 'Gantry throughput' : 'Flow', tr.state === 'Completed' ? '—' : paused ? '0 kL/h · paused' : flow != null ? D.fmt(flow) + ' kL/h' : null);
     if (tr.truck) val(760, Y + 86, 'Trucks loaded', `${tr.trucksDone} of ${tr.truckN} · ${tr.truck} kL`);
     if (tr.marine) val(760, Y + 86, 'Meter temperature', tr.temp != null && !meterLost ? D.fmt(tr.temp, 1) + ' °C' : (tr.active ? null : '—'));
     seg(790, tankX - 14);
     K.push(h('path', { key: k(), d: `M${tankX - 60} ${Y - 9}l18 9-18 9zM${tankX - 24} ${Y - 9}l-18 9 18 9z`, fill: tr.active ? C.act : C.eq, stroke: C.eqBd, strokeWidth: 1.2 }));
-    T(tankX - 42, Y - 18, String(tr.dst || '').startsWith('T-') ? 'MOV-1' + String(tr.dst).slice(2) : 'Bay valve', { fontFamily: String(tr.dst || '').startsWith('T-') ? 'Overpass Mono' : 'Barlow', fontSize: 10.5, textAnchor: 'middle', fill: C.faint });
+    T(tankX - 42, Y - 18, String(tr.dst || '').startsWith('T-') ? 'MOV-1' + String(tr.dst).slice(2) : 'Bay valve', { fontFamily: String(tr.dst || '').startsWith('T-') ? MONO : SANS, fontSize: 10.5, textAnchor: 'middle', fill: C.faint });
     // destination tank
-    sel(tankX - 20, 24, tw + 40, 250, insp === 'dst');
+    sel('selDst', tankX - 30, 24, tw + 74, 250, insp === 'dst');
     if (dst) {
       const fill = Math.min(1, st.fill), ly = tBase - th * fill;
       const kids = [h('rect', { key: 's', x: tankX, y: tTop, width: tw, height: th, fill: C.shell }), h('rect', { key: 'l', x: tankX, y: ly, width: tw, height: tBase - ly, fill: p.color, fillOpacity: 0.8 })];
@@ -345,18 +501,68 @@ class Component extends DCLogic {
       kids.push(h('rect', { key: 'o', x: tankX, y: tTop, width: tw, height: th, fill: 'none', stroke: C.eqBd, strokeWidth: 1.6 }), h('path', { key: 'rf', d: `M${tankX} ${tTop}L${tankX + tw / 2} ${tTop - 8}L${tankX + tw} ${tTop}`, fill: C.shell, stroke: C.eqBd, strokeWidth: 1.6 }));
       kids.push(h('line', { key: 'm', x1: tankX + tw, x2: tankX + tw + 10, y1: my, y2: my, stroke: '#cf3b2e', strokeWidth: 2 }), h('line', { key: 'hh', x1: tankX + tw, x2: tankX + tw + 7, y1: hy, y2: hy, stroke: C.mute, strokeWidth: 1.4 }));
       g(kids, () => this.upd({ insp: 'dst' }), 'Destination tank ' + dst.id);
-      T(tankX + tw / 2, tTop - 16, dst.id, { fontFamily: 'Overpass Mono', fontSize: 16, fontWeight: 600, textAnchor: 'middle', fill: C.txt });
+      T(tankX + tw / 2, tTop - 16, dst.id, { fontFamily: MONO, fontSize: 16, fontWeight: 600, textAnchor: 'middle', fill: C.txt });
       T(tankX + tw + 14, my + 4, 'MOC', { fontSize: 11, fill: '#cf3b2e', fontWeight: 600 });
       T(tankX + tw + 14, hy + 14, 'HLA', { fontSize: 11, fill: C.faint });
       T(tankX + tw / 2, tBase + 24, `${Math.round(st.fill * 100)}% · ${D.fmt(dst.vol)} kL`, { fontSize: 17, fontWeight: 600, textAnchor: 'middle', fill: C.txt });
-      T(tankX + tw / 2, tBase + 44, tr.active ? `Room ${D.fmt(st.rx)} kL · need ${D.fmt(tr.remaining)}` : dst.q, { fontSize: 14, textAnchor: 'middle', fill: tr.active && st.rx < tr.remaining ? '#cf3b2e' : C.mute });
+      T(tankX + tw / 2, tBase + 44, tr.active ? `Room ${D.fmt(st.rx)} kL · need ${D.fmt(tr.remaining)}` : dst.q, { fontSize: 13, textAnchor: 'middle', fill: tr.active && st.rx < tr.remaining ? '#cf3b2e' : C.mute });
     } else {
-      K.push(h('rect', { key: k(), x: tankX - 10, y: Y - 40, width: tw + 20, height: 80, fill: C.eq, stroke: C.eqBd, strokeWidth: 1.4 }));
-      T(tankX + tw / 2, Y + 4, tr.dst, { fontSize: 14, fontWeight: 600, textAnchor: 'middle', fill: C.txt });
+      // destination outside the tank register (gantry, hydrant, pipeline, vessel): long names break over two lines inside the box
+      const name = String(tr.dst || ''), words = name.split(' ');
+      let l1 = name, l2 = '';
+      if (name.length > 15 && words.length > 1) { let best = 1, bd = 1e9; for (let i = 1; i < words.length; i++) { const d = Math.max(words.slice(0, i).join(' ').length, words.slice(i).join(' ').length); if (d < bd) { bd = d; best = i; } } l1 = words.slice(0, best).join(' '); l2 = words.slice(best).join(' '); }
+      const bw = Math.max(130, Math.max(l1.length, l2.length) * 8 + 24), cx = tankX + tw / 2;
+      K.push(h('rect', { key: k(), x: cx - bw / 2, y: Y - 40, width: bw, height: 80, fill: C.eq, stroke: C.eqBd, strokeWidth: 1.4 }));
+      T(cx, l2 ? Y - 4 : Y + 5, l1, { fontSize: 14, fontWeight: 600, textAnchor: 'middle', fill: C.txt });
+      if (l2) T(cx, Y + 15, l2, { fontSize: 14, fontWeight: 600, textAnchor: 'middle', fill: C.txt });
     }
     return h('svg', { viewBox: `0 0 ${W} ${H}`, width: '100%', style: { display: 'block', aspectRatio: `${W} / ${H}` }, role: 'img', 'aria-label': 'Transfer route diagram' }, ...K);
   }
-  board(D, ctx, I) {
+  // narrow screens: the same route as a vertical list of equipment cards, with the flow animated down the connectors
+  routeList(D, t, tr, dst, st, p, flow, meterLost, insp) {
+    const h = React.createElement, paused = tr.state === 'Paused', done = tr.state === 'Completed', live = tr.active && !paused && !meterLost;
+    const solid = live || done || (tr.active && meterLost);
+    const pipe = h('svg', { width: 6, height: 26, viewBox: '0 0 6 26', 'aria-hidden': true, style: { display: 'block', flex: 'none' } },
+      h('line', { x1: 3, y1: 0, x2: 3, y2: 26, style: { stroke: paused ? 'var(--warn)' : solid ? 'var(--ink2)' : 'var(--ink4)', strokeWidth: 2, strokeDasharray: paused ? '5 4' : solid ? 'none' : '2 4' } }),
+      live ? h('line', { x1: 3, y1: 0, x2: 3, y2: 26, style: { stroke: 'var(--surf)', strokeWidth: 1.2, strokeDasharray: '3 9', animation: 'tnflow 1.1s linear infinite' } }) : null);
+    const node = (kicker, title, sub, metrics, o = {}) => ({ node: true, conn: false, kicker, title, sub: sub || '', aside: o.aside || '', asideFg: o.asideFg || 'var(--ink3)',
+      metrics: metrics.map(([k, v]) => ({ k, v: v == null ? 'Unavailable' : v, fg: v == null ? 'var(--ink3)' : 'var(--ink)', fs: v == null ? 'italic' : 'normal' })),
+      bd: o.sel ? 'var(--acc)' : o.warn ? 'var(--warn)' : 'var(--line)', bg: o.sel ? 'var(--accSoft)' : 'var(--surf)', sh: o.sel ? 'inset 3px 0 0 var(--acc)' : 'none',
+      role: o.onClick ? 'button' : undefined, tab: o.onClick ? 0 : undefined, pressed: o.onClick ? (o.sel ? 'true' : 'false') : undefined, aria: o.aria, cursor: o.onClick ? 'pointer' : 'default',
+      onClick: o.onClick, onKey: o.onClick ? e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); o.onClick(); } } : undefined,
+      hasBar: !!o.bar, barW: o.bar ? o.bar[0] : '0%', barC: o.bar ? o.bar[1] : 'transparent', barT: o.bar ? o.bar[2] : '' });
+    const conn = label => ({ node: false, conn: true, label, svg: pipe });
+    const manifoldV = (tr.press != null || !tr.marine) && tr.active ? D.fmt(tr.press != null ? tr.press : 3.1 + (tr.flow % 4) / 10, 1) + ' bar(g)' : (tr.active ? null : '—');
+    const flowV = done ? '—' : paused ? '0 kL/h · paused' : flow != null ? D.fmt(flow) + ' kL/h' : null;
+    const valve = String(tr.dst || '').startsWith('T-') ? 'MOV-1' + String(tr.dst).slice(2) : 'Bay valve';
+    const dstNode = dst ? node('Destination tank', dst.id, `${D.prod(dst.code).label} · ${dst.q}`, [['Receiving cap.', st ? D.fmt(st.rx) + ' kL' : null], ...(tr.active ? [['Need', D.fmt(tr.remaining) + ' kL']] : [])], { sel: insp === 'dst', onClick: () => this.upd({ insp: 'dst' }), aria: 'Destination tank ' + dst.id, aside: tr.active && st.rx < tr.remaining ? 'Short of room' : '', asideFg: 'var(--critInk)', bar: [Math.min(100, st.fill * 100).toFixed(1) + '%', p.color, `${Math.round(st.fill * 100)}% · ${D.fmt(dst.vol)} kL`] })
+      : node('Destination', tr.dst, '', [], { sel: insp === 'dst', onClick: () => this.upd({ insp: 'dst' }), aria: 'Destination ' + tr.dst });
+    if (tr.marine) {
+      const frac = done ? 0 : Math.max(0, 1 - tr.recv / tr.planned);
+      return [
+        node('Source · vessel', tr.vessel, `${tr.voyage} · ${tr.comp}`, [['Cargo pump', tr.vesselPress != null && tr.active && !paused ? D.fmt(tr.vesselPress, 1) + ' bar' : (tr.active ? (paused ? '0.0 bar' : null) : '—')], ['Cargo temp.', tr.vesselTemp != null ? D.fmt(tr.vesselTemp, 1) + ' °C' : null]], { sel: insp === 'src', onClick: () => this.upd({ insp: 'src' }), aria: 'Source vessel ' + tr.vessel, bar: [(frac * 100).toFixed(1) + '%', p.color, `${Math.round(frac * 100)}% of parcel on board`] }),
+        conn('Ship manifold'),
+        node('Marine connection', tr.arm, `${tr.berth} · 12" arm`, [['Status', tr.active || done ? 'Connected' : 'Free']]),
+        conn('Jetty line 16"'),
+        node('Shore manifold', 'M-01', 'Receipt header', [['Pressure', manifoldV]]),
+        conn(''),
+        node('Meter skid', tr.meter, 'Custody meter', [['Flow', flowV], ['Temp.', tr.temp != null && !meterLost ? D.fmt(tr.temp, 1) + ' °C' : (tr.active ? null : '—')]], { warn: meterLost, aside: meterLost ? 'Comms lost' : '', asideFg: 'var(--warnInk)' }),
+        conn(valve),
+        dstNode,
+      ];
+    }
+    const srcT = t.tanks.find(k => k.id === tr.src);
+    return [
+      node('Source', tr.src, srcT ? D.prod(srcT.code).label : (t.pipeIn || 'Upstream pipeline'), [], { sel: insp === 'src', onClick: () => this.upd({ insp: 'src' }), aria: 'Source ' + tr.src }),
+      conn(''),
+      node('Manifold', tr.type.includes('receipt') ? 'M-01' : 'M-02', '', [['Pressure', manifoldV]]),
+      conn(''),
+      node('Pump', tr.pump || 'P', tr.active ? 'Running' : 'Stopped', [[tr.truck ? 'Gantry throughput' : 'Flow', flowV], ...(tr.truck ? [['Trucks loaded', `${tr.trucksDone} of ${tr.truckN} · ${tr.truck} kL`]] : [])]),
+      conn(valve),
+      dstNode,
+    ];
+  }
+  board(D, ctx, I, pw) {
     const s = this.state, prods = ctx.products || [], order = new Map(D.TERMINALS.map((t, i) => [t.id, i]));
     const live = D.TRANSFERS.filter(x => ['In progress', 'Paused', 'Scheduled', 'Delayed'].includes(x.state) && (!prods.length || prods.includes(x.code)));
     const groups = { All: () => true, 'In progress': x => x.state === 'In progress', Paused: x => x.state === 'Paused', Scheduled: x => x.state === 'Scheduled' || x.state === 'Delayed' };
@@ -366,15 +572,24 @@ class Component extends DCLogic {
     const rank = { 'In progress': 0, Paused: 1, Delayed: 2, Scheduled: 3 };
     const sorts = { Terminal: (a, b) => order.get(a.term) - order.get(b.term) || rank[a.state] - rank[b.state] || end(a) - end(b), 'Finishing soonest': (a, b) => end(a) - end(b), Progress: (a, b) => pct(b) - pct(a), 'Highest flow': (a, b) => (b.flow || 0) - (a.flow || 0) };
     const list = live.filter(groups[bs]).filter(x => bt === 'All types' || x.type === bt).sort(sorts[sort] || sorts.Terminal);
+    // wide table when it fits, a compact five-column table on tablets, cards on phones
+    const mode = pw < 690 ? 'cards' : pw < 1160 ? 'mid' : 'wide', grouped = sort === 'Terminal' || !sorts[sort];
+    const counts = new Map(); list.forEach(x => counts.set(x.term, (counts.get(x.term) || 0) + 1));
+    const fk = `${bs}|${bt}|${sort}`; if (fk !== this.curList) { this.listAnim = this.curList !== undefined; this.curList = fk; }
+    const anim = (name, dur, d) => this.listAnim ? `${name} var(${dur}) var(--ease-out) ${d} both` : 'none';
     const rows = list.map((x, i) => {
-      const t = D.term(x.term), p = D.prod(x.code), tz = t.tz, first = sort === 'Terminal' && (i === 0 || list[i - 1].term !== x.term), blend = x.type.includes('blend');
+      const t = D.term(x.term), p = D.prod(x.code), tz = t.tz, first = i === 0 || list[i - 1].term !== x.term, blend = x.type.includes('blend');
       const open = (x.pauses || []).find(q => q[1] == null);
       const when = x.state === 'In progress' ? (x.etaMin ? D.tm(x.etaMin, tz) : 'Unavailable') : x.state === 'Paused' ? `Since ${D.tm(open ? open[0] : D.NOW, tz)}` : D.tm(x.start, tz);
       const whenSub = x.state === 'In progress' ? (x.etaMin ? D.dur(x.etaMin - D.NOW) + ' left' : 'No flow data') : x.state === 'Paused' ? (open && open[2]) || 'Paused' : x.state === 'Delayed' ? 'Delayed · revised start' : x.vessel && x.arrive > D.NOW ? `Vessel due ${D.tm(x.arrive, tz)}` : 'Planned start';
-      return { term: sort !== 'Terminal' || first ? t.name : '', termSub: sort !== 'Terminal' || first ? `${t.tz} · ${D.tm(D.NOW, tz, { tz: false })}` : '', bt: first && i ? '1px solid var(--line)' : '0',
-        title: x.vessel || x.type, sub: x.vessel ? `${x.type} · ${x.id}` : x.id, prod: p.short, color: p.color, route: `${x.vessel ? x.berth : x.src} → ${x.dst}`,
-        pct: Math.round(pct(x)) + '%', pctW: pct(x).toFixed(1) + '%', barBg: x.state === 'Paused' ? 'var(--warn)' : 'var(--ink2)', qty: `${D.fmt(x.recv)} / ${D.fmt(x.planned)}`,
-        flow: x.state === 'In progress' && x.flow ? D.fmt(x.flow) : '—', when, whenSub, state: x.state, icon: I.st[D.statKind(x.state)],
+      const clock = D.tm(D.NOW, tz, { tz: false }), route = `${x.vessel ? x.berth : x.src} → ${x.dst}`, warn = x.state === 'Paused' || x.state === 'Delayed', moving = x.state === 'In progress' && x.flow, cnt = counts.get(x.term);
+      return { term: !grouped || first ? t.name : '', termSub: !grouped || first ? `${t.tz} · ${clock}` : '', bt: grouped && first && i ? '1px solid var(--line)' : '0',
+        group: mode !== 'wide' && grouped && first, gName: t.name, gSub: `${t.tz} · ${clock}`, gCount: `${cnt} transfer${cnt === 1 ? '' : 's'}`, gbt: i ? '1px solid var(--line)' : '0',
+        showTerm: mode !== 'wide' && !grouped, termLine: `${t.name} · ${t.tz} ${clock}`,
+        title: x.vessel || x.type, sub: x.vessel ? `${x.type} · ${x.id}` : x.id, prod: p.short, color: p.color, route,
+        pct: Math.round(pct(x)) + '%', pctW: pct(x).toFixed(1) + '%', barBg: x.state === 'Paused' ? 'var(--warn)' : 'var(--ink2)', qty: `${D.fmt(x.recv)} / ${D.fmt(x.planned)}`, qtyKl: `${D.fmt(x.recv)} / ${D.fmt(x.planned)} kL`,
+        flow: moving ? D.fmt(x.flow) : '—', flowKl: moving ? `${D.fmt(x.flow)} kL/h` : '', when, whenSub, whenLine: `${when} · ${whenSub}`, state: x.state, icon: I.st[D.statKind(x.state)], stFg: warn ? 'var(--warnInk)' : 'var(--ink)',
+        tip: `${t.name} · ${x.vessel ? x.vessel + ' · ' : ''}${x.type} · ${x.id} · ${route}`, anim: anim('tnrise', '--t-med', Math.min(i, 12) * 16 + 'ms'), banim: anim('tngrow', '--t-slow', Math.min(i, 12) * 16 + 'ms'), ganim: anim('tnfade', '--t-med', Math.min(i, 12) * 16 + 'ms'),
         onClick: () => this.props.go(blend ? 'blending' : 'transfers', { terminalId: x.term, focus: { type: blend ? 'blend' : 'transfer', id: x.id } }) };
     });
     const moving = live.filter(x => x.state === 'In progress'), isTank = x => D.term(x.term).tanks.some(k => k.id === x.dst);
@@ -389,30 +604,66 @@ class Component extends DCLogic {
       { k: 'Vessels alongside', v: String(live.filter(x => x.vessel && (x.state === 'In progress' || x.state === 'Paused')).length), unit: '', sub: `${live.filter(x => x.vessel && (x.state === 'Scheduled' || x.state === 'Delayed')).length} waiting or due` },
       { k: 'Terminals active', v: `${new Set(moving.map(x => x.term)).size} / ${D.TERMINALS.length}`, unit: '', sub: 'with product moving' },
     ];
-    const stateChips = Object.keys(groups).map(g => { const on = g === bs; return { label: g, n: live.filter(groups[g]).length, icon: g === 'All' ? null : I.st[D.statKind(g)], pressed: on ? 'true' : 'false', bd: on ? 'var(--ink)' : 'var(--line)', bg: on ? 'var(--ink)' : 'var(--surf)', fg: on ? 'var(--surf)' : 'var(--ink)', onClick: () => this.upd({ bs: g }) }; });
-    return { rows, noRows: !rows.length, kpis, stateChips, cols: 'minmax(150px,1.15fr) minmax(190px,1.5fr) 80px minmax(140px,1.1fr) 150px 140px 70px 140px 110px',
+    const cards = mode === 'cards';
+    const stateChips = Object.keys(groups).map(g => { const on = g === bs; return { label: g, n: live.filter(groups[g]).length, icon: g === 'All' ? null : I.st[D.statKind(g)], pressed: on ? 'true' : 'false', bd: on ? 'var(--ink)' : 'var(--line)', bg: on ? 'var(--ink)' : 'var(--surf)', fg: on ? 'var(--surf)' : 'var(--ink)', hbg: on ? 'var(--ink)' : 'var(--surf2)', nml: cards ? 'auto' : '0', onClick: () => this.upd({ bs: g }) }; });
+    return { rows, noRows: !rows.length, kpis, stateChips, isWide: mode === 'wide', isMid: mode === 'mid', isCards: cards,
+      cols: 'minmax(118px,1fr) minmax(160px,1.5fr) 76px minmax(118px,1.1fr) minmax(100px,1fr) 124px 52px minmax(104px,.9fr) 104px', wideMin: '1080px',
+      midCols: 'minmax(140px,1.6fr) minmax(104px,1fr) minmax(116px,1.2fr) minmax(92px,.8fr) 104px',
+      kpiCols: `repeat(${mode === 'wide' ? 6 : mode === 'mid' ? 3 : 2},minmax(0,1fr))`, bPad: mode === 'wide' ? '22px 28px 40px' : mode === 'mid' ? '20px 20px 36px' : '16px 16px 32px',
+      chipWrap: cards ? 'display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;width:100%' : 'display:flex;gap:8px;flex-wrap:wrap',
+      selWrap: cards ? 'display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;width:100%' : 'display:flex;gap:8px', chipSpacer: !cards, bToggleFlex: cards ? '1 1 100%' : '0 0 auto',
+      groupStyle: `${cards ? 'position:sticky;top:0;z-index:1;' : ''}display:flex;align-items:baseline;gap:8px;padding:8px ${cards ? 14 : 12}px;background:var(--surf2);border-bottom:1px solid var(--line2)`,
+      secOv: cards ? '' : 'overflow-x:auto', listKey: `${fk}|${mode}`, emptyAnim: anim('tnfade', '--t-med', '0ms'),
       typeOpts: ['All types', ...types], typeVal: bt, onType: e => this.upd({ bt: e.target.value }), sortOpts: Object.keys(sorts), sortVal: sort, onSort: e => this.upd({ bsort: e.target.value }),
       bsub: `${live.length} live and planned transfers across ${D.TERMINALS.length} terminals${prods.length ? ' · filtered products' : ''} · updates every few seconds` };
   }
   renderVals() {
     const D = this.props.d, ctx = this.props.ctx;
-    if (!D || !ctx) return { ready: false };
-    const I = ctx.I, s = this.state, h = React.createElement;
-    const view = s.view === 'term' ? 'term' : 'all';
-    const viewOpts = [['term', 'This terminal'], ['all', 'All terminals']].map(([id, label]) => { const on = view === id; return { label, pressed: on ? 'true' : 'false', bd: on ? 'var(--ink)' : 'var(--line)', bg: on ? 'var(--ink)' : 'var(--surf)', fg: on ? 'var(--surf)' : 'var(--ink)', onClick: () => this.upd({ view: id }) }; });
-    if (view === 'all') return { ready: true, I, viewOpts, allView: true, termView: false, ...this.board(D, ctx, I) };
+    if (!D || !ctx) return { ready: false, rootRef: this.rootRef };
+    const I = ctx.I, s = this.state;
+    const view = s.view === 'term' ? 'term' : 'all', out = s.xo && s.xo !== view ? s.xo : null, fadeIn = s.xi === view;
+    const pw = s.pw || (ctx.mobile ? ctx.vw : ctx.vw - 72);
+    const viewOpts = [['term', 'This terminal'], ['all', 'All terminals']].map(([id, label], i) => { const on = view === id; return { label, pressed: on ? 'true' : 'false', bd: on ? 'var(--ink)' : 'var(--line)', bg: on ? 'var(--ink)' : 'var(--surf)', fg: on ? 'var(--surf)' : 'var(--ink)', hbg: on ? 'var(--ink)' : 'var(--surf2)', ml: i ? '-1px' : '0', onClick: () => this.setView(id) }; });
+    // cross-fade: the incoming view fades in underneath while the outgoing one fades out on top
+    const inS = 'flex:1;min-width:0' + (fadeIn ? ';animation:tnfade var(--t-med) var(--ease-out) both' : ''), outS = 'position:absolute;inset:0;z-index:3;pointer-events:none;animation:tnpop var(--t-fast) var(--ease-io) reverse both';
+    const showAll = view === 'all' || out === 'all', showTerm = view === 'term' || out === 'term';
+    const vals = { ready: true, rootRef: this.rootRef, I, viewOpts, showAll, showTerm, xfEnd: this.xfEnd,
+      allWrap: (view === 'all' ? inS : outS) + ';overflow:auto', allHidden: view === 'all' ? undefined : 'true',
+      termWrap: (view === 'term' ? inS : outS) + ';display:flex;min-height:0;overflow:hidden', termHidden: view === 'term' ? undefined : 'true' };
+    // a view that is not on screen forgets what it showed, so coming back to it is covered by the cross-fade alone
+    if (showAll) Object.assign(vals, this.board(D, ctx, I, pw)); else this.curList = undefined;
+    if (showTerm) Object.assign(vals, this.termVals(D, ctx, I, pw)); else { this.curDetail = undefined; this.curInsp = undefined; this.evSeen = null; }
+    return vals;
+  }
+  termVals(D, ctx, I, pw) {
+    const s = this.state, h = React.createElement;
     const t = D.term(ctx.terminalId), tz = t.tz;
     const all = D.TRANSFERS.filter(tr => tr.term === t.id);
     const marine = all.filter(tr => tr.marine), other = all.filter(tr => !tr.marine);
     let selId = s.sel[t.id];
     if (!all.find(x => x.id === selId)) selId = (marine.find(x => x.active) || marine[0] || other[0] || {}).id;
-    const mk = tr => { const p = D.prod(tr.code), sel = tr.id === selId; return { id: tr.id, title: tr.marine ? tr.vessel : `${tr.type} · ${tr.src}`, sub: tr.marine ? `${tr.berth} → ${tr.dst} · ${p.short}` : tr.truck ? `${tr.src} → ${tr.dst} · ${tr.trucksDone}/${tr.truckN} trucks` : `${tr.src} → ${tr.dst} · ${p.short}`, color: p.color, state: tr.state, icon: I.st[D.statKind(tr.state)], pct: (tr.recv / tr.planned * 100).toFixed(1) + '%', pressed: sel ? 'true' : 'false', bg: sel ? 'var(--accSoft)' : 'transparent', sh: sel ? 'inset 3px 0 0 var(--acc)' : 'none', onClick: () => this.upd({ sel: { ...s.sel, [t.id]: tr.id } }) }; };
+    // layout from the measured page width: list column, detail padding, one or two columns
+    const mobile = !!ctx.mobile, listW = pw < 1100 ? 240 : 280, mw = mobile ? pw : pw - listW;
+    const padX = mw < 600 ? 16 : mw < 900 ? 24 : 36, inner = mw - 10 - padX * 2, twoCol = inner >= 880, colW = twoCol ? inner - 24 - 360 : inner, narrow = mw < 600;
+    const tone = st => st === 'Paused' || st === 'Delayed' ? 'var(--warnInk)' : 'var(--ink)';
+    const barOf = st => st === 'Paused' || st === 'Delayed' ? 'var(--warn)' : st === 'Completed' ? 'var(--ok)' : 'var(--ink)';
+    const mk = tr => {
+      const p = D.prod(tr.code), sel = tr.id === selId, pc = tr.planned ? tr.recv / tr.planned * 100 : 0;
+      const title = tr.vessel || tr.type;
+      const sub = tr.marine ? `${tr.berth} → ${tr.dst} · ${p.short}` : tr.vessel ? `${tr.type} · ${tr.src} → ${tr.berth} · ${p.short}` : tr.truck ? `${tr.src} → ${tr.dst} · ${tr.trucksDone}/${tr.truckN} trucks` : `${tr.src} → ${tr.dst} · ${p.short}`;
+      return { id: tr.id, title, sub, tip: `${title} · ${sub} · ${tr.id}`, color: p.color, state: tr.state, icon: I.st[D.statKind(tr.state)], stFg: tone(tr.state), pct: pc.toFixed(1) + '%', pctW: Math.min(100, pc).toFixed(1) + '%', barBg: barOf(tr.state),
+        pressed: sel ? 'true' : 'false', bg: sel ? 'var(--accSoft)' : 'transparent', cbg: sel ? 'var(--accSoft)' : 'var(--surf)', sbd: sel ? 'var(--acc)' : 'var(--line)', hbg: sel ? 'var(--accSoft)' : 'var(--surf2)', sh: sel ? 'inset 3px 0 0 var(--acc)' : 'none',
+        onClick: () => this.upd({ sel: { ...s.sel, [t.id]: tr.id } }) };
+    };
     const groups = [{ label: 'Ship-to-shore', items: marine.map(mk), empty: !marine.length, emptyText: t.marine ? 'No vessel transfers in the current schedule.' : 'No marine access configured at this terminal.' }, { label: 'Other transfers', items: other.map(mk), empty: !other.length, emptyText: 'None.' }];
     const marineNote = t.marine ? `Marine access · ${t.marine.join(', ')}` : `No marine access configured. ${t.pipeIn || 'Receipts by pipeline or road'}. Ship-to-shore workspace is unavailable for this terminal.`;
     const tr = all.find(x => x.id === selId);
-    const base = { ready: true, I, t, groups, marineNote, viewOpts, allView: false, termView: true, mobileToggle: !!ctx.mobile, showList: !ctx.mobile, listW: ctx.tablet ? '230px' : '280px', noneSelected: !tr, hasSel: !!tr, goNetwork: () => this.props.go('network') };
+    const base = { t, groups, marineNote, mobileTop: mobile, showList: !mobile, listW: listW + 'px', strip: mobile ? [...groups[0].items, ...groups[1].items] : [], stripW: '220px', stripCount: `${all.length} transfer${all.length === 1 ? '' : 's'}`,
+      dPad: `${padX < 20 ? 16 : padX < 30 ? 22 : 28}px ${padX}px 48px`, dGap: padX < 20 ? '16px' : '24px', noneSelected: !tr, hasSel: !!tr, goNetwork: () => this.props.go('network') };
     if (!tr) return base;
 
+    if (tr.id !== this.curDetail) { this.detailAnim = this.curDetail !== undefined; this.curDetail = tr.id; }
+    const pop = d => this.detailAnim ? `tnpop var(--t-med) var(--ease-out) ${d}ms both` : 'none';
     const p = D.prod(tr.code), dst = t.tanks.find(k => k.id === tr.dst);
     const lossSim = !!s.loss[tr.id];
     const meterLost = tr.meterLost != null || lossSim;
@@ -425,42 +676,7 @@ class Component extends DCLogic {
     let frLabel = (tr.marine ? 'Meter online' : 'Online'), frSub = `Last sample ${D.tm(D.NOW, tz)}`, frFg = 'var(--ink)', frBg = 'var(--surf)', frBd = 'var(--line)', frIcon = I.signal;
     if (meterLost) { frLabel = `${tr.meter || 'Meter'} communication lost`; frSub = `No flow data since ${D.tm(lostAt, tz)}`; frFg = 'var(--warnInk)'; frBg = 'var(--warnSoft)'; frBd = 'var(--warn)'; frIcon = I.st.attention; }
     if (ctx.stale) { frLabel = 'Stale data'; frSub = 'Readings are not current'; frFg = 'var(--warnInk)'; frBg = 'var(--warnSoft)'; frBd = 'var(--warn)'; frIcon = I.st.attention; }
-    const stateTone = tr.state === 'Paused' || tr.state === 'Delayed' ? ['var(--warnSoft)', 'var(--warn)', 'var(--warnInk)'] : tr.state === 'Completed' ? ['var(--okSoft)', 'var(--ok)', 'var(--ink)'] : ['var(--surf)', 'var(--line)', 'var(--ink)'];
-    const active = tr.active && !paused && !meterLost;
-    // route sequence
-    const conn = (label, on) => ({ conn: true, label, lineBg: paused ? 'repeating-linear-gradient(90deg,var(--warn) 0 10px,transparent 10px 14px)' : (tr.active || tr.state === 'Completed') && on !== false ? (active ? 'repeating-linear-gradient(90deg,oklch(0.74 0.12 258) 0 14px,rgba(120,150,230,.35) 14px 24px)' : 'oklch(0.55 0.08 258)') : '#3a4047', anim: active ? 'tndash 0.9s linear infinite' : 'none' });
     const insp = s.insp || 'dst';
-    const nodeBase = (kicker, title, sub, metrics, o = {}) => ({ node: true, kicker, title, sub, metrics: metrics.map(([k, v, miss]) => ({ k, v: v == null ? 'Unavailable' : v, fg: v == null ? '#8f969d' : '#e4e6e8', fs: v == null ? 'italic' : 'normal' })), w: o.w || '150px', bd: o.sel ? 'oklch(0.74 0.12 258)' : '#3a4047', bg: o.sel ? '#222c40' : '#1d2024', sh: o.sel ? '0 0 0 3px oklch(0.74 0.12 258 / .2)' : 'none', static: !o.onClick, cursor: o.onClick ? 'pointer' : 'default', onClick: o.onClick, ...o.extra });
-    let seq;
-    if (tr.marine) {
-      const m = tr.comp.match(/(\d)\s*[–-]\s*(\d)/); const act = new Set();
-      if (m) { for (let i = +m[1]; i <= +m[2]; i++) { act.add(i + 'P'); act.add(i + 'S'); } } else (tr.comp.match(/\d[PSC]/g) || []).forEach(x => act.add(x));
-      const frac = tr.state === 'Completed' ? 0 : 1 - tr.recv / tr.planned;
-      const cells = []; for (let i = 1; i <= 6; i++) ['P', 'S'].forEach(sd => { const id = i + sd; const on = act.has(id) || (sd === 'S' && act.has(i + 'C')); cells.push({ id, fill: on ? (frac * 100).toFixed(0) + '%' : '0%', color: p.color, bd: on ? 'oklch(0.74 0.12 258)' : '#30353b', title: on ? `${id} · in this parcel` : `${id} · not in this parcel` }); });
-      const order = []; for (let i = 0; i < 12; i += 2) order.push(cells[i]); for (let i = 1; i < 12; i += 2) order.push(cells[i]);
-      seq = [
-        nodeBase('Source · vessel', tr.vessel, `${tr.voyage} · ${tr.comp}`, [['Cargo pump disch.', tr.vesselPress != null && tr.active ? D.fmt(tr.vesselPress, 1) + ' bar' : (tr.active ? null : '—')], ['Cargo temp.', tr.vesselTemp != null ? D.fmt(tr.vesselTemp, 1) + ' °C' : null]], { w: '210px', sel: insp === 'src', onClick: () => this.upd({ insp: 'src' }), extra: { vessel: true, cells: order } }),
-        conn('ship manifold'),
-        nodeBase('Marine connection', tr.arm, `${tr.berth} · 12" arm`, [['Status', tr.active || tr.state === 'Completed' ? 'Connected' : 'Disconnected']], { w: '128px' }),
-        conn('jetty line 16"'),
-        nodeBase('Shore manifold', 'M-01', 'Receipt header', [['Pressure', tr.press != null && tr.active ? D.fmt(tr.press, 1) + ' bar(g)' : (tr.active ? null : '—')]], { w: '128px' }),
-        conn(''),
-        nodeBase('Meter skid', tr.meter, 'Custody meter', [['Flow', flow != null && tr.active ? D.fmt(flow) + ' kL/h' : (tr.active ? null : '—')], ['Temp.', tr.temp != null && tr.active && !meterLost ? D.fmt(tr.temp, 1) + ' °C' : (tr.active ? null : '—')]], { w: '138px' }),
-        conn('MOV-1' + (tr.dst || '').slice(2)),
-        nodeBase('Destination tank', tr.dst, p.label, [['Receiving cap.', st ? D.fmt(st.rx) + ' kL' : null]], { w: '190px', sel: insp === 'dst', onClick: () => this.upd({ insp: 'dst' }), extra: { tank: true, fill: st ? (st.fill * 100).toFixed(1) + '%' : '0%', tankLine1: st ? `${Math.round(st.fill * 100)}% · ${D.fmt(dst.vol)} kL` : '', tankLine2: st ? `MOC ${D.fmt(dst.moc)} kL` : '' } }),
-      ];
-    } else {
-      const srcT = t.tanks.find(k => k.id === tr.src);
-      seq = [
-        nodeBase('Source', tr.src, srcT ? D.prod(srcT.code).label : (tr.type.includes('Pipeline') ? t.pipeIn || 'Upstream pipeline' : ''), [['Flow', flow ? D.fmt(flow) + ' kL/h' : null]], { w: '170px', sel: insp === 'src', onClick: () => this.upd({ insp: 'src' }) }),
-        conn(''),
-        nodeBase('Manifold', tr.type.includes('receipt') ? 'M-01' : 'M-02', '', [], { w: '120px' }),
-        conn(''),
-        nodeBase('Pump', tr.pump || '—', '', [['Status', tr.active ? 'Running' : 'Stopped']], { w: '120px' }),
-        conn(''),
-        nodeBase('Destination', tr.dst, '', [], { w: '170px', sel: insp === 'dst', onClick: () => this.upd({ insp: 'dst' }) }),
-      ];
-    }
     // KPIs
     const elapsed = tr.start <= D.NOW ? (tr.end != null ? tr.end : D.NOW) - tr.start : null;
     const kv = (k, v, u) => ({ k, v: v == null ? 'Unavailable' : v, u, fg: v == null ? 'var(--ink3)' : 'var(--ink)', fs: v == null ? 'italic' : 'normal' });
@@ -479,10 +695,9 @@ class Component extends DCLogic {
     else if (etaMin) { eta = D.tm(etaMin, tz); etaNote = `At current flow ${D.fmt(flow)} kL/h · ${D.dur(etaMin - D.NOW)} remaining`; }
     else { eta = 'Unavailable'; etaFg = 'var(--ink3)'; etaFs = 'italic'; etaNote = paused ? 'Transfer paused — no flow to estimate from.' : `Flow information insufficient — ${tr.meter || 'meter'} offline since ${D.tm(lostAt, tz)}.`; }
     const capLimit = st ? tr.recv + st.rx : tr.planned;
-    const capPos = Math.min(100, capLimit / Math.max(tr.planned, capLimit) * 100);
     const scale = Math.max(tr.planned, capLimit);
     const capText = st ? (tr.state === 'Completed' ? `${tr.dst} now ${D.fmt(dst.vol)} kL · receiving capacity ${D.fmt(st.rx)} kL` : `${tr.dst} receiving capacity ${D.fmt(st.rx)} kL vs remaining ${D.fmt(tr.remaining)} kL → headroom ${D.sgn(st.rx - tr.remaining)} kL`) : `Destination ${tr.dst}`;
-    // chart
+    // chart, drawn at roughly its on-screen width so its labels keep their size
     let chart = null, flowCaption = '';
     if (tr.start < D.NOW) {
       const e = tr.end != null ? tr.end : D.NOW; const pts = []; const rate = tr.avgRate * 1.025; let seed = tr.recv;
@@ -496,8 +711,12 @@ class Component extends DCLogic {
         if (x >= e - 0.1 && !meterLost && !inPause && flow) v = flow;
         pts.push({ t: x, v: v == null ? null : Math.max(0, v) });
       }
-      const span = e - tr.start; const step = span > 900 ? 180 : 120; const xt = []; for (let x = Math.ceil(tr.start / step) * step; x <= e; x += step) xt.push({ t: x, label: D.tm(x, tz, { tz: false }) });
-      chart = D.lineChart(h, { w: 760, h: 200, series: [{ pts, color: 'var(--ink)', label: 'Flow', unit: 'kL/h', area: true }], y0: 0, y1: Math.max(...pts.map(q => q.v || 0)) * 1.18, x0: tr.start, x1: e, xTicks: xt, bands: (tr.pauses || []).map(([a, b, why]) => ({ a, b: b == null ? e : b, label: 'Paused · ' + why })), gaps: meterLost ? [{ a: lostAt, b: e, label: 'No meter data' }] : [], hover: s.hover, onHover: v => this.setState({ hover: v }), tz, aria: 'Flow rate trend' });
+      const cw = Math.max(300, Math.min(1100, Math.round(colW - 34))), ch = cw < 520 ? 210 : 200, span = Math.max(1, e - tr.start), ppm = (cw - 62) / span;
+      const step = [30, 60, 120, 180, 240, 360, 720].find(v => v * ppm >= 64) || 1440; const xt = []; for (let x = Math.ceil(tr.start / step) * step; x <= e; x += step) xt.push({ t: x, label: D.tm(x, tz, { tz: false }).split(' ').pop() });
+      const yMax = Math.max(...pts.map(q => q.v || 0)), yTop = (yMax > 0 ? yMax : (flow || tr.flow0 || tr.flow || 100)) * 1.18; // never a flat zero range (a freshly started run has no flow yet)
+      const X = v => 48 + (v - tr.start) / span * (cw - 62);
+      const bands = (tr.pauses || []).map(([a, b, why]) => { const room = cw - 14 - (X(Math.max(a, tr.start)) + 4), full = 'Paused · ' + why; return { a, b: b == null ? e : b, label: full.length * 5.4 <= room ? full : room >= 40 ? 'Paused' : '' }; });
+      chart = D.lineChart(h, { w: cw, h: ch, series: [{ pts, color: 'var(--ink)', label: 'Flow', unit: 'kL/h', area: true }], y0: 0, y1: yTop, x0: tr.start, x1: e, xTicks: xt, bands, gaps: meterLost ? [{ a: lostAt, b: e, label: 'No meter data' }] : [], hover: s.hover, onHover: v => this.setState({ hover: v }), tz, aria: 'Flow rate trend' });
       flowCaption = `${tr.meter || 'Meter'} · kL/h · ${D.tm(tr.start, tz)} → ${tr.end != null ? D.tm(tr.end, tz) : 'now'} · hover for values`;
     } else flowCaption = 'Transfer has not started — no flow data.';
     // basis
@@ -523,6 +742,8 @@ class Component extends DCLogic {
       reconNote = started ? `So far: meter ${D.fmt(meterSoFar)} kL vs tank gain ${D.fmt(tr.recv)} kL (${D.sgn(tr.recv - meterSoFar)} kL). Final figures after completion.` : 'Available after the transfer completes.';
     }
     if (!tr.marine) { reconState = 'Not applicable'; reconNote = 'Reconciled in the daily inventory balance.'; recon = []; }
+    // stacked (phone) form of the same rows
+    recon = recon.map(r => ({ ...r, ws: r.mass ? 'nowrap' : 'normal', vU: r.mass ? r.v + ' kL' : r.v, line2: [r.mass ? `Mass ${r.mass} t` : '', r.d === 'Reference' ? 'Reference figure' : r.d ? `Δ ${r.d} kL${r.dp ? ' · ' + r.dp : ''}` : ''].filter(Boolean).join(' · ') }));
     // events
     const ev = [];
     const E = (label, time, note, kind) => ev.push({ label, time, note, kind });
@@ -539,41 +760,60 @@ class Component extends DCLogic {
     if (tr.state === 'Completed') { E('Completion', tr.end, 'Vessel pumps stopped · line drained', 'done'); E('Reconciliation', tr.end + 95, 'Final figures agreed · ship/shore difference −0.11 %', 'done'); }
     else { E('Completion', etaMin || null, etaMin ? 'Estimated at current flow' : 'Estimate unavailable', 'future'); E('Reconciliation', null, 'After completion: meter ticket, tank closing gauge, vessel ullage', 'future'); }
     const done = ev.filter(e => e.time != null && e.kind !== 'future' && e.time <= D.NOW).sort((a, b) => a.time - b.time);
+    const seen = this.evSeen && this.evSeen.id === tr.id ? this.evSeen.keys : null;
     const fut = ev.filter(e => !(e.time != null && e.kind !== 'future' && e.time <= D.NOW));
     const nowEv = tr.active ? [{ label: 'Now', time: D.NOW, note: tr.state === 'Paused' ? 'Paused' : `${D.fmt(tr.recv)} kL received`, kind: 'now' }] : [];
-    const events = [...done, ...nowEv, ...fut].map((e, i, arr) => ({ label: e.label, note: e.note, time: e.time == null ? (e.kind === 'future' ? 'Pending' : 'Unavailable') : D.tm(e.time, tz, { date: e.time < 0 || e.time >= 1440 }), r: e.kind === 'now' ? '1px' : '50%', dotBd: e.kind === 'warn' ? 'var(--warn)' : e.kind === 'now' ? 'var(--acc)' : e.kind === 'future' ? 'var(--ink4)' : 'var(--ink)', dotBg: e.kind === 'warn' ? 'var(--warn)' : e.kind === 'now' ? 'var(--acc)' : e.kind === 'future' ? 'transparent' : 'var(--ink)', fw: e.kind === 'now' ? 600 : 500, fg: e.kind === 'future' ? 'var(--ink3)' : 'var(--ink)', tf: e.kind === 'future' ? 'var(--ink3)' : 'var(--ink2)', lineBg: i === arr.length - 1 ? 'transparent' : (e.kind === 'future' ? 'var(--line2)' : 'var(--line)') }));
+    // the time column shows the clock time with the date underneath when it is not today
+    const when = (e, i) => { if (e.time == null) return [e.kind === 'future' ? 'Pending' : 'Unavailable', '']; const full = D.tm(e.time, tz), parts = full.split(' '); return parts.length > 2 ? [parts.slice(2).join(' '), parts.slice(0, 2).join(' ')] : [full, '']; };
+    const events = [...done, ...nowEv, ...fut].map((e, i, arr) => { const [time, date] = when(e), key = `${e.label}|${e.kind}|${e.kind === 'now' || e.kind === 'future' ? '' : e.time}`; return { key, anim: seen && !seen.has(key) ? 'tnpop var(--t-med) var(--ease-out) both' : 'none', label: e.label, note: e.note, time, date, r: e.kind === 'now' ? '1px' : '50%', dotBd: e.kind === 'warn' ? 'var(--warn)' : e.kind === 'now' ? 'var(--acc)' : e.kind === 'future' ? 'var(--ink4)' : 'var(--ink)', dotBg: e.kind === 'warn' ? 'var(--warn)' : e.kind === 'now' ? 'var(--acc)' : e.kind === 'future' ? 'transparent' : 'var(--ink)', fw: e.kind === 'now' ? 600 : 500, fg: e.kind === 'future' ? 'var(--ink3)' : 'var(--ink)', tf: e.kind === 'future' ? 'var(--ink3)' : 'var(--ink2)', lineBg: i === arr.length - 1 ? 'transparent' : (e.kind === 'future' ? 'var(--line2)' : 'var(--line)') }; });
+    this.evSeen = { id: tr.id, keys: new Set(events.map(e => e.key)) };
     // inspector
-    const badge = src => src === 'M' ? { src: 'measured', bBd: 'var(--ink2)', bFg: 'var(--ink2)' } : src === 'V' ? { src: 'vessel', bBd: 'var(--acc)', bFg: 'var(--acc)' } : src === 'C' ? { src: 'calculated', bBd: 'var(--ink3)', bFg: 'var(--ink3)' } : { src: 'unavailable', bBd: 'var(--ink4)', bFg: 'var(--ink3)' };
-    const row = (k, v, src) => ({ k, v: v == null ? 'Unavailable' : v, fs: v == null ? 'italic' : 'normal', vf: v == null ? 'var(--ink3)' : 'var(--ink)', ...badge(v == null ? 'U' : src) });
+    const row = (k, v) => ({ k, v: v == null ? 'Unavailable' : v, fs: v == null ? 'italic' : 'normal', vf: v == null ? 'var(--ink3)' : 'var(--ink)' });
     let inspObj;
     if (insp === 'src' && tr.marine) {
       const bl = Math.round(tr.planned * 1.0017), arr = Math.round(tr.planned * 0.99935);
-      inspObj = { title: `${tr.vessel} · ${tr.voyage}`, sub: `Source · ${tr.comp} · vessel-reported values`, rows: [row('Cargo pump discharge pressure', tr.vesselPress != null && tr.active && !paused ? D.fmt(tr.vesselPress, 1) + ' bar' : null, 'V'), row('Cargo temperature', tr.vesselTemp != null ? D.fmt(tr.vesselTemp, 1) + ' °C' : null, 'V'), row('Quantity on board (est.)', tr.state === 'Completed' ? '0 kL' : D.fmt(arr - tr.recv) + ' kL', 'C'), row('B/L quantity', D.fmt(bl) + ' kL', 'V'), row('Arrival quantity (VEF applied)', D.fmt(arr) + ' kL', 'V'), row('Vessel experience factor', '0.9984', 'V'), row('Water on board', tr.id.endsWith('0418') ? null : '0.0 kL', 'V')], link: null };
+      inspObj = { title: `${tr.vessel} · ${tr.voyage}`, sub: `Source · ${tr.comp} · vessel-reported values`, rows: [row('Cargo pump discharge pressure', tr.vesselPress != null && tr.active && !paused ? D.fmt(tr.vesselPress, 1) + ' bar' : null), row('Cargo temperature', tr.vesselTemp != null ? D.fmt(tr.vesselTemp, 1) + ' °C' : null), row('Quantity on board (est.)', tr.state === 'Completed' ? '0 kL' : D.fmt(arr - tr.recv) + ' kL'), row('B/L quantity', D.fmt(bl) + ' kL'), row('Arrival quantity (VEF applied)', D.fmt(arr) + ' kL'), row('Vessel experience factor', '0.9984'), row('Water on board', tr.id.endsWith('0418') ? null : '0.0 kL')], link: null };
     } else if (dst) {
       const ds = D.stock(dst);
-      inspObj = { title: `${dst.id} · ${D.prod(dst.code).label}`, sub: `Destination · ${dst.status} · ${dst.q}`, rows: [row('Liquid level', D.fmt(ds.level) + ' mm', 'M'), row('Current volume', D.fmt(dst.vol) + ' kL @ 15 °C', 'C'), row('Temperature', dst.tempSrc === 'unavailable' ? null : D.fmt(dst.temp, 1) + ' °C', 'M'), row('Receiving capacity to MOC', D.fmt(ds.rx) + ' kL', 'C'), row('Margin to high-level alarm', D.fmt(dst.hla - dst.vol) + ' kL', 'C'), row('Water bottom', dst.water != null ? D.fmt(dst.water) + ' mm' : null, 'M'), row('Inlet valve MOV-1' + dst.id.slice(2), tr.active ? 'Open' : 'Closed', 'M')], link: 'Open tank in terminal workspace', onLink: () => this.props.go('terminal', { terminalId: t.id, focus: { type: 'tank', id: dst.id } }) };
+      inspObj = { title: `${dst.id} · ${D.prod(dst.code).label}`, sub: `Destination · ${dst.status} · ${dst.q}`, rows: [row('Liquid level', D.fmt(ds.level) + ' mm'), row('Current volume', D.fmt(dst.vol) + ' kL @ 15 °C'), row('Temperature', dst.tempSrc === 'unavailable' ? null : D.fmt(dst.temp, 1) + ' °C'), row('Receiving capacity to MOC', D.fmt(ds.rx) + ' kL'), row('Margin to high-level alarm', D.fmt(dst.hla - dst.vol) + ' kL'), row('Water bottom', dst.water != null ? D.fmt(dst.water) + ' mm' : null), row('Inlet valve MOV-1' + dst.id.slice(2), tr.active ? 'Open' : 'Closed')], link: 'Open tank in terminal workspace', onLink: () => this.props.go('terminal', { terminalId: t.id, focus: { type: 'tank', id: dst.id } }) };
     } else inspObj = { title: tr.dst, sub: 'Destination outside tank register', rows: [], link: null };
-    // berth chart
+    // berth chart: bookings that overlap in time are stacked on their own row instead of covering each other
     const sch = D.scheduleFor(t.id);
     const X0 = D.NOW - 12 * 60, X1 = D.NOW + 60 * 60;
-    const pos = v => (Math.max(0, Math.min(1, (v - X0) / (X1 - X0))) * 100).toFixed(2) + '%';
-    const bLanes = (t.marine || []).map(b => ({ name: b, items: sch.items.filter(i => i.lane === b && i.b > X0 && i.a < X1).map(i => { const trx = D.TRANSFERS.find(x => x.id === i.ref); const planned = i.a > D.NOW; const delayed = trx && trx.state === 'Delayed'; const sel = i.ref === tr.id; return { label: i.label, title: `${i.label} · ${D.tm(i.a, tz, { date: true })} → ${D.tm(i.b, tz, { date: true })}`, x: pos(i.a), w: `calc(${pos(i.b)} - ${pos(i.a)})`, bd: sel ? 'var(--acc)' : delayed ? 'var(--warn)' : planned ? 'var(--ink3)' : 'var(--ink2)', bg: delayed ? 'var(--warnSoft)' : planned ? 'transparent' : sel ? 'var(--acc)' : 'var(--ink2)', fg: delayed || planned ? 'var(--ink)' : 'var(--surf)', onClick: () => trx && this.upd({ sel: { ...s.sel, [t.id]: trx.id } }) }; }) }));
-    const bTicks = []; for (let v = D.grid(X0, 360, tz); v <= X1; v += 360) bTicks.push({ x: pos(v), label: D.tm(v, tz, { tz: false, date: D.clockMin(v, tz) === 0 }) });
+    const frac = v => Math.max(0, Math.min(1, (v - X0) / (X1 - X0))), pos = v => (frac(v) * 100).toFixed(2) + '%';
+    const bLanes = (t.marine || []).map(b => {
+      const its = sch.items.filter(i => i.lane === b && i.b > X0 && i.a < X1).sort((p1, p2) => p1.a - p2.a), ends = [];
+      const items = its.map(i => {
+        let r = ends.findIndex(v => v <= i.a); if (r < 0) { r = ends.length; ends.push(i.b); } else ends[r] = i.b;
+        const trx = D.TRANSFERS.find(x => x.id === i.ref); const planned = i.a > D.NOW; const delayed = trx && trx.state === 'Delayed'; const sel = i.ref === tr.id;
+        return { label: i.label, title: `${i.label} · ${D.tm(i.a, tz, { date: true })} → ${D.tm(i.b, tz, { date: true })}`, x: pos(i.a), w: `calc(${pos(i.b)} - ${pos(i.a)})`, top: 7 + r * 30 + 'px', pressed: sel ? 'true' : 'false', bd: sel ? 'var(--acc)' : delayed ? 'var(--warn)' : planned ? 'var(--ink3)' : 'var(--ink2)', bg: delayed ? 'var(--warnSoft)' : planned ? 'var(--surf)' : sel ? 'var(--acc)' : 'var(--ink2)', fg: delayed || planned ? 'var(--ink)' : 'var(--surf)', onClick: () => trx && this.upd({ sel: { ...s.sel, [t.id]: trx.id } }) };
+      });
+      return { name: b, items, h: 14 + Math.max(1, ends.length) * 30 - 4 + 'px' };
+    });
+    const bTicks = []; for (let v = D.grid(X0, 360, tz); v <= X1; v += 360) { const f = frac(v), mid = D.clockMin(v, tz) === 0, txt = D.tm(v, tz, { tz: false, date: true }).split(' '); bTicks.push({ x: pos(v), tx: f < 0.03 ? '0' : f > 0.97 ? '-100%' : '-50%', label: mid ? txt.slice(0, 2).join(' ') : txt.pop(), fw: mid ? 600 : 400, fg: mid ? 'var(--ink2)' : 'var(--ink3)' }); }
     const canAct = ctx.perm.act && tr.active;
+    const ik = insp + '|' + tr.id; if (ik !== this.curInsp) { this.inspAnim = this.curInsp !== undefined; this.curInsp = ik; }
+    const inspAnim = this.inspAnim ? 'tnfade var(--t-med) var(--ease-out) both' : 'none';
+    const routeListOn = narrow;
     return {
       ...base,
-      x: { title: tr.marine ? `${tr.vessel} · ${tr.voyage}` : `${tr.type} · ${tr.src} → ${tr.dst}`, id: tr.id, state: tr.state, stIcon: I.st[D.statKind(tr.state)], stBg: stateTone[0], stBd: stateTone[1], stFg: tr.state === 'Paused' || tr.state === 'Delayed' ? 'var(--warnInk)' : 'var(--ink)', prod: p.label, color: p.color, batch: tr.batch || '—', where: tr.marine ? `${tr.berth} · ${tr.comp} → ${tr.dst}` : `${tr.src} → ${tr.dst}`,
+      x: { title: tr.marine ? `${tr.vessel} · ${tr.voyage}` : `${tr.type} · ${tr.src} → ${tr.dst}`, id: tr.id, state: tr.state, stIcon: I.st[D.statKind(tr.state)], stFg: tone(tr.state), prod: p.label, color: p.color, batch: tr.batch || '—', where: tr.marine ? `${tr.berth} · ${tr.comp} → ${tr.dst}` : `${tr.src} → ${tr.dst}`,
         frLabel, frSub, frFg, frBg, frBd, frIcon, canSim: false,
         routeText: tr.marine ? `Vessel cargo compartment → marine connection → shore manifold → receiving tank` : `${tr.src} → ${tr.dst}`,
         planned: D.fmt(tr.planned), recv: D.fmt(tr.recv), remaining: D.fmt(tr.remaining), recvWord: tr.type.includes('dispatch') ? 'Dispatched' : 'Received', pctText: `${(tr.recv / tr.planned * 100).toFixed(1)} % of planned`,
         pct: (tr.recv / scale * 100).toFixed(2) + '%', pausedW: paused ? '0.6%' : '0%', capPos: (capLimit / scale * 100).toFixed(2) + '%', capText,
-        eta, etaNote, etaFg, etaFs, kpis, flowCaption, basis, basisNote, recon, reconState, reconNote, events },
-      seq, chart, inspTabs: [['src', tr.marine ? 'Source · vessel' : 'Source'], ['dst', 'Destination · tank']].map(([id, label]) => ({ label, on: insp === id ? 'true' : 'false', onClick: () => this.upd({ insp: id }), bg: insp === id ? 'var(--surf)' : 'transparent', fg: insp === id ? 'var(--ink)' : 'var(--barInk2)' })), routeSvg: this.routeSvg(D, ctx, t, tr, dst, st, p, flow, meterLost, insp), insp: inspObj,
-      mainCols: ctx.tablet ? 'minmax(0,1fr)' : 'minmax(0,1fr) 360px',
+        eta, etaNote, etaFg, etaFs, kpis, flowCaption, basis, basisNote, recon, hasRecon: recon.length > 0, reconState, reconNote, events },
+      chart, inspTabs: [['src', tr.marine ? 'Source · vessel' : 'Source'], ['dst', 'Destination · tank']].map(([id, label]) => ({ label, on: insp === id ? 'true' : 'false', onClick: () => this.upd({ insp: id }), bg: insp === id ? 'var(--surf)' : 'transparent', fg: insp === id ? 'var(--ink)' : 'var(--barInk2)', hbg: insp === id ? 'var(--surf)' : 'rgba(255,255,255,.08)' })),
+      routeSvgOn: !routeListOn, routeListOn, routeSvg: routeListOn ? null : this.routeSvg(D, ctx, t, tr, dst, st, p, flow, meterLost, insp), rl: routeListOn ? this.routeList(D, t, tr, dst, st, p, flow, meterLost, insp) : [],
+      routeHint: routeListOn ? 'Tap the source or destination to inspect its readings' : tr.marine ? 'Select the vessel or tank to inspect its readings' : 'Select the source or destination to inspect its readings',
+      insp: inspObj, inspKey: insp + '|' + tr.id, inspAnim, detailKey: tr.id, dA0: pop(0), dA1: pop(40), dA2: pop(80), dA3: pop(120), dBar: this.detailAnim ? 'tngrow var(--t-slow) var(--ease-out) 120ms both' : 'none',
+      mainCols: twoCol ? 'minmax(0,1fr) 360px' : 'minmax(0,1fr)', sideCol: twoCol ? 'display:flex;flex-direction:column' : 'display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));align-items:start', h1Fs: narrow ? '24px' : '30px', numB: narrow ? '90px' : '110px', numFs: narrow ? '24px' : '28px', secPad: narrow ? '14px 14px 12px' : '18px 18px 16px',
+      basisTable: colW >= 430, basisStack: colW < 430, basisCols: 'minmax(0,1.6fr) repeat(3,minmax(72px,1fr))',
+      reconTable: colW >= 520 && recon.length > 0, reconStack: colW < 520 && recon.length > 0, reconCols: 'minmax(0,1.8fr) repeat(4,minmax(72px,.8fr))',
       toggleLoss: () => this.upd({ loss: { ...s.loss, [tr.id]: !lossSim } }), lossLabel: lossSim ? 'Restore meter signal' : 'Simulate meter signal loss',
-      logEvent: () => { const at = ctx.now; const label = paused ? 'Resumption logged' : 'Event logged'; this.setState({ logs: { ...s.logs, [tr.id]: [...(s.logs[tr.id] || []), { label: 'Operator note', at, note: `Logged by ${ctx.user}` }] } }); this.props.toast && this.props.toast(`Event logged on ${tr.id} by ${ctx.user}.`); },
-      noAct: !canAct, actOp: canAct ? 1 : 0.5, actIcon: canAct ? I.plus : I.lock, logLabel: 'Log event', actTitle: canAct ? 'Add an operator event to the timeline' : (tr.active ? `Requires operator role · current: ${ctx.roleLabel}` : 'Transfer is not active'),
-      berthRange: `${D.tm(X0, tz, { date: true })} → ${D.tm(X1, tz, { date: true })} · next 60 h`, bLanes, noBerths: !(t.marine || []).length, bTicks, nowX: pos(D.NOW), goSchedule: () => this.props.go('schedule'),
+      logEvent: () => { const at = ctx.now; this.setState({ logs: { ...s.logs, [tr.id]: [...(s.logs[tr.id] || []), { label: 'Operator note', at, note: `Logged by ${ctx.user}` }] } }); this.props.toast && this.props.toast(`Event logged on ${tr.id} by ${ctx.user}.`); },
+      noAct: !canAct, actOp: canAct ? 1 : 0.5, actCur: canAct ? 'pointer' : 'not-allowed', actIcon: canAct ? I.plus : I.lock, logLabel: 'Log event', actTitle: canAct ? 'Add an operator event to the timeline' : (tr.active ? `Requires operator role · current: ${ctx.roleLabel}` : 'Transfer is not active'),
+      berthRange: `${D.tm(X0, tz, { date: true })} → ${D.tm(X1, tz, { date: true })} · next 60 h`, bLanes, noBerths: !(t.marine || []).length, hasBerths: !!(t.marine || []).length, bTicks, nowX: pos(D.NOW), goSchedule: () => this.props.go('schedule'),
     };
   }
 }

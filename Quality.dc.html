@@ -7,177 +7,331 @@
 </head>
 <body>
 <x-dc>
-<div style="position:absolute;inset:0;overflow:auto;background:var(--bg)">
+<div ref="{{ rootRef }}" style="position:absolute;inset:0;background:var(--bg)">
 <sc-if value="{{ ready }}" hint-placeholder-val="{{ true }}">
-<div style="padding:32px 40px 56px;display:flex;flex-direction:column;gap:40px">
-  <div style="display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap">
-    <div>
-      <div style="display:flex;align-items:center;gap:10px"><h1 style="margin:0;font-size:30px;font-weight:500;letter-spacing:-.015em;line-height:1.1">Quality and traceability</h1></div>
-      <div style="font-size:12px;color:var(--ink3);margin-top:3px">{{ scopeText }}</div>
+<div style="height:100%;overflow:auto">
+<div style="padding:{{ L.pad }};display:flex;flex-direction:column;gap:{{ L.secGap }};min-width:0">
+  <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:14px 24px;flex-wrap:wrap">
+    <div style="flex:0 1 auto;min-width:0">
+      <h1 style="margin:0;font-size:{{ L.h1 }};font-weight:500;letter-spacing:-.015em;line-height:1.1">Quality and traceability</h1>
+      <div style="font-size:12px;color:var(--ink3);margin-top:4px">{{ scopeText }}</div>
     </div>
-    <div style="flex:1"></div>
-    <div style="display:flex;gap:4px;flex-wrap:wrap">
-      <sc-for list="{{ statusChips }}" as="c" hint-placeholder-count="6">
-        <button onClick="{{ c.onClick }}" style="height:30px;padding:0 10px;border:1px solid {{ c.bd }};border-radius:0;background:{{ c.bg }};color:{{ c.fg }};display:flex;align-items:center;gap:6px;font-size:12px;white-space:nowrap">{{ c.icon }}{{ c.label }}<span style="font-family:var(--fnum);font-size:11px;opacity:.75">{{ c.n }}</span></button>
-      </sc-for>
+    <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;min-width:0">
+      <div role="group" aria-label="Filter samples by status" style="display:flex;flex-wrap:wrap;gap:4px;min-width:0">
+        <sc-for list="{{ statusChips }}" as="c" hint-placeholder-count="6">
+          <button onClick="{{ c.onClick }}" aria-pressed="{{ c.on }}" style="height:{{ L.ctlH }};padding:0 10px;border:1px solid {{ c.bd }};border-radius:0;background:{{ c.bg }};color:{{ c.fg }};display:flex;align-items:center;gap:6px;font-size:12px;white-space:nowrap;--hb:{{ c.hb }};--hbg:{{ c.hbg }}" style-hover="border-color:var(--hb);background:var(--hbg)">{{ c.icon }}<span>{{ c.label }}</span><span style="font-family:var(--fnum);font-size:11px;opacity:.75"><span key="{{ c.nKey }}" style="display:inline-block;animation:tnfade var(--t-med) var(--ease-out) both">{{ c.n }}</span></span></button>
+        </sc-for>
+      </div>
+      <div role="group" aria-label="Sample scope" style="display:flex;border:1px solid var(--line);background:var(--surf)">
+        <sc-for list="{{ scopeOpts }}" as="o" hint-placeholder-count="2">
+          <button onClick="{{ o.onClick }}" aria-pressed="{{ o.on }}" style="height:{{ L.ctlHi }};padding:0 11px;border:0;border-radius:0;background:{{ o.bg }};color:{{ o.fg }};font-size:12px;white-space:nowrap;--hbg:{{ o.hbg }}" style-hover="background:var(--hbg)">{{ o.label }}</button>
+        </sc-for>
+      </div>
     </div>
-    <button onClick="{{ toggleScope }}" style="height:30px;padding:0 10px;border:1px solid var(--line);border-radius:0;background:var(--surf);font-size:12px;white-space:nowrap">{{ scopeBtn }}</button>
   </div>
 
-  <div style="display:grid;grid-template-columns:{{ cols2 }};gap:40px;align-items:start">
-    <section aria-label="Samples" style="background:var(--surf);border:1px solid var(--pBd);overflow:hidden;min-width:0">
-      <div style="overflow-x:auto">
-        <div style="min-width:900px">
-          <div style="display:grid;grid-template-columns:{{ cols }};padding:7px 14px;background:var(--surf);font-size:12.5px;font-weight:600;color:var(--ink);border-bottom:2px solid var(--line);gap:8px;border-bottom:1px solid var(--line)"><span>Sample</span><span>Product · batch</span><span>Location</span><span>Sampled</span><span>Test status</span><span>Release decision</span></div>
-          <sc-if value="{{ empty }}" hint-placeholder-val="{{ false }}"><div style="padding:22px 14px;color:var(--ink3)">No samples match this status in the current scope.</div></sc-if>
-          <sc-for list="{{ rows }}" as="r" hint-placeholder-count="8">
-            <div role="row" tabindex="0" onClick="{{ r.onClick }}" onKeyDown="{{ r.onKey }}" style="display:grid;grid-template-columns:{{ cols }};padding:8px 14px;gap:8px;border-bottom:1px solid var(--line2);cursor:pointer;align-items:center;background:{{ r.bg }};box-shadow:{{ r.sh }}" style-hover="background:var(--surf2)">
-              <span style="min-width:0"><span style="display:block;font-family:var(--fid);white-space:nowrap;letter-spacing:-.02em;font-size:11.5px;font-weight:600">{{ r.id }}</span><span style="display:block;font-size:10.5px;color:var(--ink3)">{{ r.term }}</span></span>
-              <span style="min-width:0"><span style="display:flex;align-items:center;gap:6px"><span style="width:9px;height:9px;flex:none;background:{{ r.color }}"></span>{{ r.prod }}</span><span style="display:block;font-family:var(--fid);white-space:nowrap;letter-spacing:-.02em;font-size:10.5px;color:var(--ink3);overflow:hidden;text-overflow:ellipsis">{{ r.batch }}</span></span>
-              <span style="font-size:12px;color:var(--ink2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ r.loc }}</span>
-              <span style="font-family:var(--fnum);font-size:11.5px">{{ r.at }}</span>
-              <span style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:500">{{ r.icon }}{{ r.status }}</span>
-              <span style="display:flex;align-items:center;gap:6px;font-size:12px">{{ r.decIcon }}{{ r.decision }}</span>
+  <div style="display:grid;grid-template-columns:{{ L.cols2 }};gap:{{ L.colGap }};align-items:start;min-width:0">
+    <section aria-label="Samples" class="tn-rise" style="background:var(--surf);border:1px solid var(--pBd);min-width:0">
+      <sc-if value="{{ L.head }}" hint-placeholder-val="{{ true }}">
+        <div style="display:grid;grid-template-columns:{{ L.cols }};column-gap:{{ L.cg }};padding:8px 14px;font-size:12.5px;font-weight:600;color:var(--ink);border-bottom:1px solid var(--line)">
+          <sc-for list="{{ L.heads }}" as="hd" hint-placeholder-count="6"><span title="{{ hd }}" style="min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ hd }}</span></sc-for>
+        </div>
+      </sc-if>
+      <sc-if value="{{ empty }}" hint-placeholder-val="{{ false }}">
+        <div key="{{ listKey }}" style="padding:28px 18px 30px;display:flex;flex-direction:column;align-items:flex-start;gap:8px;animation:tnfade var(--t-med) var(--ease-out) both">
+          <span style="color:var(--ink3)">{{ I.quality }}</span>
+          <div style="font-weight:600">{{ emptyTitle }}</div>
+          <div style="font-size:12.5px;color:var(--ink3);max-width:440px">{{ emptyText }}</div>
+          <sc-if value="{{ emptyAct }}" hint-placeholder-val="{{ false }}"><button onClick="{{ emptyAct }}" style="margin-top:4px;height:30px;padding:0 12px;border:1px solid var(--line);border-radius:0;background:var(--surf);font-size:12px;white-space:nowrap" style-hover="border-color:var(--ink4);background:var(--surf2)">{{ emptyActLabel }}</button></sc-if>
+        </div>
+      </sc-if>
+      <div key="{{ listKey }}" style="animation:tnfade var(--t-med) var(--ease-out) both">
+        <sc-for list="{{ rows }}" as="r" hint-placeholder-count="8">
+          <div role="button" tabindex="0" aria-pressed="{{ r.on }}" onClick="{{ r.onClick }}" onKeyDown="{{ r.onKey }}" style="display:grid;grid-template-columns:{{ L.cols }};grid-template-areas:{{ L.areas }};gap:{{ L.rowGap }};padding:{{ L.rowPad }};border-bottom:1px solid var(--line2);cursor:pointer;align-items:{{ L.rowAlign }};background:{{ r.bg }};box-shadow:{{ r.sh }};--rh:{{ r.rh }};--ra:{{ r.ra }}" style-hover="background:var(--rh)" style-active="background:var(--ra)" style-focus-visible="outline-offset:-2px">
+            <span style="grid-area:id;min-width:0"><span title="{{ r.id }}" style="display:block;font-family:var(--fid);font-size:11.5px;font-weight:600;letter-spacing:-.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.id }}</span><sc-if value="{{ r.showTerm }}" hint-placeholder-val="{{ false }}"><span title="{{ r.term }}" style="display:block;font-size:11px;color:var(--ink3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.term }}</span></sc-if></span>
+            <span style="grid-area:prod;min-width:0;display:{{ L.prodDisp }};flex-wrap:wrap;align-items:center;column-gap:8px"><span style="display:flex;align-items:center;gap:6px;min-width:0;max-width:100%;font-size:13px"><span style="width:9px;height:9px;flex:none;background:{{ r.color }}"></span><span title="{{ r.prod }}" style="min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.prod }}</span></span><span title="{{ r.batch }}" style="display:block;min-width:0;max-width:100%;font-family:var(--fid);font-size:11px;letter-spacing:-.02em;color:var(--ink3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.batch }}</span></span>
+            <span title="{{ r.loc }}" style="grid-area:loc;min-width:0;font-size:12px;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.loc }}</span>
+            <span title="{{ r.at }}" style="grid-area:at;min-width:0;max-width:100%;justify-self:{{ L.endSelf }};font-family:var(--fnum);font-size:11.5px;color:{{ L.atFg }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.at }}</span>
+            <span style="grid-area:st;min-width:0;max-width:100%;justify-self:{{ L.endSelf }};display:flex;align-items:center;gap:6px;font-size:12px;font-weight:500">{{ r.icon }}<span style="min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.status }}</span></span>
+            <span style="grid-area:dec;min-width:0;max-width:100%;justify-self:{{ L.endSelf }};display:flex;align-items:center;gap:6px;font-size:{{ L.decFs }};color:{{ L.decFg }};text-align:{{ L.endAlign }}">{{ r.decIcon }}<span style="min-width:0">{{ r.decision }}</span></span>
+          </div>
+        </sc-for>
+      </div>
+    </section>
+
+    <sc-if value="{{ showDetail }}" hint-placeholder-val="{{ true }}">
+      <div role="{{ L.detRole }}" aria-modal="{{ L.detModal }}" aria-label="{{ L.detLabel }}" style="{{ L.detWrap }}">
+        <section aria-label="Sample detail" style="{{ L.detSec }}">
+          <sc-if value="{{ L.sheet }}" hint-placeholder-val="{{ false }}">
+            <div style="position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:10px;padding:8px 12px 8px 10px;background:var(--surf);border-bottom:1px solid var(--line)">
+              <button ref="{{ backRef }}" onClick="{{ closeSheet }}" style="height:34px;padding:0 12px 0 6px;border:1px solid var(--line);border-radius:0;background:var(--surf);display:flex;align-items:center;gap:4px;font-size:12.5px;white-space:nowrap" style-hover="border-color:var(--ink4);background:var(--surf2)">{{ I.chevL }}Samples</button>
+              <span title="{{ sd.id }}" style="flex:1;min-width:0;text-align:right;font-family:var(--fid);font-size:12px;font-weight:600;letter-spacing:-.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ sd.id }}</span>
+            </div>
+          </sc-if>
+          <sc-if value="{{ hasSel }}" hint-placeholder-val="{{ true }}">
+            <div key="{{ sd.key }}" style="animation:{{ M.detailIn }}">
+              <div style="padding:12px 16px 14px">
+                <div style="font-size:12.5px;color:var(--ink3)">Sample</div>
+                <div style="display:flex;align-items:center;gap:4px 10px;flex-wrap:wrap;margin-top:2px;min-width:0"><span style="min-width:0;font-family:var(--fid);letter-spacing:-.02em;font-size:15px;font-weight:600;overflow-wrap:anywhere">{{ sd.id }}</span><span style="display:flex;align-items:center;gap:6px;font-weight:600">{{ sd.icon }}{{ sd.status }}</span></div>
+                <div style="display:grid;grid-template-columns:84px minmax(0,1fr);gap:5px 10px;font-size:12px;margin-top:10px;align-items:baseline">
+                  <span style="color:var(--ink3)">Product</span><span style="display:flex;align-items:center;gap:6px;min-width:0"><span style="width:9px;height:9px;flex:none;background:{{ sd.color }}"></span><span style="min-width:0">{{ sd.prod }}</span></span>
+                  <span style="color:var(--ink3)">Batch</span><span style="display:flex;align-items:center;flex-wrap:wrap;gap:4px 10px;min-width:0"><span style="min-width:0;font-family:var(--fid);letter-spacing:-.02em;font-size:11.5px;overflow-wrap:anywhere">{{ sd.batch }}</span><button onClick="{{ goTrace }}" title="Show the traceability of {{ sd.batch }}" style="height:22px;padding:0 7px 0 5px;border:1px solid var(--line);border-radius:0;background:var(--surf);display:flex;align-items:center;gap:4px;font-size:11.5px;color:var(--ink2);white-space:nowrap" style-hover="border-color:var(--ink4);color:var(--ink)">{{ I.trace }}Trace</button></span>
+                  <span style="color:var(--ink3)">Location</span><span style="min-width:0;overflow-wrap:anywhere">{{ sd.loc }}</span>
+                  <span style="color:var(--ink3)">Sampled</span><span style="font-family:var(--fnum);font-size:11.5px">{{ sd.at }}</span>
+                  <span style="color:var(--ink3)">Laboratory</span><span style="min-width:0;overflow-wrap:anywhere">{{ sd.lab }}</span>
+                  <sc-if value="{{ sd.showTerm }}" hint-placeholder-val="{{ false }}"><span style="color:var(--ink3)">Terminal</span><span style="min-width:0">{{ sd.term }}</span></sc-if>
+                </div>
+              </div>
+              <div style="display:grid;grid-template-columns:{{ L.testCols }};column-gap:12px;padding:7px 16px;font-size:12.5px;font-weight:600;color:var(--ink);border-top:1px solid var(--line);border-bottom:1px solid var(--line)"><span style="min-width:0">Test · method</span><span style="min-width:0">Result · spec</span><span style="min-width:0">Status</span></div>
+              <sc-for list="{{ sd.tests }}" as="x" hint-placeholder-count="4">
+                <div style="display:grid;grid-template-columns:{{ L.testCols }};column-gap:12px;padding:8px 16px;border-bottom:1px solid var(--line2);align-items:start;box-shadow:{{ x.bar }}">
+                  <span style="min-width:0"><span style="display:block;overflow-wrap:anywhere">{{ x.prop }}</span><span style="display:block;font-size:11px;color:var(--ink3);overflow-wrap:anywhere">{{ x.method }}</span></span>
+                  <span style="min-width:0"><span style="display:block;font-family:var(--fnum);font-size:12.5px;font-style:{{ x.fs }};color:{{ x.vf }};overflow-wrap:anywhere">{{ x.result }}</span><span style="display:block;font-family:var(--fnum);font-size:11px;color:var(--ink3);overflow-wrap:anywhere">{{ x.spec }}</span></span>
+                  <span style="min-width:0;display:flex;align-items:center;gap:5px;font-size:12px;color:{{ x.sf }}">{{ x.icon }}<span style="min-width:0">{{ x.status }}</span></span>
+                </div>
+              </sc-for>
+              <div style="padding:14px 16px 16px;display:flex;flex-direction:column;gap:10px">
+                <div style="font-size:12.5px;color:var(--ink3)">Release decision</div>
+                <div key="{{ sd.decKey }}" class="{{ sd.decCls }}" style="border:1px solid var(--line);background:{{ sd.decBg }};padding:9px 12px;display:flex;flex-direction:column;gap:3px;min-width:0">
+                  <div style="display:flex;align-items:center;gap:8px;font-weight:600;animation:{{ sd.decAnim }}">{{ sd.decIcon }}<span style="min-width:0">{{ sd.decision }}</span></div>
+                  <div style="font-size:12px;color:var(--ink2);min-width:0">{{ sd.decBy }}</div>
+                </div>
+                <div style="display:flex;gap:6px;flex-wrap:wrap">
+                  <button onClick="{{ doRelease }}" disabled="{{ relDisabled }}" title="{{ relTitle }}" style="height:32px;padding:0 14px;border:0;border-radius:0;background:var(--ink);color:var(--surf);font-weight:600;opacity:{{ relOp }};cursor:{{ relCur }};white-space:nowrap;--hbg:{{ relHover }}" style-hover="background:var(--hbg)">Release</button>
+                  <button onClick="{{ doHold }}" disabled="{{ holdDisabled }}" title="{{ holdTitle }}" style="height:32px;padding:0 12px;border:1px solid var(--line);border-radius:0;background:var(--surf);opacity:{{ holdOp }};cursor:{{ holdCur }};white-space:nowrap;--hb:{{ holdHover }}" style-hover="border-color:var(--hb)">Place on hold</button>
+                </div>
+                <div style="display:flex;gap:6px;align-items:flex-start;font-size:11.5px;color:var(--ink3)">{{ relIcon }}<span style="min-width:0">{{ relTitle }}</span></div>
+              </div>
+            </div>
+          </sc-if>
+          <sc-if value="{{ noSel }}" hint-placeholder-val="{{ false }}">
+            <div style="padding:28px 18px 30px;display:flex;flex-direction:column;align-items:flex-start;gap:8px;animation:tnfade var(--t-med) var(--ease-out) both">
+              <span style="color:var(--ink3)">{{ I.flask }}</span>
+              <div style="font-weight:600">No sample selected</div>
+              <div style="font-size:12.5px;color:var(--ink3)">Select a sample to see its tests, laboratory and release decision.</div>
+            </div>
+          </sc-if>
+        </section>
+      </div>
+    </sc-if>
+  </div>
+
+  <section ref="{{ traceRef }}" aria-label="Traceability" class="tn-rise" style="background:var(--surf);border:1px solid var(--pBd);min-width:0;scroll-margin-top:16px">
+    <div style="background:var(--bar);color:var(--barInk);--ink:var(--barInk);--ink2:var(--barInk2);--ink3:var(--barInk3);--acc:var(--barAcc);padding:9px 14px;display:flex;align-items:baseline;gap:2px 10px;flex-wrap:wrap"><span style="display:flex;align-items:center;gap:6px;font-weight:600;align-self:center">{{ I.trace }}Traceability</span><span style="min-width:0;font-family:var(--fid);letter-spacing:-.02em;font-size:12px;overflow-wrap:anywhere">{{ tr.batch }}</span><span style="font-size:11.5px;color:var(--ink3)">Finished batch → components → source tanks and receipts → documents</span></div>
+    <sc-if value="{{ tr.none }}" hint-placeholder-val="{{ false }}"><div key="{{ tr.key }}" style="padding:16px;color:var(--ink3);animation:tnfade var(--t-med) var(--ease-out) both">{{ tr.noneText }}</div></sc-if>
+    <sc-if value="{{ tr.has }}" hint-placeholder-val="{{ true }}">
+      <div key="{{ tr.key }}" style="display:grid;grid-template-columns:{{ TL.cols }};padding:16px;min-width:0">
+        <div style="border:1.5px solid var(--ink);padding:10px 12px;display:flex;flex-direction:column;gap:4px;align-self:{{ TL.batchSelf }};min-width:0;animation:tnpop var(--t-med) var(--ease-out) both">
+          <span style="font-size:12.5px;color:var(--ink3)">Finished batch</span>
+          <span style="min-width:0;font-family:var(--fid);letter-spacing:-.02em;font-weight:600;font-size:12.5px;overflow-wrap:anywhere">{{ tr.batch }}</span>
+          <span style="display:flex;align-items:center;gap:6px;font-size:12px;min-width:0"><span style="width:9px;height:9px;flex:none;background:{{ tr.color }}"></span><span style="min-width:0">{{ tr.prod }} · {{ tr.tank }}</span></span>
+          <span style="display:flex;align-items:center;gap:6px;font-size:12px;min-width:0">{{ tr.qIcon }}<span style="min-width:0">{{ tr.q }}</span></span>
+          <sc-for list="{{ tr.docs }}" as="d" hint-placeholder-count="2"><span style="display:flex;align-items:flex-start;gap:6px;font-size:11.5px;color:var(--ink2);min-width:0">{{ I.docs }}<span style="min-width:0;overflow-wrap:anywhere">{{ d }}</span></span></sc-for>
+        </div>
+        <div style="{{ TL.trunk }}"><div style="{{ TL.trunkLine }}"></div></div>
+        <div style="{{ TL.comps }}">
+          <sc-for list="{{ tr.comps }}" as="c" hint-placeholder-count="2">
+            <div style="position:relative;display:grid;grid-template-columns:{{ TL.rowCols }};row-gap:6px;align-items:center;min-width:0;animation:tnpop var(--t-med) var(--ease-out) {{ c.delay }} both">
+              <div style="position:absolute;left:-16px;width:16px;height:1px;background:var(--line);{{ TL.tick }}"></div>
+              <div style="border:1px solid var(--line);padding:8px 10px;display:flex;flex-direction:column;gap:2px;min-width:0;background:var(--surf)">
+                <span style="font-size:12px;color:var(--ink3)">Component · {{ c.share }}</span>
+                <span style="display:flex;align-items:center;gap:6px;font-weight:500;min-width:0"><span style="width:9px;height:9px;flex:none;background:{{ c.sw }};border:1px solid {{ c.swBd }}"></span><span style="min-width:0;overflow-wrap:anywhere">{{ c.label }}</span></span>
+                <span style="min-width:0;font-family:var(--fid);letter-spacing:-.02em;font-size:11px;color:var(--ink2);overflow-wrap:anywhere">{{ c.batch }}</span>
+              </div>
+              <div style="display:{{ TL.lineDisp }};height:1px;background:var(--line);transform-origin:left center;animation:tngrow var(--t-med) var(--ease-out) {{ c.delay2 }} both"></div>
+              <sc-if value="{{ c.canGo }}" hint-placeholder-val="{{ true }}">
+                <button onClick="{{ c.onTank }}" title="{{ c.goTitle }}" style="border:1px solid var(--line);border-radius:0;padding:8px 10px;display:flex;flex-direction:column;align-items:stretch;gap:2px;background:var(--surf);text-align:left;min-width:0;margin-left:{{ TL.indent }}" style-hover="border-color:var(--ink4);background:var(--surf2)">
+                  <span style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink3)"><span style="flex:1;min-width:0">Source tank</span>{{ I.arrowR }}</span>
+                  <span style="min-width:0;font-family:var(--fid);letter-spacing:-.02em;font-weight:600;font-size:12px;overflow-wrap:anywhere">{{ c.tank }}</span>
+                  <span style="min-width:0;font-size:11px;color:var(--ink2);overflow-wrap:anywhere">{{ c.src }}</span>
+                </button>
+              </sc-if>
+              <sc-if value="{{ c.noGo }}" hint-placeholder-val="{{ false }}">
+                <div style="border:1px solid var(--line);padding:8px 10px;display:flex;flex-direction:column;gap:2px;background:var(--surf);min-width:0;margin-left:{{ TL.indent }}">
+                  <span style="font-size:12px;color:var(--ink3)">Source</span>
+                  <span style="min-width:0;font-family:var(--fid);letter-spacing:-.02em;font-weight:600;font-size:12px;overflow-wrap:anywhere">{{ c.tank }}</span>
+                  <span style="min-width:0;font-size:11px;color:var(--ink2);overflow-wrap:anywhere">{{ c.src }}</span>
+                </div>
+              </sc-if>
+              <div style="display:{{ TL.lineDisp }};height:1px;background:var(--line);transform-origin:left center;animation:tngrow var(--t-med) var(--ease-out) {{ c.delay3 }} both"></div>
+              <div style="border:1px dashed var(--line);padding:8px 10px;display:flex;flex-direction:column;gap:3px;min-width:0;margin-left:{{ TL.indent2 }}">
+                <span style="font-size:12px;color:var(--ink3)">Documents</span>
+                <sc-for list="{{ c.docs }}" as="d" hint-placeholder-count="2"><span style="display:flex;align-items:flex-start;gap:6px;font-size:11.5px;min-width:0">{{ I.docs }}<span style="min-width:0;overflow-wrap:anywhere">{{ d }}</span></span></sc-for>
+                <sc-if value="{{ c.noDocs }}" hint-placeholder-val="{{ false }}"><span style="font-size:11.5px;color:var(--ink3)">No documents linked</span></sc-if>
+              </div>
             </div>
           </sc-for>
         </div>
       </div>
-    </section>
-
-    <sc-if value="{{ hasSel }}" hint-placeholder-val="{{ true }}">
-      <section aria-label="Sample detail" style="background:var(--surf);border:1px solid var(--pBd);overflow:hidden;min-width:0">
-        <div style="padding:12px 16px;border-bottom:1px solid var(--line)">
-          <div style="font-size:12.5px;color:var(--ink3)">Sample</div>
-          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:2px"><span style="font-family:var(--fid);white-space:nowrap;letter-spacing:-.02em;font-size:15px;font-weight:600">{{ sd.id }}</span><span style="display:flex;align-items:center;gap:6px;font-weight:600">{{ sd.icon }}{{ sd.status }}</span></div>
-          <div style="display:grid;grid-template-columns:96px 1fr;gap:4px 10px;font-size:12px;margin-top:10px">
-            <span style="color:var(--ink3)">Product</span><span style="display:flex;align-items:center;gap:6px"><span style="width:9px;height:9px;background:{{ sd.color }}"></span>{{ sd.prod }}</span>
-            <span style="color:var(--ink3)">Batch</span><span style="font-family:var(--fid);white-space:nowrap;letter-spacing:-.02em;font-size:11.5px">{{ sd.batch }}</span>
-            <span style="color:var(--ink3)">Location</span><span>{{ sd.loc }}</span>
-            <span style="color:var(--ink3)">Sampled</span><span style="font-family:var(--fnum);font-size:11.5px">{{ sd.at }}</span>
-            <span style="color:var(--ink3)">Laboratory</span><span>{{ sd.lab }}</span>
-          </div>
-        </div>
-        <div style="display:grid;grid-template-columns:1.3fr 0.9fr 0.9fr 0.9fr;padding:7px 16px;background:var(--surf);font-size:12.5px;font-weight:600;color:var(--ink);border-bottom:2px solid var(--line);gap:8px"><span>Test · method</span><span style="text-align:right">Result</span><span>Specification</span><span>Status</span></div>
-        <sc-for list="{{ sd.tests }}" as="x" hint-placeholder-count="4">
-          <div style="display:grid;grid-template-columns:1.3fr 0.9fr 0.9fr 0.9fr;padding:8px 16px;border-top:1px solid var(--line2);gap:8px;align-items:baseline">
-            <span style="min-width:0"><span style="display:block">{{ x.prop }}</span><span style="display:block;font-family:var(--fnum);font-size:10.5px;color:var(--ink3)">{{ x.method }}</span></span>
-            <span style="text-align:right;font-family:var(--fnum);font-size:12.5px;font-style:{{ x.fs }};color:{{ x.vf }}">{{ x.result }}</span>
-            <span style="font-family:var(--fnum);font-size:11.5px;color:var(--ink2)">{{ x.spec }}</span>
-            <span style="display:flex;align-items:center;gap:5px;font-size:12px">{{ x.icon }}{{ x.status }}</span>
-          </div>
-        </sc-for>
-        <div style="padding:12px 16px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:8px">
-          <div style="font-size:12.5px;color:var(--ink3)">Release decision</div>
-          <div style="display:flex;align-items:center;gap:8px;font-weight:600">{{ sd.decIcon }}{{ sd.decision }}</div>
-          <div style="font-size:12px;color:var(--ink2)">{{ sd.decBy }}</div>
-          <div style="display:flex;gap:6px;flex-wrap:wrap">
-            <button onClick="{{ doRelease }}" disabled="{{ relDisabled }}" title="{{ relTitle }}" style="height:32px;padding:0 12px;border:0;border-radius:0;background:var(--ink);color:var(--surf);font-weight:600;opacity:{{ relOp }};white-space:nowrap">Release</button>
-            <button onClick="{{ doHold }}" disabled="{{ holdDisabled }}" style="height:32px;padding:0 12px;border:1px solid var(--line);border-radius:0;background:var(--surf);opacity:{{ holdOp }};white-space:nowrap">Place on hold</button>
-          </div>
-          <div style="display:flex;gap:6px;align-items:flex-start;font-size:11.5px;color:var(--ink3)">{{ relIcon }}<span>{{ relTitle }}</span></div>
-        </div>
-      </section>
-    </sc-if>
-  </div>
-
-  <section aria-label="Traceability" style="background:var(--surf);border:1px solid var(--pBd);overflow:hidden">
-    <div style="background:var(--bar);color:var(--barInk);--ink:var(--barInk);--ink2:var(--barInk2);--ink3:var(--barInk3);--acc:var(--barAcc);padding:9px 14px;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap"><span style="display:flex;align-items:center;gap:6px;font-weight:600">{{ I.trace }}Traceability</span><span style="font-family:var(--fid);white-space:nowrap;letter-spacing:-.02em;font-size:12px">{{ tr.batch }}</span><span style="font-size:11.5px;color:var(--ink3)">Finished batch → components → source tanks and receipts → documents</span></div>
-    <sc-if value="{{ tr.none }}" hint-placeholder-val="{{ false }}"><div style="padding:16px;color:var(--ink3)">{{ tr.noneText }}</div></sc-if>
-    <sc-if value="{{ tr.has }}" hint-placeholder-val="{{ true }}">
-      <div style="overflow-x:auto">
-        <div style="display:grid;grid-template-columns:240px 40px 1fr;min-width:900px;padding:16px">
-          <div style="border:1.5px solid var(--ink);border-radius:0;padding:10px 12px;display:flex;flex-direction:column;gap:4px;align-self:center">
-            <span style="font-size:12.5px;color:var(--ink3)">Finished batch</span>
-            <span style="font-family:var(--fid);white-space:nowrap;letter-spacing:-.02em;font-weight:600;font-size:12.5px">{{ tr.batch }}</span>
-            <span style="display:flex;align-items:center;gap:6px;font-size:12px"><span style="width:9px;height:9px;background:{{ tr.color }}"></span>{{ tr.prod }} · {{ tr.tank }}</span>
-            <span style="display:flex;align-items:center;gap:6px;font-size:12px">{{ tr.qIcon }}{{ tr.q }}</span>
-            <sc-for list="{{ tr.docs }}" as="d" hint-placeholder-count="2"><span style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--ink2)">{{ I.docs }}{{ d }}</span></sc-for>
-          </div>
-          <div style="position:relative"><div style="position:absolute;left:0;right:0;top:50%;height:1px;background:var(--line)"></div></div>
-          <div style="display:flex;flex-direction:column;gap:10px;border-left:1px solid var(--line);padding-left:16px">
-            <sc-for list="{{ tr.comps }}" as="c" hint-placeholder-count="2">
-              <div style="display:grid;grid-template-columns:minmax(0,1fr) 28px minmax(0,1fr) 28px minmax(0,1.2fr);align-items:center">
-                <div style="border:1px solid var(--line);border-radius:0;padding:8px 10px;display:flex;flex-direction:column;gap:2px">
-                  <span style="font-size:12.5px;color:var(--ink3)">Component · {{ c.share }}</span>
-                  <span style="display:flex;align-items:center;gap:6px;font-weight:500"><span style="width:9px;height:9px;background:{{ c.sw }};border:1px solid {{ c.swBd }}"></span>{{ c.label }}</span>
-                  <span style="font-family:var(--fid);white-space:nowrap;letter-spacing:-.02em;font-size:11px;color:var(--ink2)">{{ c.batch }}</span>
-                </div>
-                <div style="height:1px;background:var(--line)"></div>
-                <button onClick="{{ c.onTank }}" style="border:1px solid var(--line);border-radius:0;padding:8px 10px;display:flex;flex-direction:column;gap:2px;background:var(--surf);text-align:left" style-hover="border-color:var(--ink4)">
-                  <span style="font-size:12.5px;color:var(--ink3)">Source</span>
-                  <span style="font-family:var(--fid);white-space:nowrap;letter-spacing:-.02em;font-weight:600;font-size:12px">{{ c.tank }}</span>
-                  <span style="font-size:11px;color:var(--ink2)">{{ c.src }}</span>
-                </button>
-                <div style="height:1px;background:var(--line)"></div>
-                <div style="border:1px dashed var(--line);border-radius:0;padding:8px 10px;display:flex;flex-direction:column;gap:3px">
-                  <span style="font-size:12.5px;color:var(--ink3)">Documents</span>
-                  <sc-for list="{{ c.docs }}" as="d" hint-placeholder-count="2"><span style="display:flex;align-items:center;gap:6px;font-size:11.5px">{{ I.docs }}{{ d }}</span></sc-for>
-                </div>
-              </div>
-            </sc-for>
-          </div>
-        </div>
-      </div>
     </sc-if>
   </section>
+</div>
 </div>
 </sc-if>
 </div>
 </x-dc>
 <script type="text/x-dc" data-dc-script>
 class Component extends DCLogic {
-  constructor(p) { super(p); this.state = p.d ? p.d.ui.load('qa', { filter: 'All', sel: null, net: false, traceBatch: null }) : {}; }
-  componentDidMount() { this.applyFocus(); }
-  componentDidUpdate() { this.applyFocus(); }
-  applyFocus() { const f = this.props.ctx && this.props.ctx.focus; const D = this.props.d; if (!f || f.n === this.lf) return; this.lf = f.n; if (f.type === 'sample') this.upd({ sel: f.id, traceBatch: null, filter: 'All' }); if (f.type === 'batch') { const s = D.SAMPLES.find(x => x.batch === f.id); this.upd({ sel: s ? s.id : this.state.sel, traceBatch: f.id, filter: 'All' }); } }
-  upd(p) { this.setState(p, () => this.props.d.ui.save('qa', this.state)); }
+  constructor(p) {
+    super(p);
+    const saved = p.d ? p.d.ui.load('qa', { filter: 'All', sel: null, net: false, traceBatch: null }) : {};
+    // w/h: measured page size (drives the responsive layout); open: phone detail sheet; flash: one-shot decision confirmation
+    this.state = { filter: saved.filter || 'All', sel: saved.sel || null, net: !!saved.net, traceBatch: saved.traceBatch || null, w: 0, h: 0, open: false, flash: null };
+    this.rootRef = React.createRef();
+    this.traceRef = React.createRef();
+    this.backRef = React.createRef();
+    this.flashN = 0;
+    this.onKey = e => { if (e.key === 'Escape' && this.state.open) this.setState({ open: false }); };
+  }
+  componentDidMount() { this.observe(); this.applyFocus(); window.addEventListener('keydown', this.onKey); }
+  componentDidUpdate() { this.observe(); this.applyFocus(); this.sheetFocus(); }
+  // phone sheet: focus moves into the sheet when it opens and back to the selected sample when it closes
+  sheetFocus() {
+    const on = !!(this.backRef.current && this.state.open);
+    if (on === !!this.sheetWas) return;
+    this.sheetWas = on;
+    if (on) this.backRef.current.focus({ preventScroll: true });
+    else { const row = this.rootRef.current && this.rootRef.current.querySelector('[role="button"][aria-pressed="true"]'); if (row) row.focus({ preventScroll: true }); }
+  }
+  componentWillUnmount() { window.removeEventListener('keydown', this.onKey); if (this.ro) this.ro.disconnect(); }
+  // the page root is sized by the shell (viewport minus rail and top bar), never by this page's content
+  observe() {
+    const el = this.rootRef.current; if (!el || el === this.obsEl) return;
+    this.obsEl = el; if (this.ro) this.ro.disconnect();
+    const measure = () => { const w = el.clientWidth, h = el.clientHeight; if (w && (w !== this.state.w || h !== this.state.h)) this.setState({ w, h }); };
+    if (window.ResizeObserver) { this.ro = new ResizeObserver(measure); this.ro.observe(el); }
+    measure();
+  }
+  applyFocus() { const f = this.props.ctx && this.props.ctx.focus; const D = this.props.d; if (!f || f.n === this.lf) return; this.lf = f.n; if (f.type === 'sample') this.upd({ sel: f.id, traceBatch: null, filter: 'All', open: true }); if (f.type === 'batch') { const s = D.SAMPLES.find(x => x.batch === f.id); this.upd({ sel: s ? s.id : this.state.sel, traceBatch: f.id, filter: 'All' }); } }
+  upd(p) { const n = { ...this.state, ...p }; this.props.d.ui.save('qa', { filter: n.filter, sel: n.sel, net: n.net, traceBatch: n.traceBatch }); this.setState(p); }
+  flash(id) { this.flashN += 1; this.setState({ flash: { id, n: this.flashN } }); }
+  still() { const el = this.rootRef.current; return window.matchMedia('(prefers-reduced-motion: reduce)').matches || !!(el && el.closest('[data-motion="off"]')); }
   renderVals() {
     const D = this.props.d, ctx = this.props.ctx;
-    if (!D || !ctx) return { ready: false };
+    if (!D || !ctx) return { ready: false, rootRef: this.rootRef };
     const I = ctx.I, s = this.state, prods = ctx.products;
-    const net = s.net || ctx.scope === 'network';
+    const shellNet = ctx.scope === 'network';
+    const net = s.net || shellNet;
     const t = D.term(ctx.terminalId);
+
+    // ── layout from the measured page width (before the first measurement: viewport minus the collapsed rail)
+    const w = s.w || Math.max(320, (ctx.vw || 1280) - (ctx.mobile ? 0 : 72)), vh = s.h || 720;
+    const phone = !!ctx.mobile;
+    const padX = phone ? 16 : w >= 1400 ? 40 : w >= 1100 ? 32 : 24, padT = phone ? 20 : w >= 1100 ? 32 : 24;
+    const cw = w - padX * 2;
+    const detW = cw >= 1240 ? 440 : cw >= 1000 ? 400 : 360;
+    const colGap = cw >= 1100 ? 32 : 20;
+    const listW = phone ? cw : cw - detW - colGap;
+    const mode = listW >= 840 ? 'wide' : listW >= 560 ? 'mid' : 'compact';
+    const LAY = {
+      // every track has a fixed minimum so header and rows (separate grids) stay aligned
+      wide: { cols: 'minmax(118px,1fr) minmax(136px,1.15fr) minmax(0,1.5fr) 112px 118px minmax(112px,1fr)', areas: '"id prod loc at st dec"', heads: ['Sample', 'Product · batch', 'Location', 'Sampled', 'Test status', 'Release decision'], rowGap: '4px 12px', rowPad: '9px 14px', rowAlign: 'center', endSelf: 'start', endAlign: 'left', atFg: 'var(--ink)', decFs: '12px', decFg: 'var(--ink)', prodDisp: 'block' },
+      mid: { cols: 'minmax(118px,1fr) minmax(130px,1.15fr) minmax(0,1.5fr) minmax(128px,1fr)', areas: '"id prod loc st" "id prod at dec"', heads: ['Sample', 'Product · batch', 'Location · sampled', 'Test · release'], rowGap: '3px 12px', rowPad: '9px 14px', rowAlign: 'start', endSelf: 'start', endAlign: 'left', atFg: 'var(--ink3)', decFs: '11.5px', decFg: 'var(--ink2)', prodDisp: 'block' },
+      compact: { cols: 'minmax(0,1fr) auto', areas: '"id st" "prod dec" "loc at"', heads: [], rowGap: '4px 14px', rowPad: '11px 14px', rowAlign: 'center', endSelf: 'end', endAlign: 'right', atFg: 'var(--ink3)', decFs: '11.5px', decFg: 'var(--ink2)', prodDisp: 'flex' },
+    }[mode];
+    const sheet = phone && !!s.open;
+    const L = {
+      ...LAY, head: mode !== 'compact', cg: '12px', sheet, detRole: sheet ? 'dialog' : undefined, detModal: sheet ? 'true' : undefined, detLabel: sheet ? 'Sample detail' : undefined,
+      pad: `${padT}px ${padX}px ${phone ? 32 : 48}px`, secGap: phone ? '24px' : w >= 1100 ? '36px' : '28px', h1: phone ? '26px' : '30px',
+      ctlH: phone ? '34px' : '30px', ctlHi: phone ? '32px' : '28px',
+      cols2: phone ? 'minmax(0,1fr)' : `minmax(0,1fr) ${detW}px`, colGap: colGap + 'px',
+      testCols: 'minmax(0,1.3fr) minmax(0,1fr) minmax(104px,.9fr)',
+      // side inspector stays in view while the list scrolls; on a phone the detail is a full-height sheet over the page
+      detWrap: phone ? 'position:absolute;inset:0;z-index:30;display:flex;flex-direction:column;background:var(--surf);animation:tndrawer var(--t-slow) var(--ease-out) both'
+        : `position:sticky;top:16px;align-self:start;min-width:0;display:flex;flex-direction:column;max-height:${Math.max(320, vh - 32)}px;animation:tnrise var(--t-slow) var(--ease-out) 40ms both`,
+      detSec: phone ? 'flex:1 1 auto;min-height:0;overflow:auto;background:var(--surf)' : 'flex:0 1 auto;min-height:0;overflow:auto;background:var(--surf);border:1px solid var(--pBd)',
+    };
+    const M = { detailIn: phone ? 'none' : 'tnpop var(--t-med) var(--ease-out) both' };
+
+    // ── samples
     const statusOf = x => x.decision === 'On hold' ? 'On hold' : x.status;
-    let base = D.SAMPLES.filter(x => (net || x.term === t.id) && (!prods.length || prods.includes(x.code)));
+    const base = D.SAMPLES.filter(x => (net || x.term === t.id) && (!prods.length || prods.includes(x.code)));
     const cats = ['All', 'Pending', 'Passed', 'Failed', 'Missing result', 'On hold'];
     const iconFor = st => I.st[st === 'Passed' ? 'ok' : st === 'Failed' ? 'critical' : st === 'Missing result' ? 'attention' : st === 'On hold' ? 'hold' : st === 'Released' || st === 'Accepted for discharge' ? 'ok' : 'pending'];
-    const statusChips = cats.map(c => { const n = c === 'All' ? base.length : base.filter(x => statusOf(x) === c || (c === 'Failed' && x.status === 'Failed')).length; const on = s.filter === c; return { label: c, n, icon: c === 'All' ? null : iconFor(c), onClick: () => this.upd({ filter: c }), bd: on ? 'var(--ink)' : 'var(--line)', bg: on ? 'var(--ink)' : 'var(--surf)', fg: on ? 'var(--surf)' : 'var(--ink)' }; });
+    const statusChips = cats.map(c => { const n = c === 'All' ? base.length : base.filter(x => statusOf(x) === c || (c === 'Failed' && x.status === 'Failed')).length; const on = s.filter === c; return { label: c, n, nKey: `n-${c}-${n}`, on, icon: c === 'All' ? null : iconFor(c), onClick: () => this.upd({ filter: c }), bd: on ? 'var(--ink)' : 'var(--line)', bg: on ? 'var(--ink)' : 'var(--surf)', fg: on ? 'var(--surf)' : 'var(--ink)', hb: on ? 'var(--ink)' : 'var(--ink4)', hbg: on ? 'var(--ink)' : 'var(--surf2)' }; });
     const list = base.filter(x => s.filter === 'All' || statusOf(x) === s.filter || (s.filter === 'Failed' && x.status === 'Failed')).sort((a, b) => b.at - a.at);
     const sel = list.find(x => x.id === s.sel) || D.SAMPLES.find(x => x.id === s.sel && (net || x.term === t.id)) || list[0];
-    const rows = list.map(x => { const T = D.term(x.term), p = D.prod(x.code), on = sel && x.id === sel.id; const st = statusOf(x); return { id: x.id, term: T.name, prod: p.label, color: p.color, batch: x.batch, loc: x.loc, at: D.tm(x.at, T.tz, { date: true }), status: st, icon: iconFor(st), decision: x.decision, decIcon: iconFor(x.decision === 'Pending' ? 'Pending' : x.decision), bg: on ? 'var(--accSoft)' : 'transparent', sh: on ? 'inset 2px 0 0 var(--acc)' : 'none', onClick: () => this.upd({ sel: x.id, traceBatch: null }), onKey: e => { if (e.key === 'Enter') this.upd({ sel: x.id, traceBatch: null }); } }; });
-    let sd = {}, relDisabled = true, holdDisabled = true, relTitle = '';
+    const pick = id => this.upd({ sel: id, traceBatch: null, open: phone, flash: null });
+    // without a "Release decision" column header, a pending decision is spelled out so it is not read as a second test status
+    const decText = d => d === 'Pending' && mode !== 'wide' ? 'Decision pending' : d;
+    const rows = list.map(x => { const T = D.term(x.term), p = D.prod(x.code), on = !!(sel && x.id === sel.id); const st = statusOf(x); return { id: x.id, on, term: T.name, showTerm: net, prod: p.label, color: p.color, batch: x.batch, loc: x.loc, at: D.tm(x.at, T.tz, { date: true }), status: st, icon: iconFor(st), decision: decText(x.decision), decIcon: iconFor(x.decision === 'Pending' ? 'Pending' : x.decision), bg: on ? 'var(--accSoft)' : 'var(--surf)', sh: on ? 'inset 3px 0 0 var(--acc)' : 'inset 0 0 0 var(--acc)', rh: on ? 'var(--accSoft)' : 'var(--surf2)', ra: on ? 'var(--accSoft)' : 'var(--surf3)', onClick: () => pick(x.id), onKey: e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(x.id); } } }; });
+    const nS = n => `${n} sample${n === 1 ? '' : 's'}`;
+    const where = net ? 'the network' : t.name;
+    let emptyTitle = '', emptyText = '', emptyAct = null, emptyActLabel = '';
+    if (!list.length) {
+      if (!base.length) {
+        emptyTitle = net ? 'No samples in the network' : `No samples at ${t.name}`;
+        emptyText = prods.length ? 'No samples match the product filter in the top bar.' : net ? 'No quality samples have been recorded in this period.' : 'Samples appear here when a receipt, tank or blend at this terminal is sampled.';
+        if (!net) { emptyAct = () => this.upd({ net: true }); emptyActLabel = 'Show all terminals'; }
+      } else {
+        emptyTitle = { Pending: 'No pending samples', Passed: 'No passed samples', Failed: 'No failed samples', 'Missing result': 'No samples with a missing result', 'On hold': 'No samples on hold' }[s.filter] || 'No samples';
+        emptyText = `None of the ${nS(base.length)} in ${where} has this status right now.`;
+        emptyAct = () => this.upd({ filter: 'All' }); emptyActLabel = 'Show all statuses';
+      }
+    }
+
+    // ── selected sample
+    let sd = {}, relDisabled = true, holdDisabled = true, relTitle = '', holdTitle = '';
     if (sel) {
       const T = D.term(sel.term), p = D.prod(sel.code);
       const st = statusOf(sel);
-      sd = { id: sel.id, status: st, icon: iconFor(st), prod: p.label, color: p.color, batch: sel.batch, loc: sel.loc, at: D.tm(sel.at, T.tz, { date: true }), lab: sel.lab,
-        tests: sel.tests.map(x => ({ prop: x.prop, method: x.method, result: x.result == null ? (x.status === 'Missing result' ? 'Missing' : 'Pending') : `${x.result} ${x.unit}`, fs: x.result == null ? 'italic' : 'normal', vf: x.result == null ? 'var(--ink3)' : x.status === 'Failed' ? 'var(--critInk)' : 'var(--ink)', spec: x.spec, status: x.status, icon: iconFor(x.status) })),
-        decision: sel.decision, decIcon: iconFor(sel.decision === 'Pending' ? 'Pending' : sel.decision), decBy: sel.by ? `Recorded by ${sel.by.who} · ${D.tm(sel.by.at, T.tz, { date: true })}` : 'No decision recorded.' };
+      const fl = s.flash && s.flash.id === sel.id ? s.flash.n : 0;
+      const dec = sel.decision;
+      sd = { key: 'sd-' + sel.id, id: sel.id, status: st, icon: iconFor(st), prod: p.label, color: p.color, batch: sel.batch, loc: sel.loc, at: D.tm(sel.at, T.tz, { date: true }), lab: sel.lab, term: T.name, showTerm: net,
+        tests: sel.tests.map(x => ({ prop: x.prop, method: x.method, result: x.result == null ? (x.status === 'Missing result' ? 'Missing' : 'Pending') : `${x.result} ${x.unit}`.trim(), fs: x.result == null ? 'italic' : 'normal', vf: x.result == null ? 'var(--ink3)' : x.status === 'Failed' ? 'var(--critInk)' : 'var(--ink)', spec: `Spec ${x.spec}`, status: x.status, sf: x.status === 'Failed' ? 'var(--critInk)' : 'var(--ink)', icon: iconFor(x.status), bar: x.status === 'Failed' ? 'inset 3px 0 0 var(--crit)' : x.status === 'Missing result' ? 'inset 3px 0 0 var(--warn)' : 'none' })),
+        decision: dec, decIcon: iconFor(dec === 'Pending' ? 'Pending' : dec), decBy: sel.by ? `Recorded by ${sel.by.who} · ${D.tm(sel.by.at, T.tz, { date: true })}` : 'No decision recorded.',
+        decBg: dec === 'Released' || dec === 'Accepted for discharge' ? 'var(--okSoft)' : dec === 'On hold' ? 'var(--warnSoft)' : 'var(--surf2)',
+        decKey: `dec-${sel.id}-${fl}`, decCls: fl ? 'tn-glow' : '', decAnim: fl ? 'tnpop var(--t-med) var(--ease-out) both' : 'none' };
       const allPass = sel.tests.every(x => x.status === 'Passed');
-      const isRel = sel.decision === 'Released' || sel.decision === 'Accepted for discharge';
+      const isRel = dec === 'Released' || dec === 'Accepted for discharge';
       if (!ctx.perm.release) relTitle = `Release decisions require the Quality officer role · current: ${ctx.roleLabel}`;
       else if (isRel) relTitle = 'Already released.';
       else if (!allPass) relTitle = 'Release blocked until every required test is Passed. A completed transfer or blend never releases product by itself.';
       else relTitle = 'All required tests passed. Release records your name and time.';
-      relDisabled = !ctx.perm.release || isRel || !allPass; holdDisabled = !ctx.perm.release || sel.decision === 'On hold';
+      relDisabled = !ctx.perm.release || isRel || !allPass; holdDisabled = !ctx.perm.release || dec === 'On hold';
+      holdTitle = !ctx.perm.release ? `Hold decisions require the Quality officer role · current: ${ctx.roleLabel}` : dec === 'On hold' ? 'Already on hold.' : 'Place this batch on hold. The hold records your name and time.';
     }
-    // trace
+
+    // ── traceability
     const tb = s.traceBatch || (sel && sel.batch);
     const T0 = D.TRACE[tb];
-    let tr = { batch: tb || '—', has: false, none: true, noneText: 'Select a sample to trace its batch.' };
+    const traceW = cw - 34;
+    const tRow = traceW >= 760;
+    const TL = tRow ? {
+      cols: 'minmax(200px,260px) 32px minmax(0,1fr)', batchSelf: 'center',
+      trunk: 'position:relative;align-self:stretch', trunkLine: 'position:absolute;left:0;right:0;top:50%;height:1px;background:var(--line);transform-origin:left center;animation:tngrow var(--t-med) var(--ease-out) 60ms both',
+      comps: 'display:flex;flex-direction:column;gap:10px;border-left:1px solid var(--line);padding-left:16px;min-width:0',
+      rowCols: 'minmax(0,1fr) 24px minmax(0,1fr) 24px minmax(0,1.2fr)', lineDisp: 'block', indent: '0', indent2: '0', tick: 'top:50%',
+    } : {
+      cols: 'minmax(0,1fr)', batchSelf: 'stretch',
+      trunk: 'height:14px;margin-left:14px;border-left:1px solid var(--line)', trunkLine: 'display:none',
+      comps: 'display:flex;flex-direction:column;gap:14px;margin-left:14px;border-left:1px solid var(--line);padding-left:16px;min-width:0',
+      rowCols: 'minmax(0,1fr)', lineDisp: 'none', indent: '14px', indent2: '28px', tick: 'top:20px',
+    };
+    let tr = { key: 'tr-none-' + (tb || ''), batch: tb || '—', has: false, none: true, noneText: 'Select a sample to trace its batch.' };
     if (T0) {
       const p = D.prod(T0.product); const term0 = sel ? sel.term : t.id; const k = D.tank(term0, T0.tank); const bl = D.BLENDS.find(b => b.id === tb);
       const q = bl ? bl.state : k ? k.q : '—';
-      tr = { batch: tb, has: true, none: false, prod: p.label, color: p.color, tank: T0.tank, q, qIcon: iconFor(q === 'Released' ? 'Released' : q === 'On hold' ? 'On hold' : 'Pending'), docs: T0.docs,
-        comps: T0.comps.map(c => { const P = D.prod(c.c); return { label: P.label, sw: P.sw, swBd: P.kind === 'component' ? P.color : 'transparent', share: c.share + ' %', batch: c.batch, tank: c.tank, src: c.src, docs: c.docs, onTank: () => c.tank.startsWith('T-') && this.props.go('terminal', { terminalId: term0, focus: { type: 'tank', id: c.tank } }) }; }) };
+      tr = { key: 'tr-' + tb, batch: tb, has: true, none: false, prod: p.label, color: p.color, tank: T0.tank, q, qIcon: iconFor(q === 'Released' ? 'Released' : q === 'On hold' ? 'On hold' : 'Pending'), docs: T0.docs,
+        comps: T0.comps.map((c, i) => { const P = D.prod(c.c); const kid = c.tank.split(' ')[0]; const go = c.tank.startsWith('T-') && !!D.tank(term0, kid); const d = 80 + Math.min(i, 4) * 50; return { label: P.label, sw: P.sw, swBd: P.kind === 'component' ? P.color : 'transparent', share: c.share + ' %', batch: c.batch, tank: c.tank, src: c.src, docs: c.docs, noDocs: !c.docs.length, canGo: go, noGo: !go, goTitle: `Open ${kid} in the terminal workspace`, delay: d + 'ms', delay2: (d + 60) + 'ms', delay3: (d + 120) + 'ms', onTank: () => go && this.props.go('terminal', { terminalId: term0, focus: { type: 'tank', id: kid } }) }; }) };
     } else if (tb) tr.noneText = `No component trace recorded for ${tb}. Tank batches received directly from a vessel trace to their receipt documents in the Transfers workspace.`;
+
+    const decide = (decision, msg) => { sel.decision = decision; sel.by = { who: `${ctx.user} · Quality officer`, at: ctx.now }; this.props.toast && this.props.toast(msg); ctx.bump(); this.flash(sel.id); };
+    const onT = (on, hov) => ({ bg: on ? 'var(--ink)' : 'var(--surf)', fg: on ? 'var(--surf)' : 'var(--ink)', hbg: on ? 'var(--ink)' : hov });
     return {
-      ready: true, I, statusChips, rows, empty: !rows.length, hasSel: !!sel, sd, tr,
-      scopeText: net ? `All ${D.TERMINALS.length} terminals · ${list.length} samples` : `${t.name} · ${list.length} samples`,
-      toggleScope: () => this.upd({ net: !s.net }), scopeBtn: net ? 'Show this terminal only' : 'Show all terminals',
-      cols: 'minmax(0,1.1fr) minmax(0,1.3fr) minmax(0,1.5fr) minmax(0,0.9fr) minmax(0,0.9fr) minmax(0,1fr)', cols2: ctx.tablet ? 'minmax(0,1fr)' : 'minmax(0,1fr) 440px',
-      relDisabled, relOp: relDisabled ? 0.4 : 1, relTitle, relIcon: relDisabled ? I.lock : I.st.ok, holdDisabled, holdOp: holdDisabled ? 0.4 : 1,
-      doRelease: () => { sel.decision = 'Released'; sel.by = { who: `${ctx.user} · Quality officer`, at: ctx.now }; const k = D.tank(sel.term, sel.link.id) || null; if (k && k.batch === sel.batch) k.q = 'Released'; const b = D.BLENDS.find(x => x.id === sel.batch); if (b) b.state = 'Released'; this.props.toast && this.props.toast(`${sel.batch} released by ${ctx.user}.`); ctx.bump(); this.forceUpdate(); },
-      doHold: () => { sel.decision = 'On hold'; sel.by = { who: `${ctx.user} · Quality officer`, at: ctx.now }; const k = D.TERMINALS.find(x => x.id === sel.term).tanks.find(x => x.batch === sel.batch); if (k) k.q = 'On hold'; const b = D.BLENDS.find(x => x.id === sel.batch); if (b) b.state = 'On hold'; this.props.toast && this.props.toast(`${sel.batch} placed on hold.`); ctx.bump(); this.forceUpdate(); },
+      ready: true, rootRef: this.rootRef, traceRef: this.traceRef, backRef: this.backRef, I, L, M, TL, statusChips, rows, empty: !rows.length, emptyTitle, emptyText, emptyAct, emptyActLabel,
+      listKey: `list-${s.filter}-${net ? 'net' : t.id}`, hasSel: !!sel, noSel: !sel, showDetail: phone ? sheet && !!sel : true, sd, tr,
+      scopeText: `${net ? `All ${D.TERMINALS.length} terminals` : t.name} · ${s.filter === 'All' || !base.length ? nS(base.length) : `${list.length} of ${nS(base.length)} · ${s.filter}`}`,
+      scopeOpts: [
+        { label: 'This terminal', on: !net, ...onT(!net, 'var(--surf2)'), onClick: () => { if (shellNet) this.props.setCtx && this.props.setCtx({ scope: 'terminal' }); this.upd({ net: false }); } },
+        { label: 'All terminals', on: net, ...onT(net, 'var(--surf2)'), onClick: () => this.upd({ net: true }) },
+      ],
+      closeSheet: () => this.setState({ open: false }),
+      goTrace: () => { const go = () => { const el = this.traceRef.current; if (el) el.scrollIntoView({ behavior: this.still() ? 'auto' : 'smooth', block: 'start' }); }; if (sheet) this.setState({ open: false }, () => setTimeout(go, 0)); else go(); },
+      relDisabled, relOp: relDisabled ? 0.4 : 1, relCur: relDisabled ? 'not-allowed' : 'pointer', relHover: relDisabled ? 'var(--ink)' : 'var(--ink2)', relTitle, relIcon: relDisabled ? I.lock : I.st.ok,
+      holdDisabled, holdOp: holdDisabled ? 0.4 : 1, holdCur: holdDisabled ? 'not-allowed' : 'pointer', holdHover: holdDisabled ? 'var(--line)' : 'var(--ink3)', holdTitle,
+      doRelease: () => { const k = D.tank(sel.term, sel.link.id) || null; if (k && k.batch === sel.batch) k.q = 'Released'; const b = D.BLENDS.find(x => x.id === sel.batch); if (b) b.state = 'Released'; decide('Released', `${sel.batch} released by ${ctx.user}.`); },
+      doHold: () => { const k = D.TERMINALS.find(x => x.id === sel.term).tanks.find(x => x.batch === sel.batch); if (k) k.q = 'On hold'; const b = D.BLENDS.find(x => x.id === sel.batch); if (b) b.state = 'On hold'; decide('On hold', `${sel.batch} placed on hold.`); },
     };
   }
 }

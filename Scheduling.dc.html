@@ -7,69 +7,80 @@
 </head>
 <body>
 <x-dc>
-<div style="position:absolute;inset:0;overflow:auto;background:var(--bg)">
+<div ref="{{ pageRef }}" style="position:absolute;inset:0;overflow:auto">
 <sc-if value="{{ ready }}" hint-placeholder-val="{{ true }}">
-<div style="padding:32px 40px 56px;display:flex;flex-direction:column;gap:40px">
-  <div style="display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap">
-    <div>
-      <div style="display:flex;align-items:center;gap:10px"><h1 style="margin:0;font-size:30px;font-weight:500;letter-spacing:-.015em;line-height:1.1">Scheduling board</h1></div>
-      <div style="font-size:12px;color:var(--ink3);margin-top:3px">{{ sub }}</div>
+<div style="padding:{{ L.pad }};display:flex;flex-direction:column;gap:{{ L.gap }}">
+  <div style="display:flex;align-items:flex-end;gap:14px 24px;flex-wrap:wrap">
+    <div style="flex:1 1 320px;min-width:0">
+      <h1 style="margin:0;font-size:30px;font-weight:500;letter-spacing:-.015em;line-height:1.1">Scheduling board</h1>
+      <div style="font-size:12px;color:var(--ink3);margin-top:3px;text-wrap:pretty">{{ sub }}</div>
     </div>
-    <div style="flex:1"></div>
-    <div style="display:flex;gap:4px;flex-wrap:wrap">
+    <div role="group" aria-label="Activity types" style="display:flex;gap:4px;flex-wrap:wrap;min-width:0">
       <sc-for list="{{ typeChips }}" as="c" hint-placeholder-count="6">
-        <button onClick="{{ c.onClick }}" aria-pressed="{{ c.on }}" style="height:30px;padding:0 10px;border:1px solid {{ c.bd }};border-radius:0;background:var(--surf);display:flex;align-items:center;gap:7px;font-size:12px;opacity:{{ c.op }};white-space:nowrap"><span style="width:14px;height:10px;background:{{ c.sw }};border:{{ c.swBd }}"></span>{{ c.label }}</button>
+        <button onClick="{{ c.onClick }}" aria-pressed="{{ c.on }}" title="{{ c.title }}" style="height:30px;padding:0 10px;border:1px solid {{ c.bd }};border-radius:0;background:var(--surf);display:flex;align-items:center;gap:7px;font-size:12px;opacity:{{ c.op }};white-space:nowrap" style-hover="border-color:var(--ink3);background:var(--surf2)"><span style="width:14px;height:10px;flex:none;background:{{ c.sw }};border:{{ c.swBd }}"></span>{{ c.label }}</button>
       </sc-for>
     </div>
   </div>
 
-  <div style="display:grid;grid-template-columns:{{ cols2 }};gap:40px;align-items:start">
-    <section aria-label="Board" style="background:var(--surf);border:1px solid var(--pBd);overflow:hidden;min-width:0">
-      <div style="overflow-x:auto">
-        <div style="min-width:900px;padding:8px 14px 12px">
-          <div style="display:grid;grid-template-columns:120px 1fr;height:26px">
-            <span style="font-size:12.5px;color:var(--ink3);align-self:end;padding-bottom:4px">Resource</span>
-            <div style="position:relative">
-              <sc-for list="{{ ticks }}" as="k" hint-placeholder-count="9"><span style="position:absolute;left:{{ k.x }};bottom:4px;transform:translateX(-50%);font-family:var(--fnum);font-size:10.5px;color:{{ k.fg }};white-space:nowrap;font-weight:{{ k.fw }}">{{ k.label }}</span></sc-for>
-            </div>
-          </div>
+  <div style="display:grid;grid-template-columns:{{ L.cols }};gap:{{ L.gap }};align-items:start">
+    <section aria-label="Board" class="tn-rise" style="background:var(--surf);border:1px solid var(--pBd);overflow:hidden;min-width:0">
+      <div style="display:flex;align-items:flex-start;padding-top:8px">
+        <div style="flex:none;width:{{ L.laneW }};padding-left:{{ L.lanePl }};border-right:{{ L.laneBd }}">
+          <div style="height:30px;display:flex;align-items:flex-end;padding:0 8px 8px 0"><span style="font-size:12.5px;color:var(--ink3);line-height:1.2">Resource</span></div>
           <sc-for list="{{ lanes }}" as="ln" hint-placeholder-count="8">
-            <div style="display:grid;grid-template-columns:120px 1fr;height:40px;border-top:1px solid var(--line2)">
-              <span style="align-self:center;display:flex;flex-direction:column;line-height:1.15"><span style="font-weight:500;font-family:{{ ln.ff }};font-size:12px">{{ ln.name }}</span><span style="font-size:10.5px;color:var(--ink3)">{{ ln.kind }}</span></span>
-              <div style="position:relative;background:repeating-linear-gradient(90deg,transparent 0,transparent calc(100%/8 - 1px),var(--line2) calc(100%/8 - 1px),var(--line2) calc(100%/8))">
-                <sc-for list="{{ ln.items }}" as="b" hint-placeholder-count="2">
-                  <button onClick="{{ b.onClick }}" title="{{ b.title }}" style="position:absolute;top:{{ b.top }};height:{{ b.h }};left:{{ b.x }};width:{{ b.w }};border:{{ b.bd }};background:{{ b.bg }};color:{{ b.fg }};border-radius:0;padding:0 6px;font-size:11px;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:5px;box-shadow:{{ b.sh }};z-index:{{ b.z }}">{{ b.icon }}<span style="overflow:hidden;text-overflow:ellipsis">{{ b.label }}</span></button>
-                </sc-for>
-                <div style="position:absolute;top:-2px;bottom:-2px;left:{{ nowX }};width:1.5px;background:var(--acc);z-index:3"></div>
-              </div>
+            <div style="height:{{ ln.h }};border-top:1px solid var(--line2);padding:6px 8px 0 0;display:flex;flex-direction:column;line-height:1.2;min-width:0;overflow:hidden;transition:height var(--t-med) var(--ease-io)">
+              <span title="{{ ln.name }}" style="font-weight:500;font-family:{{ ln.ff }};font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ ln.name }}</span>
+              <span title="{{ ln.kind }}" style="font-size:11px;color:var(--ink3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ ln.kind }}</span>
             </div>
           </sc-for>
         </div>
+        <div ref="{{ scrollRef }}" style="flex:1 1 auto;min-width:0;overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain">
+          <div style="min-width:{{ L.trackMin }};padding:0 14px 6px 4px">
+            <div ref="{{ axisRef }}" style="position:relative;height:30px">
+              <sc-for list="{{ ticks }}" as="k" hint-placeholder-count="9"><span style="position:absolute;left:{{ k.x }};bottom:8px;transform:{{ k.tf }};font-family:var(--fnum);font-size:11px;line-height:1.2;color:{{ k.fg }};font-weight:{{ k.fw }};white-space:nowrap">{{ k.label }}</span></sc-for>
+              <span aria-hidden="true" style="position:absolute;left:{{ nowX }};bottom:0;width:10px;height:6px;margin-left:-5px;background:var(--acc);clip-path:polygon(0 0,100% 0,50% 100%)"></span>
+            </div>
+            <sc-for list="{{ lanes }}" as="ln" hint-placeholder-count="8">
+              <div style="position:relative;height:{{ ln.h }};border-top:1px solid var(--line2);background:{{ grid }};transition:height var(--t-med) var(--ease-io)">
+                <div aria-hidden="true" style="position:absolute;left:0;top:0;bottom:0;width:{{ nowX }};background:{{ pastBg }}"></div>
+                <div aria-hidden="true" style="position:absolute;top:-1px;bottom:0;left:{{ nowX }};width:2px;margin-left:-1px;background:var(--acc)"></div>
+                <sc-for list="{{ ln.items }}" as="b" hint-placeholder-count="2">
+                  <button key="{{ b.key }}" data-iid="{{ b.id }}" onClick="{{ b.onClick }}" title="{{ b.title }}" aria-label="{{ b.title }}" aria-pressed="{{ b.on }}" class="{{ b.cls }}" style="position:absolute;top:{{ b.top }};height:24px;left:{{ b.x }};width:{{ b.w }};min-width:6px;border:{{ b.bd }};border-radius:0;background:{{ b.bg }};color:{{ b.fg }};padding:0 {{ b.px }};font-size:11px;line-height:1.2;text-align:left;white-space:nowrap;overflow:clip;display:flex;align-items:center;gap:4px;z-index:{{ b.z }};opacity:{{ b.op }};visibility:{{ b.vis }};pointer-events:{{ b.pe }};outline:2px solid {{ b.ol }};outline-offset:{{ b.olo }};transition:{{ b.tr }}" style-hover="transform:translateY(-1px);box-shadow:0 3px 10px rgba(16,24,32,.22);z-index:5" style-active="transform:translateY(0);box-shadow:none" style-focus-visible="outline:2px solid var(--acc);outline-offset:2px;z-index:5">{{ b.icon }}<span style="display:{{ b.ld }};position:sticky;left:6px;flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis">{{ b.label }}</span></button>
+                </sc-for>
+              </div>
+            </sc-for>
+          </div>
+        </div>
       </div>
-      <div style="padding:8px 14px;border-top:1px solid var(--line2);font-size:11px;color:var(--ink3);display:flex;gap:14px;flex-wrap:wrap">
-        <span style="display:flex;align-items:center;gap:5px"><span style="width:12px;height:2px;background:var(--acc)"></span>Now · {{ nowLabel }}</span>
-        <span style="display:flex;align-items:center;gap:5px">{{ I.st.critical }}Conflict — outlined in red</span>
+      <div style="padding:8px 14px;border-top:1px solid var(--line2);font-size:11px;color:var(--ink3);display:flex;gap:6px 14px;flex-wrap:wrap;align-items:center">
+        <span style="display:flex;align-items:center;gap:5px;white-space:nowrap"><span style="width:12px;height:2px;flex:none;background:var(--acc)"></span>Now · {{ nowLabel }}</span>
+        <span style="display:flex;align-items:center;gap:5px">{{ I.st.critical }}<span>Conflict — outlined in red</span></span>
         <span>Select an activity or conflict for details.</span>
       </div>
     </section>
 
-    <div style="display:flex;flex-direction:column;gap:40px;min-width:0">
-      <section aria-label="Conflicts" style="background:var(--surf);border:1px solid var(--pBd);overflow:hidden">
-        <div style="background:var(--bar);color:var(--barInk);--ink:var(--barInk);--ink2:var(--barInk2);--ink3:var(--barInk3);--acc:var(--barAcc);padding:9px 14px;display:flex;align-items:baseline;gap:8px"><span style="font-weight:600">Conflicts</span><span style="font-size:12px;color:var(--ink3)">{{ conflictCount }}</span></div>
-        <sc-if value="{{ noConflicts }}" hint-placeholder-val="{{ false }}"><div style="padding:14px;color:var(--ink3);display:flex;gap:8px;align-items:center">{{ I.st.ok }}No tank, route or equipment conflicts in the next 48 h.</div></sc-if>
+    <div class="tn-rise" style="display:flex;flex-direction:column;gap:{{ L.gap }};min-width:0">
+      <section aria-label="Conflicts" style="background:var(--surf);border:1px solid var(--pBd);overflow:hidden;min-width:0">
+        <div style="background:var(--bar);color:var(--barInk);--ink:var(--barInk);--ink2:var(--barInk2);--ink3:var(--barInk3);--acc:var(--barAcc);padding:9px 14px;display:flex;align-items:baseline;gap:4px 8px;flex-wrap:wrap"><span style="font-weight:600">Conflicts</span><span style="font-size:12px;color:var(--ink3)">{{ conflictCount }}</span></div>
+        <sc-if value="{{ noConflicts }}" hint-placeholder-val="{{ false }}"><div style="padding:14px;color:var(--ink3);display:flex;gap:8px;align-items:center">{{ I.st.ok }}<span style="min-width:0">No tank, route or equipment conflicts in the next 48 h.</span></div></sc-if>
         <sc-for list="{{ conflicts }}" as="c" hint-placeholder-count="3">
-          <button onClick="{{ c.onClick }}" style="width:100%;display:grid;grid-template-columns:16px 1fr;gap:9px;padding:10px 14px;border:0;border-bottom:1px solid var(--line2);background:{{ c.bg }};text-align:left" style-hover="background:var(--surf2)">
+          <button onClick="{{ c.onClick }}" aria-pressed="{{ c.on }}" class="{{ c.cls }}" style="position:relative;z-index:{{ c.z }};width:100%;display:grid;grid-template-columns:16px minmax(0,1fr);gap:9px;padding:10px 14px 10px 11px;border:0;border-left:3px solid {{ c.lb }};border-bottom:1px solid var(--line2);border-radius:0;background:{{ c.bg }};text-align:left;--hov:{{ c.hov }}" style-hover="background:var(--hov)">
             <span style="margin-top:1px">{{ c.icon }}</span>
-            <span style="display:flex;flex-direction:column;gap:3px"><span style="font-size:12.5px;color:var(--critInk)">{{ c.kind }}</span><span style="font-weight:500;text-wrap:pretty">{{ c.text }}</span><span style="font-size:11.5px;color:var(--ink3)">Suggested: {{ c.fix }}</span></span>
+            <span style="display:flex;flex-direction:column;gap:3px;min-width:0"><span style="font-size:12.5px;color:var(--critInk)">{{ c.kind }}</span><span style="font-weight:500;text-wrap:pretty;overflow-wrap:anywhere">{{ c.text }}</span><span style="font-size:11.5px;color:var(--ink3);overflow-wrap:anywhere">Suggested: {{ c.fix }}</span></span>
           </button>
         </sc-for>
       </section>
-      <section aria-label="Activity detail" style="background:var(--surf);border:1px solid var(--pBd);padding:12px 14px;display:flex;flex-direction:column;gap:8px">
-        <div style="font-weight:600">{{ det.title }}</div>
-        <div style="display:grid;grid-template-columns:90px 1fr;gap:4px 10px;font-size:12px">
-          <sc-for list="{{ det.rows }}" as="r" hint-placeholder-count="4"><span style="color:var(--ink3)">{{ r.k }}</span><span style="font-family:{{ r.ff }}">{{ r.v }}</span></sc-for>
+      <section ref="{{ detRef }}" aria-label="Activity detail" style="order:{{ L.detOrder }};background:var(--surf);border:1px solid var(--pBd);overflow:hidden;min-width:0">
+        <div key="{{ det.key }}" class="{{ det.anim }}" style="padding:12px 14px;display:flex;flex-direction:column;gap:8px">
+          <div style="display:flex;align-items:flex-start;gap:10px">
+            <div style="flex:1 1 auto;min-width:0;font-weight:600;overflow-wrap:anywhere">{{ det.title }}</div>
+            <sc-if value="{{ det.clear }}" hint-placeholder-val="{{ false }}"><button onClick="{{ det.clear }}" aria-label="Clear selection" title="Clear selection" style="flex:none;width:24px;height:24px;margin:-3px -6px -3px 0;border:0;border-radius:0;background:transparent;color:var(--ink3);display:grid;place-items:center" style-hover="background:var(--surf2);color:var(--ink)">{{ I.close }}</button></sc-if>
+          </div>
+          <div style="display:grid;grid-template-columns:90px minmax(0,1fr);gap:4px 10px;font-size:12px">
+            <sc-for list="{{ det.rows }}" as="r" hint-placeholder-count="4"><span style="color:var(--ink3)">{{ r.k }}</span><span style="font-family:{{ r.ff }};color:{{ r.fg }};min-width:0;overflow-wrap:anywhere">{{ r.v }}</span></sc-for>
+          </div>
+          <sc-if value="{{ det.link }}" hint-placeholder-val="{{ false }}"><button onClick="{{ det.onLink }}" style="align-self:flex-start;border:0;background:transparent;color:var(--acc);padding:0;display:flex;gap:4px;align-items:center" style-hover="text-decoration:underline">{{ det.link }} {{ I.arrowR }}</button></sc-if>
         </div>
-        <sc-if value="{{ det.link }}" hint-placeholder-val="{{ false }}"><button onClick="{{ det.onLink }}" style="align-self:flex-start;border:0;background:transparent;color:var(--acc);padding:0;display:flex;gap:4px;align-items:center">{{ det.link }} {{ I.arrowR }}</button></sc-if>
       </section>
     </div>
   </div>
@@ -79,37 +90,151 @@
 </x-dc>
 <script type="text/x-dc" data-dc-script>
 class Component extends DCLogic {
-  constructor(p) { super(p); this.state = p.d ? p.d.ui.load('sch', { off: [], sel: null, cf: null }) : {}; }
-  upd(p) { this.setState(p, () => this.props.d.ui.save('sch', this.state)); }
+  constructor(p) {
+    super(p);
+    const def = { off: [], sel: null, cf: null };
+    const st = p.d ? p.d.ui.load('sch', def) : def;
+    const off = Array.isArray(st.off) ? st.off : [];
+    // packOff trails off while bars fade out, so the lanes re-pack only after the fade (see toggleType)
+    this.state = { off, packOff: off, sel: st.sel == null ? null : st.sel, cf: st.cf == null ? null : st.cf, tw: 0 };
+    this.pageRef = React.createRef(); this.scrollRef = React.createRef(); this.axisRef = React.createRef(); this.detRef = React.createRef();
+  }
+  componentDidMount() { this.sync(); }
+  componentDidUpdate() { this.sync(); }
+  componentWillUnmount() { if (this.ro) this.ro.disconnect(); this.seq = -1; }
+  upd(p, then) { this.setState(p, () => { const s = this.state; this.props.d.ui.save('sch', { off: s.off, sel: s.sel, cf: s.cf }); if (then) then(); }); }
+  motionOn() {
+    const el = this.pageRef.current;
+    if (el && el.closest('[data-motion="off"]')) return false;
+    try { return !window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return true; }
+  }
+  // Measure the time axis (labels in narrow bars depend on its pixel width) and bring "now" into view once per terminal.
+  sync() {
+    const ax = this.axisRef.current;
+    if (ax !== this.roEl) {
+      if (this.ro) { this.ro.disconnect(); this.ro = null; }
+      this.roEl = ax;
+      if (ax) { if (typeof ResizeObserver === 'function') { this.ro = new ResizeObserver(() => this.measure()); this.ro.observe(ax); } this.measure(); }
+    }
+    const sc = this.scrollRef.current, ctx = this.props.ctx;
+    if (sc && ctx && this.state.tw && this.nowFor !== ctx.terminalId) { this.nowFor = ctx.terminalId; this.toNow(sc); }
+  }
+  measure() { const ax = this.axisRef.current; if (!ax) return; const w = Math.round(ax.clientWidth); if (w > 0 && w !== this.state.tw) this.setState({ tw: w }); }
+  toNow(sc) {
+    const D = this.props.d, ctx = this.props.ctx, max = sc.scrollWidth - sc.clientWidth;
+    if (!D || !ctx || max <= 1) return;
+    const t = D.term(ctx.terminalId), f = Math.max(0, Math.min(1, (D.NOW - D.dayStart(0, t.tz)) / 2880));
+    sc.scrollLeft = Math.max(0, Math.min(max, 4 + f * this.state.tw - sc.clientWidth * 0.3));
+  }
+  // Scroll helpers (client coordinates). Only the board's own scrollers move, never the shell.
+  revealX(l, r) {
+    const sc = this.scrollRef.current; if (!sc) return;
+    const max = sc.scrollWidth - sc.clientWidth; if (max <= 1) return;
+    const b = sc.getBoundingClientRect(), pad = 24;
+    if (l >= b.left + pad && r <= b.right - pad) return;
+    const L = l - b.left + sc.scrollLeft, R = r - b.left + sc.scrollLeft;
+    const to = R - L <= sc.clientWidth - 2 * pad ? (L + R) / 2 - sc.clientWidth / 2 : L - pad;
+    sc.scrollTo({ left: Math.max(0, Math.min(max, to)), behavior: this.motionOn() ? 'smooth' : 'auto' });
+  }
+  revealY(top, bottom) {
+    const pg = this.pageRef.current; if (!pg) return;
+    const b = pg.getBoundingClientRect(), pad = 16;
+    let d = 0;
+    if (bottom > b.bottom - pad) d = Math.min(bottom - b.bottom + pad, top - b.top - pad);
+    else if (top < b.top + pad) d = top - b.top - pad;
+    if (Math.abs(d) >= 1) pg.scrollTo({ top: pg.scrollTop + d, behavior: this.motionOn() ? 'smooth' : 'auto' });
+  }
+  reveal(ids) {
+    const sc = this.scrollRef.current; if (!sc) return;
+    const rs = [...sc.querySelectorAll('[data-iid]')].filter(e => ids.includes(e.getAttribute('data-iid')) && getComputedStyle(e).visibility !== 'hidden').map(e => e.getBoundingClientRect());
+    if (!rs.length) return;
+    this.revealX(Math.min(...rs.map(r => r.left)), Math.max(...rs.map(r => r.right)));
+    this.revealY(Math.min(...rs.map(r => r.top)), Math.max(...rs.map(r => r.bottom)));
+  }
+  showDetail() { const e = this.detRef.current; if (e && this.props.ctx && this.props.ctx.tablet) { const r = e.getBoundingClientRect(); this.revealY(r.top, r.bottom); } }
+  // Hiding a type: its bars fade out first, then the lanes re-pack. Showing a type: the lanes make room first, then the bars fade in.
+  // The re-pack waits for the real fade transitions to finish (not a timer), so moving bars never pass over fading ones.
+  toggleType(k) {
+    const s = this.state, hide = !s.off.includes(k), seq = (this.seq = (this.seq || 0) + 1);
+    const off = hide ? [...s.off, k] : s.off.filter(x => x !== k);
+    if (!hide || !this.motionOn()) { this.upd({ off, packOff: off }); return; }
+    this.upd({ off }, () => {
+      const repack = () => { if (this.seq === seq) this.setState({ packOff: this.state.off }); };
+      const sc = this.scrollRef.current;
+      const fades = sc ? [...sc.querySelectorAll('[data-iid]')].flatMap(e => e.getAnimations ? e.getAnimations() : []).filter(a => a.transitionProperty === 'opacity') : [];
+      if (!fades.length) repack(); else Promise.all(fades.map(a => a.finished.catch(() => null))).then(repack);
+    });
+  }
   renderVals() {
     const D = this.props.d, ctx = this.props.ctx;
-    if (!D || !ctx) return { ready: false };
-    const I = ctx.I, s = this.state;
+    if (!D || !ctx) return { ready: false, pageRef: this.pageRef };
+    const I = ctx.I, s = this.state, mob = !!ctx.mobile, tab = !!ctx.tablet;
     const t = D.term(ctx.terminalId), tz = t.tz;
     const sch = D.scheduleFor(t.id);
-    const X0 = D.dayStart(0, tz), X1 = X0 + 2880;
-    const pos = v => (Math.max(0, Math.min(1, (v - X0) / (X1 - X0))) * 100).toFixed(3) + '%';
+    const SPAN = 2880, X0 = D.dayStart(0, tz), X1 = X0 + SPAN;
+    const frac = v => Math.max(0, Math.min(1, (v - X0) / SPAN));
+    const pct = v => (frac(v) * 100).toFixed(3) + '%';
+    const when = v => String(D.tm(v, tz, { date: true })).replace(/ /g, ' '); // keep "07 Oct 00:00 WIB" on one line
     const types = { Receipt: ['var(--ink)', 'none', 'var(--surf)'], Dispatch: ['var(--surf3)', '1px solid var(--ink3)', 'var(--ink)'], Transfer: ['var(--ink3)', 'none', 'var(--surf)'], Blending: ['var(--accSoft)', '1px solid var(--acc)', 'var(--ink)'], Maintenance: ['repeating-linear-gradient(135deg, var(--surf3) 0 4px, var(--surf) 4px 8px)', '1px solid var(--ink4)', 'var(--ink)'], Quality: ['var(--surf)', '1px dashed var(--ink3)', 'var(--ink)'] };
+    const off = s.off || [], packOff = s.packOff || off;
     const inConf = new Set(); const confOf = {}; sch.conflicts.forEach(c => c.items.forEach(i => { inConf.add(i); confOf[i] = c.id; }));
-    const hiItems = s.cf ? (sch.conflicts.find(c => c.id === s.cf) || { items: [] }).items : [];
-    const typeChips = Object.entries(types).map(([k, v]) => { const on = !s.off.includes(k); return { label: k, sw: v[0], swBd: v[1] === 'none' ? '0' : v[1], on: on ? 'true' : 'false', op: on ? 1 : 0.45, bd: on ? 'var(--ink3)' : 'var(--line)', onClick: () => this.upd({ off: on ? [...s.off, k] : s.off.filter(x => x !== k) }) }; });
-    const laneKind = n => /^T-/.test(n) ? 'Tank' : /^P-/.test(n) ? 'Pump' : /BS-/.test(n) ? 'Blend skid' : /line/.test(n) ? 'Route' : /Jetty|Berth/.test(n) ? 'Berth' : /Gantry/.test(n) ? 'Truck loading' : n;
+    const selConf = s.cf ? sch.conflicts.find(c => c.id === s.cf) : null;
+    const hiItems = selConf ? selConf.items : [];
+    const typeChips = Object.entries(types).map(([k, v]) => { const on = !off.includes(k); return { label: k, title: (on ? 'Hide ' : 'Show ') + k.toLowerCase() + ' activities', sw: v[0], swBd: v[1] === 'none' ? '0' : v[1], on: on ? 'true' : 'false', op: on ? 1 : 0.45, bd: on ? 'var(--ink3)' : 'var(--line)', onClick: () => this.toggleType(k) }; });
+    const laneKind = n => /^T-/.test(n) ? 'Tank' : /^P-/.test(n) ? 'Pump' : /BS-/.test(n) ? 'Blend skid' : /line/i.test(n) ? 'Route' : /Jetty|Berth|Wharf|SPM|Buoy/i.test(n) ? 'Berth' : /Gantry/.test(n) ? 'Truck loading' : /Hydrant/i.test(n) ? 'Into-plane' : /Rail/i.test(n) ? 'Rail loading' : 'Resource';
+    // Pixel width of the time axis (measured; a fair guess until then) — only used to decide what fits inside a bar.
+    const tw = s.tw || (mob ? 940 : tab ? 700 : 900), ppm = tw / SPAN;
+    const BAR = 24, ROW = 28; // bar height and row pitch (4 px between stacked bars)
+    const horizon = sch.items.filter(i => i.b > X0 && i.a < X1);
+    const rowMem = this.rowMem || (this.rowMem = new Map()); // last row of every bar, so hidden bars stay put while they fade
     const lanes = sch.lanes.map(name => {
-      const its = sch.items.filter(i => i.lane === name && i.b > X0 && i.a < X1 && !s.off.includes(i.type));
-      const ov = new Map(); its.forEach((i, ix) => { const o = its.filter((j, jx) => jx < ix && j.a < i.b && j.b > i.a).length; ov.set(i.id, o); });
-      return { name, kind: laneKind(name), ff: /^[TP]-|BS-/.test(name) ? 'var(--fnum)' : 'var(--fsans)', items: its.map(i => { const ty = types[i.type] || types.Transfer; const c = inConf.has(i.id); const hi = hiItems.includes(i.id) || s.sel === i.id; const o = ov.get(i.id); return { label: i.label, title: `${i.type} · ${i.label} · ${D.tm(i.a, tz, { date: true })} → ${D.tm(i.b, tz, { date: true })}${c ? ' · CONFLICT' : ''}`, x: pos(i.a), w: `calc(${pos(i.b)} - ${pos(i.a)})`, top: o ? '20px' : '5px', h: o ? '15px' : (its.some((j) => j !== i && j.a < i.b && j.b > i.a) ? '14px' : '29px'), bg: ty[0], bd: c ? '1.5px solid var(--crit)' : ty[1], fg: ty[2], sh: hi ? '0 0 0 3px oklch(0.6 0.15 258 / .35)' : 'none', z: hi ? 2 : 1, icon: c ? I.st.critical : null, onClick: () => this.upd({ sel: i.id, cf: confOf[i.id] || null }) }; }) };
+      // every activity stays in the DOM (filtered ones fade out), in time order so keyboard order follows the board
+      const its = horizon.filter(i => i.lane === name).sort((p, q) => p.a - q.a || p.b - q.b || (p.id < q.id ? -1 : p.id > q.id ? 1 : 0));
+      // greedy interval packing: each bar takes the first row that is free at its start
+      const ends = [], row = new Map();
+      its.forEach(i => { if (packOff.includes(i.type)) return; const a = Math.max(i.a, X0), b = Math.max(Math.min(i.b, X1), a + 30); let r = ends.findIndex(e => e <= a); if (r < 0) { r = ends.length; ends.push(b); } else ends[r] = b; row.set(i, r); });
+      const n = Math.max(1, ends.length);
+      return {
+        name, kind: laneKind(name), ff: /^[TP]-|BS-/.test(name) ? 'var(--fnum)' : 'var(--fsans)', h: (12 + n * ROW) + 'px',
+        items: its.map(i => {
+          const key = `${t.id}|${name}|${i.id}`; let r = row.get(i);
+          if (r == null) r = Math.min(rowMem.get(key) || 0, n - 1); else rowMem.set(key, r);
+          const ty = types[i.type] || types.Transfer, vis = !off.includes(i.type), c = inConf.has(i.id);
+          const isSel = s.sel === i.id, isHi = !isSel && hiItems.includes(i.id);
+          const a = Math.max(i.a, X0), b = Math.min(i.b, X1), wpx = Math.max(6, (b - a) * ppm);
+          const px = wpx < 32 ? 3 : 6, icon = c && wpx >= 20, room = wpx - 2 * px - 3 - (icon ? 18 : 0);
+          const fade = vis ? 'opacity var(--t-fast) var(--ease-out) var(--t-med),visibility 0s' : 'opacity var(--t-fast) var(--ease-out),visibility 0s linear var(--t-fast)';
+          return {
+            key, id: i.id, label: i.label, ld: room >= 20 ? 'block' : 'none', icon: icon ? I.st.critical : null,
+            title: `${i.type} · ${i.label} · ${D.tm(i.a, tz, { date: true })} → ${D.tm(i.b, tz, { date: true })}${c ? ' · CONFLICT' : ''}`,
+            x: pct(i.a), w: ((frac(i.b) - frac(i.a)) * 100).toFixed(3) + '%', top: (7 + r * ROW) + 'px', px: px + 'px',
+            bg: ty[0], bd: c ? '1.5px solid var(--crit)' : ty[1], fg: ty[2],
+            ol: isSel ? 'var(--acc)' : isHi ? 'color-mix(in srgb, var(--crit) 55%, transparent)' : 'transparent', olo: isSel || isHi ? '1px' : '-2px',
+            z: isSel ? 3 : isHi ? 2 : 1, cls: isSel || isHi ? 'tn-glow' : '', on: isSel ? 'true' : 'false',
+            op: vis ? 1 : 0, vis: vis ? 'visible' : 'hidden', pe: vis ? 'auto' : 'none',
+            tr: `${fade},top var(--t-med) var(--ease-io),transform var(--t-fast) var(--ease-out),box-shadow var(--t-med) var(--ease-out),outline-color var(--t-med) var(--ease-out),outline-offset var(--t-fast) var(--ease-out),background-color var(--t-med) var(--ease-out),border-color var(--t-med) var(--ease-out)`,
+            onClick: () => this.upd({ sel: i.id, cf: confOf[i.id] || null }, () => this.showDetail()),
+          };
+        }),
+      };
     });
-    const ticks = []; for (let v = X0; v <= X1; v += 360) ticks.push({ x: pos(v), label: D.tm(v, tz, { tz: false, date: (v - X0) % 1440 === 0 }), fg: 'var(--ink3)', fw: 400 });
-    const conflicts = sch.conflicts.map(c => ({ kind: c.kind, text: c.text, fix: c.fix, icon: I.st.critical, bg: s.cf === c.id ? 'var(--critSoft)' : 'transparent', onClick: () => this.upd({ cf: s.cf === c.id ? null : c.id, sel: c.items[0] }) }));
+    // 6-hourly ticks: dates on day boundaries only; the first and last labels sit inside the axis instead of hanging over its ends
+    const ticks = []; for (let v = X0; v <= X1; v += 360) { const day = (v - X0) % 1440 === 0; const lb = String(D.tm(v, tz, { tz: false, date: day })); ticks.push({ x: pct(v), label: day ? lb : lb.slice(-5), tf: v === X0 ? 'none' : v === X1 ? 'translateX(-100%)' : 'translateX(-50%)', fg: day ? 'var(--ink2)' : 'var(--ink3)', fw: day ? 600 : 400 }); }
+    const conflicts = sch.conflicts.map(c => { const on = s.cf === c.id; return { kind: c.kind, text: c.text, fix: c.fix, icon: I.st.critical, on: on ? 'true' : 'false', bg: on ? 'var(--critSoft)' : 'transparent', hov: on ? 'var(--critSoft)' : 'var(--surf2)', lb: on ? 'var(--crit)' : 'transparent', cls: on ? 'tn-glow' : '', z: on ? 1 : 0, onClick: () => { const pick = !on; this.upd({ cf: pick ? c.id : null, sel: c.items[0] }, () => { if (pick) this.reveal(c.items); }); } }; });
     const it = sch.items.find(i => i.id === s.sel);
-    let det = { title: 'No activity selected', rows: [{ k: 'Horizon', v: `${D.tm(X0, tz, { date: true })} → ${D.tm(X1, tz, { date: true })}`, ff: 'var(--fnum)' }, { k: 'Activities', v: String(sch.items.filter(i => i.b > X0 && i.a < X1).length), ff: 'var(--fnum)' }, { k: 'Conflicts', v: String(sch.conflicts.length), ff: 'var(--fnum)' }], link: null };
+    let det = { key: `d|${t.id}|none`, title: 'No activity selected', rows: [{ k: 'Horizon', v: `${when(X0)} → ${when(X1)}`, ff: 'var(--fnum)', fg: 'inherit' }, { k: 'Activities', v: String(horizon.length), ff: 'var(--fnum)', fg: 'inherit' }, { k: 'Conflicts', v: String(sch.conflicts.length), ff: 'var(--fnum)', fg: 'inherit' }], link: null, clear: null };
     if (it) {
       const tr = D.TRANSFERS.find(x => x.id === it.ref || x.id === it.id); const bl = D.BLENDS.find(b => it.label.includes(b.id) || it.label.includes(b.id.slice(-3)) && it.type === 'Blending');
-      det = { title: it.label, rows: [{ k: 'Type', v: it.type, ff: 'var(--fsans)' }, { k: 'Resource', v: it.lane, ff: 'var(--fnum)' }, { k: 'Start', v: D.tm(it.a, tz, { date: true }), ff: 'var(--fnum)' }, { k: 'End', v: D.tm(it.b, tz, { date: true }), ff: 'var(--fnum)' }, { k: 'Duration', v: D.dur(it.b - it.a), ff: 'var(--fnum)' }, { k: 'Conflict', v: confOf[it.id] ? sch.conflicts.find(c => c.id === confOf[it.id]).kind : 'None', ff: 'var(--fsans)' }],
+      const cfk = confOf[it.id] ? sch.conflicts.find(c => c.id === confOf[it.id]).kind : null;
+      det = { key: `d|${t.id}|${it.id}`, title: it.label, rows: [{ k: 'Type', v: it.type, ff: 'var(--fsans)', fg: 'inherit' }, { k: 'Resource', v: it.lane, ff: 'var(--fnum)', fg: 'inherit' }, { k: 'Start', v: when(it.a), ff: 'var(--fnum)', fg: 'inherit' }, { k: 'End', v: when(it.b), ff: 'var(--fnum)', fg: 'inherit' }, { k: 'Duration', v: D.dur(it.b - it.a), ff: 'var(--fnum)', fg: 'inherit' }, { k: 'Conflict', v: cfk || 'None', ff: 'var(--fsans)', fg: cfk ? 'var(--critInk)' : 'inherit' }],
         link: tr ? (tr.marine ? 'Open transfer' : 'Open in terminal workspace') : bl ? 'Open blend batch' : /^T-/.test(it.lane) ? 'Open tank' : null,
-        onLink: () => tr ? this.props.go(tr.marine ? 'transfers' : 'terminal', { terminalId: t.id, focus: { type: 'transfer', id: tr.id } }) : bl ? this.props.go('blending', { terminalId: t.id, focus: { type: 'blend', id: bl.id } }) : this.props.go('terminal', { terminalId: t.id, focus: { type: 'tank', id: it.lane } }) };
+        onLink: () => tr ? this.props.go(tr.marine ? 'transfers' : 'terminal', { terminalId: t.id, focus: { type: 'transfer', id: tr.id } }) : bl ? this.props.go('blending', { terminalId: t.id, focus: { type: 'blend', id: bl.id } }) : this.props.go('terminal', { terminalId: t.id, focus: { type: 'tank', id: it.lane } }),
+        clear: () => this.upd({ sel: null, cf: null }) };
     }
-    return { ready: true, I, sub: `${t.name} · receipts, dispatches, transfers, blending, quality and maintenance · ${D.tm(X0, tz, { date: true })} → ${D.tm(X1, tz, { date: true })}`, typeChips, lanes, ticks, nowX: pos(D.NOW), nowLabel: D.tm(D.NOW, tz), conflicts, noConflicts: !conflicts.length, conflictCount: conflicts.length ? `${conflicts.length} need a decision` : 'None', det, cols2: ctx.tablet ? 'minmax(0,1fr)' : 'minmax(0,1fr) 340px' };
+    det.anim = tab ? 'tn-pop' : 'tn-drawer';
+    const L = { pad: mob ? '20px 16px 40px' : '32px 40px 56px', gap: mob ? '24px' : '40px', cols: tab ? 'minmax(0,1fr)' : 'minmax(0,1fr) 340px', laneW: mob ? '100px' : '128px', lanePl: mob ? '12px' : '14px', laneBd: mob ? '1px solid var(--line2)' : '0', trackMin: mob ? '940px' : '600px', detOrder: tab ? -1 : 0 };
+    const grid = 'repeating-linear-gradient(90deg,transparent 0,transparent calc(50% - 1px),var(--line) calc(50% - 1px),var(--line) 50%),repeating-linear-gradient(90deg,transparent 0,transparent calc(12.5% - 1px),var(--line2) calc(12.5% - 1px),var(--line2) 12.5%)';
+    return { ready: true, I, L, pageRef: this.pageRef, scrollRef: this.scrollRef, axisRef: this.axisRef, detRef: this.detRef, sub: `${t.name} · receipts, dispatches, transfers, blending, quality and maintenance · ${when(X0)} → ${when(X1)}`, typeChips, lanes, ticks, grid, pastBg: 'color-mix(in srgb, var(--ink) 3.5%, transparent)', nowX: pct(D.NOW), nowLabel: D.tm(D.NOW, tz), conflicts, noConflicts: !conflicts.length, conflictCount: conflicts.length ? `${conflicts.length} need a decision` : 'None', det };
   }
 }
 </script>

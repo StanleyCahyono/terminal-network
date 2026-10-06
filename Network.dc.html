@@ -9,189 +9,251 @@
 <x-dc>
 <div style="position:absolute;inset:0;overflow:auto;background:var(--bg)">
 <sc-if value="{{ ready }}" hint-placeholder-val="{{ true }}">
-<div style="padding:32px 40px 56px;display:flex;flex-direction:column;gap:40px;min-width:0">
-  <div style="display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap">
-    <div style="display:flex;flex-direction:column;gap:3px">
-      <div style="display:flex;align-items:center;gap:10px">
-        <h1 style="margin:0;font-size:30px;font-weight:500;letter-spacing:-.015em;line-height:1.1">Network overview</h1>
-        
+<div style="padding:{{ L.pad }};display:flex;flex-direction:column;gap:{{ L.gap }};min-width:0">
+  <div style="display:flex;align-items:flex-end;gap:14px 16px;flex-wrap:wrap;min-width:0">
+    <h1 style="margin:0;font-size:{{ L.h1 }};font-weight:500;letter-spacing:-.015em;line-height:1.1;min-width:0">Network overview</h1>
+    <div role="group" aria-label="Table filters" style="margin-left:auto;display:flex;gap:6px;flex-wrap:wrap;align-items:center;justify-content:flex-end;min-width:0;max-width:100%;flex:{{ L.filtFlex }}">
+      <button onClick="{{ clearFilters }}" style="order:{{ L.clearOrder }};height:32px;border:0;background:transparent;color:var(--acc);padding:0 6px;white-space:nowrap;visibility:{{ L.clearVis }};opacity:{{ L.clearOp }};transition:opacity var(--t-med) var(--ease-out),visibility var(--t-med)" style-hover="text-decoration:underline">Clear filters</button>
+      <div style="height:32px;display:flex;align-items:center;gap:7px;padding:0 9px;border:1px solid var(--line);border-radius:0;background:var(--surf);width:{{ L.searchW }};max-width:100%;min-width:0;transition:border-color var(--t-med) var(--ease-out)" style-hover="border-color:var(--ink3)" style-focus-within="border-color:var(--acc)">
+        <span style="color:var(--ink3);display:flex;flex:none">{{ I.search }}</span>
+        <input value="{{ f.text }}" onInput="{{ onText }}" placeholder="Filter terminals" aria-label="Filter terminals" style="border:0;outline:0;background:transparent;flex:1;min-width:0;height:100%">
       </div>
-      
-    </div>
-    <div style="flex:1"></div>
-    <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
-      <div style="height:32px;display:flex;align-items:center;gap:7px;padding:0 9px;border:1px solid var(--line);border-radius:0;background:var(--surf);width:200px">
-        <span style="color:var(--ink3)">{{ I.search }}</span>
-        <input value="{{ f.text }}" onInput="{{ onText }}" placeholder="Filter terminals" aria-label="Filter terminals" style="border:0;outline:0;background:transparent;flex:1;min-width:0">
-      </div>
-      <select value="{{ f.cap }}" onChange="{{ onCap }}" aria-label="Capability" style="height:32px;border:1px solid var(--line);border-radius:0;background:var(--surf);padding:0 8px">
+      <select value="{{ f.cap }}" onChange="{{ onCap }}" aria-label="Capability" style="height:32px;border:1px solid var(--line);border-radius:0;background:var(--surf);padding:0 8px;flex:{{ L.selFlex }};max-width:100%" style-hover="border-color:var(--ink3)">
         <sc-for list="{{ capOptions }}" as="o" hint-placeholder-count="6"><option value="{{ o }}">{{ o }}</option></sc-for>
       </select>
-      <select value="{{ f.status }}" onChange="{{ onStatus }}" aria-label="Operating status" style="height:32px;border:1px solid var(--line);border-radius:0;background:var(--surf);padding:0 8px">
+      <select value="{{ f.status }}" onChange="{{ onStatus }}" aria-label="Operating status" style="height:32px;border:1px solid var(--line);border-radius:0;background:var(--surf);padding:0 8px;flex:{{ L.selFlex }};max-width:100%" style-hover="border-color:var(--ink3)">
         <sc-for list="{{ statusOptions }}" as="o" hint-placeholder-count="3"><option value="{{ o }}">{{ o }}</option></sc-for>
       </select>
-      <select value="{{ f.sev }}" onChange="{{ onSev }}" aria-label="Exception severity" style="height:32px;border:1px solid var(--line);border-radius:0;background:var(--surf);padding:0 8px">
+      <select value="{{ f.sev }}" onChange="{{ onSev }}" aria-label="Exception severity" style="height:32px;border:1px solid var(--line);border-radius:0;background:var(--surf);padding:0 8px;flex:{{ L.selFlex }};max-width:100%" style-hover="border-color:var(--ink3)">
         <sc-for list="{{ sevOptions }}" as="o" hint-placeholder-count="4"><option value="{{ o }}">{{ o }}</option></sc-for>
       </select>
-      <sc-if value="{{ filtered }}" hint-placeholder-val="{{ false }}">
-        <button onClick="{{ clearFilters }}" style="height:32px;border:0;background:transparent;color:var(--acc);padding:0 6px;white-space:nowrap">Clear filters</button>
-      </sc-if>
     </div>
   </div>
 
   <sc-if value="{{ hasProdFilter }}" hint-placeholder-val="{{ false }}">
-    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12px;color:var(--ink2)">
+    <div class="tn-fade" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12px;color:var(--ink2);min-width:0">
       <span>Product filter (all screens):</span>
       <sc-for list="{{ prodChips }}" as="p" hint-placeholder-count="2">
-        <span style="display:flex;align-items:center;gap:6px;padding:2px 8px;border:1px solid var(--line);border-radius:0;background:var(--surf)"><span style="width:9px;height:9px;background:{{ p.color }}"></span>{{ p.label }}</span>
+        <span style="display:flex;align-items:center;gap:6px;padding:2px 8px;border:1px solid var(--line);border-radius:0;background:var(--surf);white-space:nowrap"><span style="width:9px;height:9px;flex:none;background:{{ p.color }}"></span>{{ p.label }}</span>
       </sc-for>
     </div>
   </sc-if>
 
-  <section aria-label="Network summary" style="display:grid;grid-template-columns:{{ sumCols }};background:var(--surf);border:1px solid var(--pBd)">
-    <div style="padding:14px 18px;display:flex;flex-direction:column;gap:8px;border-right:1px solid var(--line2);min-width:0">
-      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px">
-        <span style="font-size:12.5px;color:var(--ink3)">Total inventory · finished products</span>
-        <button onClick="{{ goInventory }}" style="border:0;background:transparent;color:var(--acc);font-size:12px;padding:0;display:flex;gap:4px;align-items:center;white-space:nowrap">Inventory records {{ I.arrowR }}</button>
+  <section aria-label="Network summary" style="display:grid;grid-template-columns:{{ L.sumCols }};gap:{{ L.tileGap }};min-width:0">
+    <div class="tn-lift" onClick="{{ K.inv }}" style="position:relative;cursor:pointer;padding:{{ L.tilePad }};display:flex;flex-direction:column;gap:8px;min-width:0;background:var(--surf);border:1px solid var(--pBd)" style-hover="border-color:var(--accLine)" style-active="transform:none;box-shadow:none;background:var(--surf2)">
+      <div style="display:flex;align-items:baseline;gap:2px 10px;flex-wrap:wrap;min-width:0">
+        <span style="flex:1 1 auto;min-width:0;font-size:12.5px;color:var(--ink3)">Total inventory · finished products</span>
+        <button style="margin-left:auto;border:0;background:transparent;color:var(--acc);font-size:12px;padding:0;display:flex;gap:4px;align-items:center;white-space:nowrap">Inventory records {{ I.arrowR }}</button>
       </div>
-      <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap">
+      <div style="display:flex;align-items:baseline;gap:4px 8px;flex-wrap:wrap;min-width:0">
         <span style="font-size:26px;font-weight:600;letter-spacing:-.01em;font-variant-numeric:tabular-nums">{{ sum.inv }}</span><span style="color:var(--ink3)">kL</span>
-        
       </div>
-      <div style="display:flex;height:10px;gap:1px;background:var(--surf2)">
-        <sc-for list="{{ prodBar }}" as="p" hint-placeholder-count="8"><div title="{{ p.title }}" style="width:{{ p.w }};background:{{ p.color }}"></div></sc-for>
+      <div style="display:flex;height:10px;gap:1px;background:var(--surf2);transform-origin:left center;animation:tngrow var(--t-slow) var(--ease-out) both">
+        <sc-for list="{{ prodBar }}" as="p" hint-placeholder-count="8"><div class="tn-bar" title="{{ p.title }}" style="width:{{ p.w }};min-width:0;background:{{ p.color }}"></div></sc-for>
       </div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:0 24px;margin-top:4px">
-        <sc-for list="{{ prodBar }}" as="p" hint-placeholder-count="8"><div style="display:grid;grid-template-columns:10px minmax(0,1fr) auto 40px;gap:8px;align-items:center;padding:4px 0;border-bottom:1px solid var(--line2);font-size:13px"><span style="width:10px;height:10px;background:{{ p.color }}"></span><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ p.label }}</span><span style="font-weight:500">{{ p.v }}</span><span style="text-align:right;color:var(--ink2)">{{ p.pct }}</span></div></sc-for>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(230px,100%),1fr));gap:0 24px;margin-top:4px;min-width:0">
+        <sc-for list="{{ prodBar }}" as="p" hint-placeholder-count="8"><div title="{{ p.title }}" style="display:grid;grid-template-columns:10px minmax(0,1fr) auto 40px;gap:8px;align-items:center;padding:4px 0;border-bottom:1px solid var(--line2);font-size:13px;min-width:0"><span style="width:10px;height:10px;background:{{ p.color }}"></span><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ p.label }}</span><span style="font-weight:500;white-space:nowrap">{{ p.v }}</span><span style="text-align:right;color:var(--ink2);white-space:nowrap">{{ p.pct }}</span></div></sc-for>
       </div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:0 24px;font-size:13px"><div style="display:flex;justify-content:space-between;padding:4px 0"><span>On quality hold</span><span style="font-weight:600;white-space:nowrap">{{ sum.held }} kL</span></div><div style="display:flex;justify-content:space-between;padding:4px 0"><span>Blend components</span><span style="font-weight:600;white-space:nowrap">{{ sum.comp }} kL</span></div></div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(230px,100%),1fr));gap:0 24px;font-size:13px;min-width:0"><div style="display:flex;justify-content:space-between;gap:12px;padding:4px 0;min-width:0"><span style="min-width:0">On quality hold</span><span style="font-weight:600;white-space:nowrap">{{ sum.held }} kL</span></div><div style="display:flex;justify-content:space-between;gap:12px;padding:4px 0;min-width:0"><span style="min-width:0">Blend components</span><span style="font-weight:600;white-space:nowrap">{{ sum.comp }} kL</span></div></div>
     </div>
-    <div style="padding:14px 18px;display:flex;flex-direction:column;gap:8px;border-right:1px solid var(--line2);min-width:0">
-      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px">
-        <span style="font-size:12.5px;color:var(--ink3)">Available receiving capacity</span>
-        <button onClick="{{ sortByRx }}" style="border:0;background:transparent;color:var(--acc);font-size:12px;padding:0;display:flex;gap:4px;align-items:center;white-space:nowrap">Sort table {{ I.arrowR }}</button>
+    <div class="tn-lift" onClick="{{ K.rx }}" style="position:relative;cursor:pointer;padding:{{ L.tilePad }};display:flex;flex-direction:column;gap:8px;min-width:0;background:var(--surf);border:1px solid {{ K.rxBd }}" style-hover="border-color:var(--accLine)" style-active="transform:none;box-shadow:none;background:var(--surf2)">
+      <span aria-hidden="true" style="position:absolute;left:-1px;right:-1px;top:-1px;height:2px;background:var(--acc);opacity:{{ K.rxOn }};transition:opacity var(--t-med) var(--ease-out);pointer-events:none"></span>
+      <div style="display:flex;align-items:baseline;gap:2px 10px;flex-wrap:wrap;min-width:0">
+        <span style="flex:1 1 auto;min-width:0;font-size:12.5px;color:var(--ink3)">Available receiving capacity</span>
+        <button aria-pressed="{{ K.rxPressed }}" style="margin-left:auto;border:0;background:transparent;color:var(--acc);font-size:12px;padding:0;display:flex;gap:4px;align-items:center;white-space:nowrap">Sort table {{ I.arrowR }}</button>
       </div>
-      <div style="display:flex;align-items:baseline;gap:8px"><span style="font-size:22px;font-weight:600">{{ sum.rx }}</span><span style="color:var(--ink3)">kL</span></div>
-      <div style="height:6px;background:var(--surf3);position:relative"><div style="position:absolute;inset:0 auto 0 0;width:{{ sum.usedW }};background:var(--ink2)"></div></div>
-      <div style="display:flex;flex-direction:column;font-size:13px"><div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--line2)"><span>Operating capacity in use</span><span style="font-weight:600">{{ sum.capUsed }}</span></div><div style="display:flex;justify-content:space-between;padding:4px 0"><span>Basis</span><span>To max. operating capacity, in-service tanks</span></div></div>
+      <div style="display:flex;align-items:baseline;gap:4px 8px;flex-wrap:wrap;min-width:0"><span style="font-size:22px;font-weight:600">{{ sum.rx }}</span><span style="color:var(--ink3)">kL</span></div>
+      <div style="height:6px;background:var(--surf3);position:relative;overflow:hidden"><div class="tn-bar" style="position:absolute;inset:0 auto 0 0;width:{{ sum.usedW }};background:var(--ink2);transform-origin:left center;animation:tngrow var(--t-slow) var(--ease-out) both"></div></div>
+      <div style="display:flex;flex-direction:column;font-size:13px;min-width:0">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:4px 0;border-bottom:1px solid var(--line2)"><span style="min-width:0">Operating capacity in use</span><span style="font-weight:600;white-space:nowrap">{{ sum.capUsed }}</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:2px 12px;padding:4px 0"><span style="flex:none">Basis</span><span style="flex:1 1 150px;min-width:0;text-align:right">To max. operating capacity, in-service tanks</span></div>
+      </div>
     </div>
-    <div style="padding:14px 18px;display:flex;flex-direction:column;gap:8px;border-right:1px solid var(--line2);min-width:0">
-      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px">
-        <span style="font-size:12.5px;color:var(--ink3)">Active transfers</span>
-        <button onClick="{{ toggleTrList }}" style="border:0;background:transparent;color:var(--acc);font-size:12px;padding:0;white-space:nowrap">{{ trListLabel }}</button>
+    <div class="tn-lift" onClick="{{ K.tr }}" style="position:relative;cursor:pointer;padding:{{ L.tilePad }};display:flex;flex-direction:column;gap:8px;min-width:0;background:var(--surf);border:1px solid {{ K.trBd }}" style-hover="border-color:var(--accLine)" style-active="transform:none;box-shadow:none;background:var(--surf2)">
+      <span aria-hidden="true" style="position:absolute;left:-1px;right:-1px;top:-1px;height:2px;background:var(--acc);opacity:{{ K.trOn }};transition:opacity var(--t-med) var(--ease-out);pointer-events:none"></span>
+      <div style="display:flex;align-items:baseline;gap:2px 10px;flex-wrap:wrap;min-width:0">
+        <span style="flex:1 1 auto;min-width:0;font-size:12.5px;color:var(--ink3)">Active transfers</span>
+        <button aria-expanded="{{ K.trOpen }}" style="margin-left:auto;border:0;background:transparent;color:var(--acc);font-size:12px;padding:0;display:flex;gap:4px;align-items:center;white-space:nowrap">{{ trListLabel }}<span style="display:flex;transform:{{ K.trChev }};transition:transform var(--t-med) var(--ease-out)">{{ I.chevD }}</span></button>
       </div>
       <div style="font-size:22px;font-weight:600">{{ sum.active }}</div>
-      <div style="display:flex;flex-direction:column;gap:2px;font-size:11.5px;color:var(--ink2)">
-        <sc-for list="{{ trTypes }}" as="x" hint-placeholder-count="4"><span style="display:flex;justify-content:space-between;gap:8px"><span>{{ x.type }}</span><span style="font-family:var(--fnum)">{{ x.n }}</span></span></sc-for>
+      <div style="display:flex;flex-direction:column;gap:2px;font-size:11.5px;color:var(--ink2);min-width:0">
+        <sc-for list="{{ trTypes }}" as="x" hint-placeholder-count="4"><span style="display:flex;justify-content:space-between;gap:8px;min-width:0"><span style="min-width:0">{{ x.type }}</span><span style="font-family:var(--fnum);flex:none">{{ x.n }}</span></span></sc-for>
       </div>
     </div>
-    <div style="padding:14px 18px;display:flex;flex-direction:column;gap:8px;min-width:0">
-      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px">
-        <span style="font-size:12.5px;color:var(--ink3)">Exceptions requiring attention</span>
-        <button onClick="{{ openAlarmsAll }}" style="border:0;background:transparent;color:var(--acc);font-size:12px;padding:0;display:flex;gap:4px;align-items:center;white-space:nowrap">Alarm centre {{ I.arrowR }}</button>
+    <div class="tn-lift" onClick="{{ K.ex }}" style="position:relative;cursor:pointer;padding:{{ L.tilePad }};display:flex;flex-direction:column;gap:8px;min-width:0;background:var(--surf);border:1px solid var(--pBd)" style-hover="border-color:var(--accLine)" style-active="transform:none;box-shadow:none;background:var(--surf2)">
+      <div style="display:flex;align-items:baseline;gap:2px 10px;flex-wrap:wrap;min-width:0">
+        <span style="flex:1 1 auto;min-width:0;font-size:12.5px;color:var(--ink3)">Exceptions requiring attention</span>
+        <button style="margin-left:auto;border:0;background:transparent;color:var(--acc);font-size:12px;padding:0;display:flex;gap:4px;align-items:center;white-space:nowrap">Alarm centre {{ I.arrowR }}</button>
       </div>
       <div style="font-size:22px;font-weight:600">{{ sum.exN }}</div>
-      <div style="display:flex;flex-direction:column;gap:4px;font-size:12px">
-        <span style="display:flex;align-items:center;gap:7px">{{ I.st.critical }}<b style="font-weight:600">{{ sum.crit }}</b> Critical<span style="color:var(--ink3)">· {{ sum.critUnack }} not acknowledged</span></span>
-        <span style="display:flex;align-items:center;gap:7px">{{ I.st.attention }}<b style="font-weight:600">{{ sum.warn }}</b> Attention<span style="color:var(--ink3)">· {{ sum.warnUnack }} not acknowledged</span></span>
+      <div style="display:flex;flex-direction:column;gap:4px;font-size:12px;min-width:0">
+        <span style="display:grid;grid-template-columns:auto auto minmax(0,1fr);column-gap:7px;align-items:center"><span style="display:flex">{{ I.st.critical }}</span><span style="white-space:nowrap"><b style="font-weight:600">{{ sum.crit }}</b> Critical</span><span style="color:var(--ink3);min-width:0">· {{ sum.critUnack }} not acknowledged</span></span>
+        <span style="display:grid;grid-template-columns:auto auto minmax(0,1fr);column-gap:7px;align-items:center"><span style="display:flex">{{ I.st.attention }}</span><span style="white-space:nowrap"><b style="font-weight:600">{{ sum.warn }}</b> Attention</span><span style="color:var(--ink3);min-width:0">· {{ sum.warnUnack }} not acknowledged</span></span>
       </div>
     </div>
   </section>
 
   <sc-if value="{{ trListOpen }}" hint-placeholder-val="{{ false }}">
-    <section aria-label="Active transfer records" style="background:var(--surf);border:1px solid var(--pBd);overflow:auto;animation:tnin .14s ease">
-      <div style="display:grid;grid-template-columns:150px 120px minmax(0,1.4fr) minmax(0,1.2fr) minmax(0,1.3fr) 160px 90px;min-width:900px;padding:8px 14px;font-size:12.5px;color:var(--ink3);border-bottom:1px solid var(--line)">
-        <span>Transfer</span><span>Type</span><span>Terminal</span><span>Product</span><span>Route</span><span>Progress</span><span>State</span>
-      </div>
-      <sc-for list="{{ trRows }}" as="r" hint-placeholder-count="6">
-        <button onClick="{{ r.onClick }}" style="width:100%;display:grid;grid-template-columns:150px 120px minmax(0,1.4fr) minmax(0,1.2fr) minmax(0,1.3fr) 160px 90px;min-width:900px;align-items:center;padding:7px 14px;border:0;border-bottom:1px solid var(--line2);background:transparent;text-align:left" style-hover="background:var(--surf2)">
-          <span style="font-family:var(--fid);white-space:nowrap;letter-spacing:-.02em;font-size:11.5px">{{ r.id }}</span><span>{{ r.type }}</span><span>{{ r.term }}</span>
-          <span style="display:flex;align-items:center;gap:6px"><span style="width:9px;height:9px;background:{{ r.color }}"></span>{{ r.prod }}</span>
-          <span style="font-family:var(--fnum);font-size:11.5px;color:var(--ink2)">{{ r.route }}</span>
-          <span style="display:flex;align-items:center;gap:8px"><span style="flex:1;height:4px;background:var(--surf3)"><span style="display:block;height:4px;width:{{ r.pct }};background:var(--ink2)"></span></span><span style="font-family:var(--fnum);font-size:11px;width:34px;text-align:right">{{ r.pct }}</span></span>
-          <span style="display:flex;align-items:center;gap:5px">{{ r.icon }}{{ r.state }}</span>
-        </button>
-      </sc-for>
+    <section aria-label="Active transfer records" class="tn-rise" style="background:var(--surf);border:1px solid var(--pBd);min-width:0">
+      <sc-if value="{{ T.table }}" hint-placeholder-val="{{ true }}">
+        <div style="overflow-x:auto">
+          <div style="min-width:{{ T.minW }}">
+            <div style="display:grid;grid-template-columns:{{ T.cols }};column-gap:12px;padding:8px 14px;font-size:12.5px;color:var(--ink3);border-bottom:1px solid var(--line)">
+              <span>Transfer</span><span>Type</span><span>Terminal</span><span>Product</span><span>Route</span><span>Progress</span><span>State</span>
+            </div>
+            <sc-for list="{{ trRows }}" as="r" hint-placeholder-count="6">
+              <button onClick="{{ r.onClick }}" style="width:100%;display:grid;grid-template-columns:{{ T.cols }};column-gap:12px;align-items:center;padding:7px 14px;border:0;border-bottom:1px solid var(--line2);background:transparent;text-align:left" style-hover="background:var(--surf2)" style-active="background:var(--surf3)">
+                <span style="font-family:var(--fid);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:-.02em;font-size:11.5px">{{ r.id }}</span>
+                <span title="{{ r.type }}" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.type }}</span>
+                <span title="{{ r.term }}" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.term }}</span>
+                <span title="{{ r.prod }}" style="display:flex;align-items:center;gap:6px;min-width:0"><span style="width:9px;height:9px;flex:none;background:{{ r.color }}"></span><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0">{{ r.prod }}</span></span>
+                <span title="{{ r.route }}" style="font-family:var(--fnum);font-size:11.5px;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.route }}</span>
+                <span style="display:flex;align-items:center;gap:8px;min-width:0"><span style="flex:1;min-width:0;height:4px;background:var(--surf3);overflow:hidden"><span class="tn-bar" style="display:block;height:4px;width:{{ r.pct }};background:var(--ink2)"></span></span><span style="font-family:var(--fnum);font-size:11px;width:34px;flex:none;text-align:right">{{ r.pct }}</span></span>
+                <span title="{{ r.state }}" style="display:flex;align-items:center;gap:5px;min-width:0"><span style="display:flex;flex:none">{{ r.icon }}</span><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0">{{ r.state }}</span></span>
+              </button>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+      <sc-if value="{{ T.cards }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;min-width:0">
+          <sc-for list="{{ trRows }}" as="r" hint-placeholder-count="6">
+            <button onClick="{{ r.onClick }}" style="width:100%;display:flex;flex-direction:column;align-items:stretch;gap:5px;padding:10px 14px;border:0;border-bottom:1px solid var(--line2);background:transparent;text-align:left;min-width:0" style-hover="background:var(--surf2)" style-active="background:var(--surf3)">
+              <span style="display:flex;align-items:center;justify-content:space-between;gap:10px;min-width:0">
+                <span style="font-family:var(--fid);font-size:11.5px;letter-spacing:-.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0">{{ r.id }}</span>
+                <span title="{{ r.state }}" style="display:flex;align-items:center;gap:5px;flex:0 1 auto;min-width:0;font-size:12.5px"><span style="display:flex;flex:none">{{ r.icon }}</span><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0">{{ r.state }}</span></span>
+              </span>
+              <span title="{{ r.type }} · {{ r.term }}" style="font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0">{{ r.type }} · {{ r.term }}</span>
+              <span style="display:flex;align-items:center;gap:6px;font-size:12px;min-width:0"><span style="width:9px;height:9px;flex:none;background:{{ r.color }}"></span><span title="{{ r.prod }}" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:0 1 auto">{{ r.prod }}</span><span style="color:var(--ink3);flex:none">·</span><span title="{{ r.route }}" style="font-family:var(--fnum);color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:1 1 0">{{ r.route }}</span></span>
+              <span style="display:flex;align-items:center;gap:8px;min-width:0"><span style="flex:1;min-width:0;height:4px;background:var(--surf3);overflow:hidden"><span class="tn-bar" style="display:block;height:4px;width:{{ r.pct }};background:var(--ink2)"></span></span><span style="font-family:var(--fnum);font-size:11px;width:34px;flex:none;text-align:right">{{ r.pct }}</span></span>
+            </button>
+          </sc-for>
+        </div>
+      </sc-if>
+      <sc-if value="{{ T.empty }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:16px 14px;color:var(--ink3)">{{ T.emptyMsg }}</div>
+      </sc-if>
     </section>
   </sc-if>
 
-  <div style="display:grid;grid-template-columns:{{ mainCols }};gap:40px;align-items:start">
+  <div style="display:grid;grid-template-columns:{{ mainCols }};gap:{{ L.mainGap }};align-items:start;min-width:0">
     <section aria-label="Terminal registry" style="background:var(--surf);border:1px solid var(--pBd);min-width:0;overflow:hidden">
       <div style="background:var(--bar);color:var(--barInk);--ink:var(--barInk);--ink2:var(--barInk2);--ink3:var(--barInk3);--acc:var(--barAcc);display:flex;align-items:center;gap:10px;padding:9px 14px;">
         <span style="font-weight:600">Terminal registry</span>
         <span style="color:var(--ink3);font-size:12px">{{ rowCount }}</span>
         <div style="flex:1"></div>
-        
+
       </div>
+      <sc-if value="{{ R.table }}" hint-placeholder-val="{{ true }}">
       <div style="overflow-x:auto">
-        <div role="table" style="min-width:1060px">
+        <div role="table" style="min-width:{{ R.minW }}">
           <div role="row" style="display:grid;grid-template-columns:{{ cols }};padding:0 14px;border-bottom:2px solid var(--line);background:var(--surf)">
             <sc-for list="{{ heads }}" as="hd" hint-placeholder-count="9">
-              <button role="columnheader" onClick="{{ hd.onClick }}" aria-sort="{{ hd.aria }}" style="white-space:nowrap;display:flex;align-items:center;gap:4px;justify-content:{{ hd.jc }};padding:8px 6px;border:0;background:transparent;font-size:12.5px;color:{{ hd.fg }};font-weight:500;text-align:left">{{ hd.label }}<span style="opacity:{{ hd.op }}">{{ hd.icon }}</span></button>
+              <button role="columnheader" onClick="{{ hd.onClick }}" aria-sort="{{ hd.aria }}" style="white-space:nowrap;display:flex;align-items:center;gap:4px;justify-content:{{ hd.jc }};padding:8px 6px;border:0;background:transparent;font-size:12.5px;color:{{ hd.fg }};font-weight:500;text-align:left" style-hover="background:var(--surf2)">{{ hd.label }}<span style="display:flex;opacity:{{ hd.op }};transform:{{ hd.rot }};transition:opacity var(--t-fast) var(--ease-out),transform var(--t-med) var(--ease-out)">{{ hd.icon }}</span></button>
             </sc-for>
           </div>
-          <sc-if value="{{ empty }}" hint-placeholder-val="{{ false }}">
-            <div style="padding:30px 20px;display:flex;flex-direction:column;gap:8px;align-items:flex-start">
-              <span style="font-weight:600">No terminals match these filters.</span>
-              <span style="color:var(--ink3)">Filters combine: capability, operating status, exception severity, text and the global product filter.</span>
-              <button onClick="{{ clearFilters }}" style="height:30px;padding:0 12px;border:1px solid var(--line);border-radius:0;background:var(--surf);white-space:nowrap">Clear table filters</button>
+          <div role="rowgroup" key="{{ listKey }}" class="tn-fade">
+            <sc-for list="{{ rows }}" as="r" hint-placeholder-count="14">
+              <div role="row" tabindex="0" onClick="{{ r.onClick }}" onKeyDown="{{ r.onKey }}" onMouseEnter="{{ r.onHover }}" onMouseLeave="{{ r.onLeave }}" onFocus="{{ r.onFocus }}" style="display:grid;grid-template-columns:{{ cols }};align-items:center;padding:0 14px;min-height:46px;border-bottom:1px solid var(--line2);cursor:pointer;background:{{ r.bg }};box-shadow:{{ r.sh }};transition:background-color var(--t-med) var(--ease-out),box-shadow var(--t-med) var(--ease-out)" style-hover="background:var(--accSoft)" style-active="background:color-mix(in srgb,var(--acc) 18%,var(--surf))" style-focus-visible="outline:2px solid var(--acc);outline-offset:-2px">
+                <div title="{{ r.name }}" style="padding:8px;min-width:0;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.name }}</div>
+                <div style="padding:8px;display:flex;align-items:center;gap:7px;white-space:nowrap;min-width:0">{{ r.statusIcon }}<span>{{ r.status }}</span></div>
+                <div title="{{ r.barTitle }}" style="padding:8px;display:grid;grid-template-columns:minmax(60px,1fr) auto;gap:12px;align-items:center;min-width:0">
+                  <div style="display:flex;height:8px;background:var(--surf3);overflow:hidden"><div class="tn-bar" style="width:{{ r.wAvail }};background:var(--ink2)"></div><div class="tn-bar" style="width:{{ r.wHeld }};background:repeating-linear-gradient(135deg, var(--holdA) 0 2px, var(--holdB) 2px 4px)"></div></div>
+                  <span style="font-size:13.5px;text-align:right;white-space:nowrap">{{ r.inv }}</span>
+                </div>
+                <div style="padding:8px;text-align:right;font-size:13.5px;white-space:nowrap">{{ r.rx }}</div>
+                <div style="padding:8px;text-align:right;font-size:13.5px;color:{{ r.activeFg }}">{{ r.active }}</div>
+                <div style="padding:8px;text-align:right;font-size:13.5px;white-space:nowrap">{{ r.sched }}</div>
+                <div title="{{ r.heldKl }}" style="padding:8px;text-align:right;font-size:13.5px">{{ r.holds }}</div>
+                <div title="{{ r.exTitle }}" style="padding:8px;display:flex;gap:8px;align-items:center;min-width:0"><span style="flex:none;display:flex">{{ r.exIcon }}</span><span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:{{ r.exFg }}">{{ r.ex }}</span><span style="flex:none;color:var(--ink3);font-size:12px">{{ r.exMore }}</span></div>
+                <div style="padding:8px;text-align:right;white-space:nowrap;min-width:0;overflow:hidden;text-overflow:ellipsis;color:{{ r.updFg }}">{{ r.upd }}</div>
+              </div>
+            </sc-for>
+          </div>
+          <sc-if value="{{ hasRows }}" hint-placeholder-val="{{ true }}">
+            <div role="row" style="display:grid;grid-template-columns:{{ cols }};align-items:center;padding:0 14px;min-height:40px;background:var(--surf2);font-weight:600">
+              <div style="padding:8px;white-space:nowrap">Total · {{ rowCount }}</div><div></div>
+              <div style="padding:8px;text-align:right;white-space:nowrap">{{ tot.inv }}</div>
+              <div style="padding:6px;text-align:right;font-family:var(--fnum);font-size:12px;white-space:nowrap">{{ tot.rx }}</div>
+              <div style="padding:6px;text-align:right;font-family:var(--fnum);font-size:12px">{{ tot.active }}</div>
+              <div style="padding:6px;text-align:right;font-family:var(--fnum);font-size:12px;white-space:nowrap">{{ tot.sched }}</div>
+              <div style="padding:6px;text-align:right;font-family:var(--fnum);font-size:12px">{{ tot.holds }}</div>
+              <div></div><div></div>
             </div>
           </sc-if>
-          <sc-for list="{{ rows }}" as="r" hint-placeholder-count="14">
-            <div role="row" tabindex="0" onClick="{{ r.onClick }}" onKeyDown="{{ r.onKey }}" onMouseEnter="{{ r.onHover }}" style="display:grid;grid-template-columns:{{ cols }};align-items:center;padding:0 14px;min-height:46px;border-bottom:1px solid var(--line2);cursor:pointer;background:{{ r.bg }};box-shadow:{{ r.sh }}" style-hover="background:var(--surf2)">
-              <div style="padding:8px;min-width:0;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.name }}</div>
-              <div style="padding:8px;display:flex;align-items:center;gap:7px;white-space:nowrap">{{ r.statusIcon }}<span>{{ r.status }}</span></div>
-              <div title="{{ r.barTitle }}" style="padding:8px;display:grid;grid-template-columns:minmax(60px,1fr) auto;gap:12px;align-items:center;min-width:0">
-                <div style="display:flex;height:8px;background:var(--surf3)"><div style="width:{{ r.wAvail }};background:var(--ink2)"></div><div style="width:{{ r.wHeld }};background:repeating-linear-gradient(135deg, var(--holdA) 0 2px, var(--holdB) 2px 4px)"></div></div>
-                <span style="font-size:13.5px;text-align:right;white-space:nowrap">{{ r.inv }}</span>
-              </div>
-              <div style="padding:8px;text-align:right;font-size:13.5px">{{ r.rx }}</div>
-              <div style="padding:8px;text-align:right;font-size:13.5px;color:{{ r.activeFg }}">{{ r.active }}</div>
-              <div style="padding:8px;text-align:right;font-size:13.5px">{{ r.sched }}</div>
-              <div title="{{ r.heldKl }}" style="padding:8px;text-align:right;font-size:13.5px">{{ r.holds }}</div>
-              <div style="padding:8px;display:flex;gap:8px;align-items:center;min-width:0"><span style="flex:none">{{ r.exIcon }}</span><span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:{{ r.exFg }}">{{ r.ex }}</span><span style="flex:none;color:var(--ink3);font-size:12px">{{ r.exMore }}</span></div>
-              <div style="padding:8px;text-align:right;white-space:nowrap;color:{{ r.updFg }}">{{ r.upd }}</div>
-            </div>
-          </sc-for>
-          <div role="row" style="display:grid;grid-template-columns:{{ cols }};align-items:center;padding:0 14px;min-height:40px;background:var(--surf2);font-weight:600">
-            <div style="padding:8px">Total · {{ rowCount }}</div><div></div>
-            <div style="padding:8px;text-align:right">{{ tot.inv }}</div>
-            <div style="padding:6px;text-align:right;font-family:var(--fnum);font-size:12px">{{ tot.rx }}</div>
-            <div style="padding:6px;text-align:right;font-family:var(--fnum);font-size:12px">{{ tot.active }}</div>
-            <div style="padding:6px;text-align:right;font-family:var(--fnum);font-size:12px">{{ tot.sched }}</div>
-            <div style="padding:6px;text-align:right;font-family:var(--fnum);font-size:12px">{{ tot.holds }}</div>
-            <div></div><div></div>
-          </div>
         </div>
       </div>
-      
+      </sc-if>
+      <sc-if value="{{ R.cards }}" hint-placeholder-val="{{ false }}">
+        <div role="group" aria-label="Sort terminals" style="display:flex;gap:4px;overflow-x:auto;padding:7px 10px;border-bottom:2px solid var(--line);background:var(--surf)">
+          <sc-for list="{{ heads }}" as="hd" hint-placeholder-count="9">
+            <button onClick="{{ hd.onClick }}" aria-pressed="{{ hd.on }}" style="flex:none;white-space:nowrap;display:flex;align-items:center;gap:4px;height:28px;padding:0 9px;border:1px solid {{ hd.chipBd }};border-radius:0;background:{{ hd.chipBg }};font-size:12.5px" style-hover="border-color:var(--ink3)">{{ hd.label }}<span style="display:{{ hd.chipIc }};transform:{{ hd.rot }};transition:transform var(--t-med) var(--ease-out)">{{ hd.icon }}</span></button>
+          </sc-for>
+        </div>
+        <div role="list" aria-label="Terminals" key="{{ listKey }}" class="tn-fade">
+          <sc-for list="{{ rows }}" as="r" hint-placeholder-count="14">
+            <div role="listitem" tabindex="0" onClick="{{ r.onClick }}" onKeyDown="{{ r.onKey }}" style="display:flex;flex-direction:column;gap:6px;padding:12px 14px;border-bottom:1px solid var(--line2);cursor:pointer;min-width:0;transition:background-color var(--t-med) var(--ease-out)" style-hover="background:var(--surf2)" style-active="background:color-mix(in srgb,var(--acc) 18%,var(--surf))" style-focus-visible="outline:2px solid var(--acc);outline-offset:-2px">
+              <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;min-width:0">
+                <span style="font-weight:600;min-width:0;overflow-wrap:anywhere">{{ r.name }}</span>
+                <span style="display:flex;align-items:center;gap:6px;flex:none;font-size:12.5px;color:var(--ink2);white-space:nowrap">{{ r.statusIcon }}<span>{{ r.status }}</span></span>
+              </div>
+              <div title="{{ r.barTitle }}" style="display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;min-width:0">
+                <div style="display:flex;height:8px;background:var(--surf3);overflow:hidden"><div class="tn-bar" style="width:{{ r.wAvail }};background:var(--ink2)"></div><div class="tn-bar" style="width:{{ r.wHeld }};background:repeating-linear-gradient(135deg, var(--holdA) 0 2px, var(--holdB) 2px 4px)"></div></div>
+                <span style="font-size:13px;white-space:nowrap">{{ r.inv }} kL</span>
+              </div>
+              <div style="display:flex;flex-wrap:wrap;gap:2px 14px;font-size:12px;color:var(--ink2);min-width:0">
+                <span style="white-space:nowrap">Receiving {{ r.rx }} kL</span><span style="white-space:nowrap">Active {{ r.active }}</span><span style="white-space:nowrap">Sched. R/D {{ r.sched }}</span><span title="{{ r.heldKl }}" style="white-space:nowrap">Holds {{ r.holds }}</span>
+              </div>
+              <div title="{{ r.exTitle }}" style="display:flex;gap:8px;align-items:center;min-width:0;font-size:12.5px"><span style="flex:none;display:flex">{{ r.exIcon }}</span><span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:{{ r.exFg }}">{{ r.exCard }}</span><span style="flex:none;color:var(--ink3);font-size:12px">{{ r.exMore }}</span><span style="margin-left:auto;flex:none;white-space:nowrap;color:{{ r.updFg }}">{{ r.updCard }}</span></div>
+            </div>
+          </sc-for>
+        </div>
+        <sc-if value="{{ hasRows }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex;flex-wrap:wrap;gap:2px 14px;align-items:baseline;padding:10px 14px;background:var(--surf2);font-size:12px;color:var(--ink2);min-width:0">
+            <span style="font-weight:600;font-size:14px;color:var(--ink);white-space:nowrap">Total · {{ rowCount }}</span>
+            <span style="white-space:nowrap">{{ tot.inv }} kL stored</span><span style="white-space:nowrap">Receiving {{ tot.rx }} kL</span><span style="white-space:nowrap">Active {{ tot.active }}</span><span style="white-space:nowrap">Sched. R/D {{ tot.sched }}</span><span style="white-space:nowrap">Holds {{ tot.holds }}</span>
+          </div>
+        </sc-if>
+      </sc-if>
+      <sc-if value="{{ empty }}" hint-placeholder-val="{{ false }}">
+        <div class="tn-fade" style="padding:28px 20px 30px;display:flex;flex-direction:column;gap:8px;align-items:flex-start;min-width:0">
+          <span style="font-weight:600">No terminals match these filters.</span>
+          <span style="color:var(--ink3)">Filters combine: capability, operating status, exception severity, text and the global product filter.</span>
+          <button onClick="{{ clearFilters }}" style="height:30px;padding:0 12px;border:1px solid var(--line);border-radius:0;background:var(--surf);white-space:nowrap" style-hover="background:var(--surf2);border-color:var(--ink3)">Clear table filters</button>
+        </div>
+      </sc-if>
     </section>
 
     <sc-if value="{{ showMap }}" hint-placeholder-val="{{ true }}">
       <aside style="display:{{ asideDir }};grid-template-columns:{{ asideCols }};flex-direction:column;gap:24px;min-width:0;align-items:start">
-        <section aria-label="Terminal preview" style="background:var(--surf);border:1px solid var(--pBd);padding:14px;display:flex;flex-direction:column;gap:12px">
-          <div style="display:flex;align-items:flex-start;gap:10px">
-            <div style="flex:1;min-width:0">
-              <div style="font-weight:600;font-size:14px">{{ pv.name }}</div>
-              <div style="font-size:11.5px;color:var(--ink3)">{{ pv.area }} · {{ pv.kind }}</div>
-            </div>
-            <div style="text-align:right"><div style="font-family:var(--fnum);font-size:12px">{{ pv.local }}</div><div style="font-size:10.5px;color:var(--ink3)">Terminal local time</div></div>
-          </div>
-          <div style="display:flex;gap:5px;flex-wrap:wrap">
-            <sc-for list="{{ pv.caps }}" as="c" hint-placeholder-count="3"><span style="font-size:11px;padding:2px 7px;border:1px solid var(--line);border-radius:0;color:var(--ink2)">{{ c }}</span></sc-for>
-            <span style="font-size:11px;padding:2px 7px;color:var(--ink3)">{{ pv.tanks }}</span>
-          </div>
-          <div style="display:flex;flex-direction:column;gap:6px">
-            <div style="font-size:12.5px;color:var(--ink3)">Stored by product · kL</div>
-            <sc-for list="{{ pv.prods }}" as="p" hint-placeholder-count="4">
-              <div style="display:grid;grid-template-columns:110px 1fr 70px;gap:8px;align-items:center;font-size:12px">
-                <span style="display:flex;align-items:center;gap:6px;white-space:nowrap"><span style="width:9px;height:9px;background:{{ p.color }}"></span>{{ p.label }}</span>
-                <span style="height:6px;background:var(--surf3)"><span style="display:block;height:6px;width:{{ p.w }};background:{{ p.color }}"></span></span>
-                <span style="text-align:right;font-family:var(--fnum);font-size:11.5px">{{ p.v }}</span>
+        <section aria-label="Terminal preview" style="width:100%;background:var(--surf);border:1px solid var(--pBd);min-width:0">
+          <div key="{{ previewId }}" class="tn-pop" style="padding:14px;display:flex;flex-direction:column;gap:12px;min-width:0">
+            <div style="display:flex;align-items:flex-start;gap:12px;min-width:0">
+              <div style="flex:1;min-width:0">
+                <div style="font-weight:600;font-size:14px;overflow-wrap:anywhere">{{ pv.name }}</div>
+                <div style="font-size:11.5px;color:var(--ink3);overflow-wrap:anywhere">{{ pv.area }} · {{ pv.kind }}</div>
               </div>
-            </sc-for>
+              <div style="text-align:right;flex:none"><div style="font-family:var(--fnum);font-size:12px;white-space:nowrap">{{ pv.local }}</div><div style="font-size:10.5px;color:var(--ink3);white-space:nowrap">Terminal local time</div></div>
+            </div>
+            <div style="display:flex;gap:5px;flex-wrap:wrap;min-width:0">
+              <sc-for list="{{ pv.caps }}" as="c" hint-placeholder-count="3"><span style="font-size:11px;padding:2px 7px;border:1px solid var(--line);border-radius:0;color:var(--ink2);white-space:nowrap">{{ c }}</span></sc-for>
+              <span style="font-size:11px;padding:2px 7px;color:var(--ink3);white-space:nowrap">{{ pv.tanks }}</span>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:6px;min-width:0">
+              <div style="font-size:12.5px;color:var(--ink3)">Stored by product · kL</div>
+              <sc-for list="{{ pv.prods }}" as="p" hint-placeholder-count="4">
+                <div title="{{ p.label }}: {{ p.v }} kL" style="display:grid;grid-template-columns:minmax(0,150px) minmax(40px,1fr) auto;gap:10px;align-items:center;font-size:12px;min-width:0">
+                  <span style="display:flex;align-items:center;gap:6px;min-width:0"><span style="width:9px;height:9px;flex:none;background:{{ p.color }}"></span><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0">{{ p.label }}</span></span>
+                  <span style="height:6px;background:var(--surf3);overflow:hidden"><span class="tn-bar" style="display:block;height:6px;width:{{ p.w }};background:{{ p.color }};transform-origin:left center;animation:tngrow var(--t-slow) var(--ease-out) both"></span></span>
+                  <span style="min-width:56px;text-align:right;font-family:var(--fnum);font-size:11.5px;white-space:nowrap">{{ p.v }}</span>
+                </div>
+              </sc-for>
+              <sc-if value="{{ pvNoProds }}" hint-placeholder-val="{{ false }}">
+                <span style="font-size:12px;color:var(--ink3)">No stored product for the current product filter.</span>
+              </sc-if>
+            </div>
+            <button onClick="{{ pv.open }}" style="height:34px;border:0;border-radius:0;background:var(--ink);color:var(--surf);font-weight:500;display:flex;align-items:center;justify-content:center;gap:8px;white-space:nowrap;min-width:0" style-hover="background:var(--ink2)">Open terminal workspace {{ I.arrowR }}</button>
           </div>
-          <button onClick="{{ pv.open }}" style="height:34px;border:0;border-radius:0;background:var(--ink);color:var(--surf);font-weight:500;display:flex;align-items:center;justify-content:center;gap:8px;white-space:nowrap">Open terminal workspace {{ I.arrowR }}</button>
         </section>
       </aside>
     </sc-if>
@@ -212,8 +274,12 @@ class Component extends DCLogic {
     this.onSel = e => { this.setState({ hover: e.detail }); };
     const el = this.mapRef.current; if (el) el.addEventListener('terminalselect', this.onSel);
   }
-  componentWillUnmount() { const el = this.mapRef.current; if (el) el.removeEventListener('terminalselect', this.onSel); }
+  componentWillUnmount() { clearTimeout(this.hT); const el = this.mapRef.current; if (el) el.removeEventListener('terminalselect', this.onSel); }
   upd(p) { this.setState(p, () => { const { hover, ...rest } = this.state; this.props.d.ui.save('net', rest); }); }
+  // The preview follows the pointer once it rests on a row (a short delay keeps a sweep across rows from flickering it); keyboard focus selects at once.
+  hoverTo(id, now) { clearTimeout(this.hT); if (this.state.hover === id) return; if (now) this.setState({ hover: id }); else this.hT = setTimeout(() => { if (this.state.hover !== id) this.setState({ hover: id }); }, 90); }
+  // KPI tiles act on a click anywhere in the tile, except a click that ends a text selection (copying a figure must not navigate).
+  tileAct(fn) { return e => { const sel = window.getSelection && window.getSelection(); if (sel && !sel.isCollapsed && !(e.target.closest && e.target.closest('button'))) return; fn(); }; }
   netBars(vals) {
     const h = React.createElement, W = 112, H = 22, n = vals.length - 1; if (n < 1) return null;
     const d = []; for (let i = 0; i < n; i++) d.push(vals[i + 1] - vals[i]);
@@ -258,15 +324,15 @@ class Component extends DCLogic {
         wAvail: ((sm.inv - sm.held) / maxCap * 100).toFixed(2) + '%', wHeld: (sm.held / maxCap * 100).toFixed(2) + '%', barTitle: `${D.fmt(sm.inv)} kL stored · ${D.fmt(sm.held)} kL on hold · max operating capacity ${D.fmt(sm.cap)} kL`,
         spark: this.netBars(tr), chg: (() => { const d = tr[tr.length - 1] - tr[0]; return Math.abs(d) < 1 ? 'No change' : (d > 0 ? '▲ ' : '▼ ') + D.fmt(Math.abs(d)) + ' kL'; })(), chgFg: 'var(--ink)', rx: D.fmt(sm.rx), active: sm.active, activeFg: sm.active ? 'var(--ink)' : 'var(--ink4)',
         sched: `${sm.rxN} / ${sm.dxN}`, holds: sm.holds || '—', heldKl: sm.held ? `${sm.holds} tanks · ${D.fmt(sm.held)} kL on hold` : 'No quality holds',
-        exIcon: sm.top ? I.st[sm.top.sev] : null, ex: sm.top ? sm.top.what : '—', exFg: sm.top ? 'var(--ink)' : 'var(--ink4)', exMore,
-        upd: stale ? 'Stale · ' + Math.round(t.upd) + ' min' : D.tm(D.NOW - t.upd, t.tz), updFg: stale ? 'var(--warnInk)' : 'var(--ink2)',
+        exIcon: sm.top ? I.st[sm.top.sev] : null, ex: sm.top ? sm.top.what : '—', exFg: sm.top ? 'var(--ink)' : 'var(--ink4)', exMore, exTitle: sm.top ? sm.top.what + (exMore ? ` (${exMore} more)` : '') : 'No open exception', exCard: sm.top ? sm.top.what : 'No open exception',
+        upd: stale ? 'Stale · ' + Math.round(t.upd) + ' min' : D.tm(D.NOW - t.upd, t.tz), updFg: stale ? 'var(--warnInk)' : 'var(--ink2)', updCard: stale ? 'Stale · ' + Math.round(t.upd) + ' min' : 'Updated ' + D.tm(D.NOW - t.upd, t.tz),
         bg: t.id === previewId ? 'var(--accSoft)' : 'transparent', sh: t.id === previewId ? 'inset 2px 0 0 var(--acc)' : 'none',
         onClick: () => this.props.go('terminal', { terminalId: t.id, scope: 'terminal' }),
         onKey: e => { if (e.key === 'Enter') this.props.go('terminal', { terminalId: t.id, scope: 'terminal' }); },
-        onHover: () => { if (this.state.hover !== t.id) this.setState({ hover: t.id }); },
+        onHover: () => this.hoverTo(t.id), onLeave: () => clearTimeout(this.hT), onFocus: () => this.hoverTo(t.id, true),
       };
     });
-    const heads = [['name', 'Terminal', 'flex-start'], ['status', 'Status', 'flex-start'], ['inv', 'Stored inventory kL', 'flex-end'], ['rx', 'Receiving kL', 'flex-end'], ['active', 'Active', 'flex-end'], ['sched', 'Sched. R/D', 'flex-end'], ['holds', 'Holds', 'flex-end'], ['ex', 'Highest-priority exception', 'flex-start'], ['upd', 'Updated', 'flex-end']].map(([k, label, jc]) => ({ label, jc, onClick: () => this.upd({ sort: k, dir: s.sort === k ? -s.dir : (k === 'name' || k === 'status' ? 1 : -1) }), icon: s.sort === k && s.dir < 0 ? I.chevD : I.chevU, op: s.sort === k ? 1 : 0, fg: 'var(--ink)', aria: s.sort === k ? (s.dir > 0 ? 'ascending' : 'descending') : 'none' }));
+    const heads = [['name', 'Terminal', 'flex-start'], ['status', 'Status', 'flex-start'], ['inv', 'Stored inventory kL', 'flex-end'], ['rx', 'Receiving kL', 'flex-end'], ['active', 'Active', 'flex-end'], ['sched', 'Sched. R/D', 'flex-end'], ['holds', 'Holds', 'flex-end'], ['ex', 'Highest-priority exception', 'flex-start'], ['upd', 'Updated', 'flex-end']].map(([k, label, jc]) => ({ label, jc, onClick: () => this.upd({ sort: k, dir: s.sort === k ? -s.dir : (k === 'name' || k === 'status' ? 1 : -1) }), icon: I.chevU, rot: s.sort === k && s.dir < 0 ? 'rotate(180deg)' : 'none', op: s.sort === k ? 1 : 0, on: s.sort === k, chipIc: s.sort === k ? 'flex' : 'none', chipBd: s.sort === k ? 'var(--ink3)' : 'var(--line)', chipBg: s.sort === k ? 'var(--surf2)' : 'var(--surf)', fg: 'var(--ink)', aria: s.sort === k ? (s.dir > 0 ? 'ascending' : 'descending') : 'none' }));
     // network summary (always whole network, product filter respected)
     let inv = 0, cap = 0, held = 0, rx = 0, comp = 0, tanks = 0; const byProd = {};
     all.forEach(({ t, sm }) => { inv += sm.inv; cap += sm.cap; held += sm.held; rx += sm.rx; comp += sm.comp; Object.entries(sm.byProd).forEach(([c, v]) => byProd[c] = (byProd[c] || 0) + v); tanks += t.tanks.filter(k => k.kind === 'product' && (!prods.length || prods.includes(k.code))).length; });
@@ -286,18 +352,22 @@ class Component extends DCLogic {
     const mapJson = JSON.stringify(all.map(({ t, sm }) => ({ id: t.id, name: t.name, short: (mapShort[t.id] || [t.name, 8, -7])[0], lx: (mapShort[t.id] || [t.name, 8, -7])[1], ly: (mapShort[t.id] || [t.name, 8, -7])[2], label: true, lat: t.lat, lon: t.lon, sev: sm.top && sm.top.sev !== 'info' ? sm.top.sev : null, dim: !list.find(x => x.t.id === t.id) })));
     const wide = ctx.vw >= 1500; const mapH = ctx.vw < 1700 ? '360px' : '420px';
     const filtered = !!(s.text || s.cap !== 'All capabilities' || s.status !== 'All statuses' || s.sev !== 'All severities');
+    // responsive layout, KPI tile actions/states and the records list form (phones get stacked cards)
+    const mob = !!ctx.mobile, tab = !!ctx.tablet, rxSel = s.sort === 'rx' && s.dir < 0;
+    const L = { pad: mob ? '20px 16px 40px' : tab ? '28px 24px 48px' : '32px 40px 56px', gap: mob ? '24px' : tab ? '32px' : '40px', h1: mob ? '26px' : '30px', filtFlex: mob ? '1 1 100%' : '0 1 auto', searchW: mob ? '100%' : '200px', selFlex: mob ? '1 1 auto' : '0 0 auto', clearOrder: mob ? 9 : -1, clearVis: filtered ? 'visible' : 'hidden', clearOp: filtered ? 1 : 0, sumCols: mob ? 'minmax(0,1fr)' : tab ? 'repeat(2,minmax(0,1fr))' : 'minmax(0,1.5fr) minmax(0,1fr) minmax(0,.9fr) minmax(0,1.1fr)', tileGap: mob ? '10px' : '12px', tilePad: mob ? '14px 16px' : '14px 18px', mainGap: tab ? '28px' : '40px' };
+    const K = { inv: this.tileAct(() => this.props.go('inventory', { scope: 'network' })), rx: this.tileAct(() => this.upd({ sort: 'rx', dir: -1 })), tr: this.tileAct(() => this.upd({ trList: !this.state.trList })), ex: this.tileAct(() => this.props.openAlarms && this.props.openAlarms('network')), rxOn: rxSel ? 1 : 0, rxBd: rxSel ? 'var(--accLine)' : 'var(--pBd)', rxPressed: rxSel, trOn: s.trList ? 1 : 0, trBd: s.trList ? 'var(--accLine)' : 'var(--pBd)', trOpen: !!s.trList, trChev: s.trList ? 'rotate(180deg)' : 'none' };
+    const T = { table: !mob, cards: mob, empty: !trRows.length, emptyMsg: prods.length ? 'No active transfers for the current product filter.' : 'No active transfers right now.', minW: '900px', cols: '116px 124px minmax(0,1.4fr) minmax(0,1.2fr) minmax(0,1.3fr) minmax(110px,.8fr) 112px' };
     return {
       ready: true, I, f: s, subtitle: `${D.TERMINALS.length} terminals · ${D.SNAPSHOT} · live simulation with fictional values, not plant telemetry`,
       onText: e => this.upd({ text: e.target.value }), onCap: e => this.upd({ cap: e.target.value }), onStatus: e => this.upd({ status: e.target.value }), onSev: e => this.upd({ sev: e.target.value }),
       capOptions: ['All capabilities', 'Marine', 'Blending', 'Truck loading', 'Hydrant', 'Pipeline', 'Filling & packaging', 'Rail'], statusOptions: ['All statuses', 'Operating', 'Restricted'], sevOptions: ['All severities', 'Critical', 'Attention', 'No open exception'],
       filtered, clearFilters: () => this.upd({ text: '', cap: 'All capabilities', status: 'All statuses', sev: 'All severities' }),
       hasProdFilter: prods.length > 0, prodChips: prods.map(c => D.prod(c)),
-      sumCols: ctx.mobile ? 'minmax(0,1fr)' : ctx.tablet ? 'repeat(2,minmax(0,1fr))' : '1.5fr 1fr 0.9fr 1.1fr', sum, prodBar, trTypes: Object.entries(types).map(([type, n]) => ({ type, n })),
-      goInventory: () => this.props.go('inventory', { scope: 'network' }), sortByRx: () => this.upd({ sort: 'rx', dir: -1 }), openAlarmsAll: () => this.props.openAlarms && this.props.openAlarms('network'),
-      trListOpen: s.trList, toggleTrList: () => this.upd({ trList: !s.trList }), trListLabel: s.trList ? 'Hide records' : 'Show records', trRows,
-      mainCols: ctx.vw < 1700 ? 'minmax(0,1fr)' : 'minmax(0,1fr) 400px', asideCols: ctx.vw < 1700 ? 'minmax(0,720px)' : '1fr', asideDir: ctx.vw < 1700 ? 'grid' : 'flex', cols: 'minmax(180px,1.6fr) 118px minmax(190px,1.5fr) 118px 62px 92px 64px minmax(200px,2.2fr) 96px',
-      heads, rows, empty: !rows.length, rowCount: `${rows.length} of ${D.TERMINALS.length}`, tot,
-      showMap: !ctx.mobile, mapRef: this.mapRef, mapJson, previewId, pv, mapH, theme: ctx.theme,
+      sum, prodBar, trTypes: Object.entries(types).map(([type, n]) => ({ type, n })),
+      trListOpen: s.trList, trListLabel: s.trList ? 'Hide records' : 'Show records', trRows,
+      mainCols: ctx.vw < 1700 ? 'minmax(0,1fr)' : 'minmax(0,1fr) 400px', asideCols: ctx.vw < 1700 ? 'minmax(0,720px)' : '1fr', asideDir: ctx.vw < 1700 ? 'grid' : 'flex', cols: 'minmax(200px,1.6fr) 118px minmax(190px,1.5fr) 112px 68px 92px 68px minmax(200px,2.2fr) 104px', R: { minW: '1180px', table: !mob, cards: mob },
+      heads, rows, empty: !rows.length, hasRows: rows.length > 0, rowCount: `${rows.length} of ${D.TERMINALS.length}`, tot, listKey: [s.cap, s.status, s.sev, s.sort, s.dir, prods.join('+')].join('|'),
+      showMap: !ctx.mobile, mapRef: this.mapRef, mapJson, previewId, pv, pvNoProds: !pv.prods.length, mapH, theme: ctx.theme, L, K, T,
     };
   }
 }

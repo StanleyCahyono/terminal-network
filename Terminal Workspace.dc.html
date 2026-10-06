@@ -12,18 +12,18 @@
   <div style="flex:none;padding:14px 20px 12px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;border-bottom:1px solid var(--line);background:var(--surf)">
     <div style="display:flex;flex-direction:column;gap:2px;min-width:0">
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-        <h1 style="margin:0;font-size:30px;font-weight:500;letter-spacing:-.015em;line-height:1.1">{{ t.name }}</h1>
+        <h1 style="margin:0;font-size:{{ h1fs }};font-weight:500;letter-spacing:-.015em;line-height:1.1;text-wrap:balance;min-width:0">{{ t.name }}</h1>
         <span style="display:flex;align-items:center;gap:5px;font-size:12px">{{ tStatusIcon }}{{ t.status }}</span>
         
       </div>
       <div style="font-size:12px;color:var(--ink3);display:flex;gap:10px;flex-wrap:wrap"><span>{{ t.area }} · {{ t.kind }}</span><span style="font-family:var(--fnum)">Local {{ localTime }}</span><span>{{ capsText }}</span></div>
     </div>
     <div style="flex:1"></div>
-    <div style="display:flex;gap:0;border:1px solid var(--line);border-radius:0;overflow:hidden">
+    <div role="group" aria-label="Stock summary" style="display:{{ kpi.disp }};grid-template-columns:{{ kpi.cols }};flex-wrap:wrap;gap:1px;background:var(--line);border:1px solid var(--line);flex:{{ kpi.flex }};min-width:0;max-width:100%">
       <sc-for list="{{ stockStrip }}" as="x" hint-placeholder-count="6">
-        <div title="{{ x.title }}" style="padding:6px 12px;border-right:1px solid var(--line2);display:flex;flex-direction:column;gap:1px;min-width:92px;background:var(--surf)">
-          <span style="font-size:12.5px;color:var(--ink3);white-space:nowrap;display:flex;align-items:center;gap:5px"><span style="width:8px;height:8px;background:{{ x.sw }};border:{{ x.swBd }}"></span>{{ x.label }}</span>
-          <span style="font-family:var(--fnum);font-size:13px;font-weight:500">{{ x.v }}</span>
+        <div title="{{ x.title }}" style="padding:{{ kpi.pad }};display:flex;flex-direction:column;gap:1px;flex:1 0 auto;min-width:{{ kpi.minW }};background:var(--surf)">
+          <span style="font-size:{{ kpi.fs }};color:var(--ink3);white-space:nowrap;display:flex;align-items:center;gap:5px;min-width:0"><span style="width:8px;height:8px;flex:none;background:{{ x.sw }};border:{{ x.swBd }}"></span><span style="overflow:hidden;text-overflow:ellipsis;min-width:0">{{ x.label }}</span></span>
+          <span style="font-family:var(--fnum);font-size:13px;font-weight:500;white-space:nowrap">{{ x.v }}</span>
         </div>
       </sc-for>
     </div>
@@ -43,33 +43,33 @@
             <span style="font-size:12.5px;color:var(--ink3);margin-right:4px">Movements</span>
             <sc-if value="{{ noTransfers }}" hint-placeholder-val="{{ false }}"><span style="font-size:12px;color:var(--ink3)">No active transfers at this terminal.</span></sc-if>
             <sc-for list="{{ trChips }}" as="c" hint-placeholder-count="3">
-              <button onClick="{{ c.onClick }}" aria-pressed="{{ c.pressed }}" style="height:28px;display:flex;align-items:center;gap:7px;padding:0 9px;border:1px solid {{ c.bd }};border-radius:0;background:{{ c.bg }};color:var(--ink);font-size:11.5px;white-space:nowrap">
-                <span style="width:8px;height:8px;background:{{ c.color }}"></span>
-                <span style="font-family:var(--fnum);font-size:11px;white-space:nowrap">{{ c.short }}</span>
-                <span style="color:var(--ink3);white-space:nowrap">{{ c.route }}</span>
-                <span style="color:{{ c.stFg }};white-space:nowrap">{{ c.state }}</span>
+              <button class="tn-pop" onClick="{{ c.onClick }}" aria-pressed="{{ c.pressed }}" title="{{ c.title }}" style="height:28px;display:flex;align-items:center;gap:7px;padding:0 9px;border:1px solid {{ c.bd }};border-radius:0;background:{{ c.bg }};box-shadow:{{ c.sh }};color:var(--ink);font-size:11.5px;white-space:nowrap;max-width:100%;min-width:0;overflow:hidden;--chipHov:{{ c.bdHov }}" style-hover="border-color:var(--chipHov)">
+                <span style="width:8px;height:8px;flex:none;background:{{ c.color }}"></span>
+                <span style="font-family:var(--fnum);font-size:11px;white-space:nowrap;flex:none">{{ c.short }}</span>
+                <span style="color:var(--ink3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0">{{ c.route }}</span>
+                <span style="color:{{ c.stFg }};white-space:nowrap;flex:none">{{ c.state }}</span>
               </button>
             </sc-for>
             <div style="flex:1"></div>
-            <button onClick="{{ toggleSummary }}" style="height:26px;padding:0 10px;border:1px solid var(--line);border-radius:0;background:{{ sumBg }};color:var(--ink);font-size:12px;white-space:nowrap">Terminal summary</button>
+            <button onClick="{{ toggleSummary }}" aria-pressed="{{ sumPressed }}" style="height:26px;padding:0 10px;border:1px solid var(--line);border-radius:0;background:{{ sumBg }};color:var(--ink);font-size:12px;white-space:nowrap" style-hover="border-color:var(--ink4)">Terminal summary</button>
             <sc-if value="{{ hasSel }}" hint-placeholder-val="{{ false }}">
-              <button onClick="{{ clearSel }}" style="height:26px;padding:0 9px;border:1px solid var(--line);border-radius:0;background:transparent;color:var(--ink);font-size:11.5px;white-space:nowrap">Clear selection</button>
+              <button class="tn-fade" onClick="{{ clearSel }}" style="height:26px;padding:0 9px;border:1px solid var(--line);border-radius:0;background:transparent;color:var(--ink);font-size:11.5px;white-space:nowrap" style-hover="background:var(--surf2)">Clear selection</button>
             </sc-if>
           </div>
           <div style="display:flex;align-items:center;gap:12px;padding:7px 12px;border-bottom:1px solid var(--line);background:var(--surf);flex-wrap:wrap">
             <span style="font-size:12.5px;color:var(--ink3)">Show on tags</span>
             <div role="group" aria-label="Tag content" style="display:flex;border:1px solid var(--line)">
               <sc-for list="{{ modes }}" as="m" hint-placeholder-count="3">
-                <button onClick="{{ m.onClick }}" aria-pressed="{{ m.on }}" style="height:28px;padding:0 12px;border:0;border-right:1px solid var(--line);background:{{ m.bg }};color:{{ m.fg }};font-size:12.5px;white-space:nowrap">{{ m.label }}</button>
+                <button onClick="{{ m.onClick }}" aria-pressed="{{ m.on }}" style="height:28px;padding:0 12px;border:0;border-right:1px solid var(--line);background:{{ m.bg }};color:{{ m.fg }};font-size:12.5px;white-space:nowrap;--tabHov:{{ m.hov }}" style-hover="background:var(--tabHov)">{{ m.label }}</button>
               </sc-for>
             </div>
             <div style="flex:1"></div>
             <span style="font-size:12px;color:var(--ink3)">{{ zoomHint }}</span>
             <div role="group" aria-label="Zoom" style="display:flex;border:1px solid var(--line)">
-              <button onClick="{{ zoomOut }}" aria-label="Zoom out" title="Zoom out" style="width:30px;height:28px;border:0;border-right:1px solid var(--line);background:transparent;color:var(--ink);display:grid;place-items:center">{{ I.minus }}</button>
-              <button onClick="{{ zoomFit }}" title="Fit to view" style="height:28px;padding:0 10px;border:0;border-right:1px solid var(--line);background:transparent;color:var(--ink);font-size:12px;white-space:nowrap">{{ zoomPct }}</button>
-              <button onClick="{{ zoomIn }}" aria-label="Zoom in" title="Zoom in" style="width:30px;height:28px;border:0;border-right:1px solid var(--line);background:transparent;color:var(--ink);display:grid;place-items:center">{{ I.plus }}</button>
-              <button onClick="{{ zoomSel }}" disabled="{{ noSelZoom }}" title="Zoom to selected tank" style="height:28px;padding:0 10px;border:0;background:transparent;color:var(--ink);font-size:12px;white-space:nowrap;opacity:{{ selZoomOp }}">Zoom to tank</button>
+              <button onClick="{{ zoomOut }}" disabled="{{ noZoomOut }}" aria-label="Zoom out" title="Zoom out" style="width:30px;height:28px;border:0;border-right:1px solid var(--line);background:transparent;color:var(--ink);display:grid;place-items:center;opacity:{{ zoomOutOp }}" style-enabled:hover="background:var(--surf2)">{{ I.minus }}</button>
+              <button onClick="{{ zoomFit }}" title="Fit to view" style="height:28px;min-width:52px;padding:0 10px;border:0;border-right:1px solid var(--line);background:transparent;color:var(--ink);font-size:12px;font-family:var(--fnum);white-space:nowrap" style-hover="background:var(--surf2)">{{ zoomPct }}</button>
+              <button onClick="{{ zoomIn }}" disabled="{{ noZoomIn }}" aria-label="Zoom in" title="Zoom in" style="width:30px;height:28px;border:0;border-right:1px solid var(--line);background:transparent;color:var(--ink);display:grid;place-items:center;opacity:{{ zoomInOp }}" style-enabled:hover="background:var(--surf2)">{{ I.plus }}</button>
+              <button onClick="{{ zoomSel }}" disabled="{{ noSelZoom }}" title="Zoom to selected tank" style="height:28px;padding:0 10px;border:0;background:transparent;color:var(--ink);font-size:12px;white-space:nowrap;opacity:{{ selZoomOp }}" style-enabled:hover="background:var(--surf2)">Zoom to tank</button>
             </div>
           </div>
           <div ref="{{ wrapRef }}" style="position:relative;overflow:hidden;width:100%;background:var(--surf2);cursor:{{ cursor }};touch-action:pan-y;user-select:none">
@@ -91,7 +91,7 @@
       <sc-if value="{{ showMobileList }}" hint-placeholder-val="{{ false }}">
         <section style="flex:none;display:flex;flex-direction:column;gap:8px">
           <sc-for list="{{ mobileEx }}" as="e" hint-placeholder-count="0">
-            <div style="display:flex;gap:8px;padding:10px 12px;background:var(--surf);border:1px solid var(--line);border-radius:0">{{ e.icon }}<div><div style="font-weight:600">{{ e.what }}</div><div style="font-size:11.5px;color:var(--ink3)">{{ e.sub }}</div></div></div>
+            <div class="tn-rise" style="display:flex;gap:8px;padding:10px 12px;background:var(--surf);border:1px solid var(--line);border-radius:0"><span style="flex:none;margin-top:2px">{{ e.icon }}</span><div style="min-width:0"><div style="font-weight:600;text-wrap:pretty">{{ e.what }}</div><div style="font-size:11.5px;color:var(--ink3)">{{ e.sub }}</div></div></div>
           </sc-for>
         </section>
       </sc-if>
@@ -104,21 +104,21 @@
           
         </div>
         <div style="overflow-x:auto">
-          <div style="min-width:1120px">
+          <div style="min-width:1160px">
             <div style="display:grid;grid-template-columns:{{ cols }};padding:0 10px;background:var(--surf);border-bottom:2px solid var(--line)">
               <sc-for list="{{ heads }}" as="hd" hint-placeholder-count="13">
-                <button onClick="{{ hd.onClick }}" aria-sort="{{ hd.aria }}" style="display:flex;align-items:center;gap:3px;justify-content:{{ hd.jc }};padding:8px 5px;border:0;background:transparent;font-size:12.5px;color:{{ hd.fg }};font-weight:500;white-space:nowrap">{{ hd.label }}<span style="opacity:{{ hd.op }}">{{ hd.icon }}</span></button>
+                <button onClick="{{ hd.onClick }}" aria-sort="{{ hd.aria }}" title="{{ hd.title }}" style="display:flex;align-items:center;gap:3px;justify-content:{{ hd.jc }};text-align:{{ hd.ta }};min-width:0;padding:8px 5px;border:0;background:transparent;font-size:12.5px;line-height:1.2;color:{{ hd.fg }};font-weight:500" style-hover="color:var(--acc)"><span style="min-width:0">{{ hd.label }}</span><span style="display:{{ hd.iconDisp }};flex:none;animation:tnfade var(--t-fast) var(--ease-out) both">{{ hd.icon }}</span></button>
               </sc-for>
             </div>
             <sc-if value="{{ tableEmpty }}" hint-placeholder-val="{{ false }}">
               <div style="padding:22px 16px;color:var(--ink3)">No tanks at this terminal store the selected products. Clear the product filter in the top bar to see all tanks.</div>
             </sc-if>
             <sc-for list="{{ rows }}" as="r" hint-placeholder-count="12">
-              <div role="row" tabindex="0" onClick="{{ r.onClick }}" onKeyDown="{{ r.onKey }}" style="display:grid;grid-template-columns:{{ cols }};padding:0 10px;min-height:38px;align-items:center;border-bottom:1px solid var(--line2);cursor:pointer;background:{{ r.bg }};box-shadow:{{ r.sh }}" style-hover="background:var(--surf2)">
+              <div role="row" tabindex="0" aria-selected="{{ r.ariaSel }}" onClick="{{ r.onClick }}" onKeyDown="{{ r.onKey }}" style="display:grid;grid-template-columns:{{ cols }};padding:0 10px;min-height:38px;align-items:center;border-bottom:1px solid var(--line2);cursor:pointer;background:{{ r.bg }};box-shadow:{{ r.sh }};--rowHov:{{ r.hov }};--rowAct:{{ r.act }};transition:background-color var(--t-fast) var(--ease-out),box-shadow var(--t-med) var(--ease-out)" style-hover="background:var(--rowHov)" style-active="background:var(--rowAct)">
                 <span style="padding:4px 5px;font-family:var(--fid);white-space:nowrap;letter-spacing:-.02em;font-weight:600;font-size:12px">{{ r.id }}</span>
-                <span style="padding:4px 5px;display:flex;align-items:center;gap:6px;white-space:nowrap;overflow:hidden"><span style="width:9px;height:9px;flex:none;background:{{ r.sw }};border:1px solid {{ r.swBd }}"></span><span style="overflow:hidden;text-overflow:ellipsis">{{ r.prod }}</span></span>
-                <span style="padding:4px 5px;display:flex;align-items:center;gap:5px;white-space:nowrap;overflow:hidden">{{ r.stIcon }}<span style="overflow:hidden;text-overflow:ellipsis">{{ r.status }}</span></span>
-                <span style="padding:4px 5px;display:flex;align-items:center;gap:6px"><span style="flex:1;height:5px;background:var(--surf3);position:relative"><span style="position:absolute;left:0;top:0;bottom:0;width:{{ r.fillW }};background:{{ r.color }}"></span><span style="position:absolute;top:-2px;bottom:-2px;left:{{ r.mocW }};width:1px;background:var(--ink)"></span></span><span style="font-family:var(--fnum);font-size:11.5px;width:34px;text-align:right">{{ r.fill }}</span></span>
+                <span title="{{ r.prod }}" style="padding:4px 5px;display:flex;align-items:center;gap:6px;white-space:nowrap;overflow:hidden;min-width:0"><span style="width:9px;height:9px;flex:none;background:{{ r.sw }};border:1px solid {{ r.swBd }}"></span><span style="overflow:hidden;text-overflow:ellipsis;min-width:0">{{ r.prod }}</span></span>
+                <span title="{{ r.status }}" style="padding:4px 5px;display:flex;align-items:center;gap:5px;white-space:nowrap;overflow:hidden;min-width:0">{{ r.stIcon }}<span style="overflow:hidden;text-overflow:ellipsis;min-width:0">{{ r.status }}</span></span>
+                <span style="padding:4px 5px;display:flex;align-items:center;gap:6px;min-width:0"><span style="flex:1;height:5px;background:var(--surf3);position:relative"><span style="position:absolute;left:0;top:0;bottom:0;width:{{ r.fillW }};background:{{ r.color }};transition:width var(--t-slow) var(--ease-out)"></span><span style="position:absolute;top:-2px;bottom:-2px;left:{{ r.mocW }};width:1px;background:var(--ink)"></span></span><span style="font-family:var(--fnum);font-size:11.5px;width:34px;flex:none;text-align:right">{{ r.fill }}</span></span>
                 <span style="padding:4px 5px;text-align:right;font-family:var(--fnum);font-size:12px">{{ r.vol }}</span>
                 <span style="padding:4px 5px;text-align:right;font-family:var(--fnum);font-size:12px">{{ r.usable }}</span>
                 <span style="padding:4px 5px;text-align:right;font-family:var(--fnum);font-size:12px;color:var(--ink2)">{{ r.reserved }}</span>
@@ -127,7 +127,7 @@
                 <span style="padding:4px 5px;text-align:right;font-family:var(--fnum);font-size:12px">{{ r.rx }}</span>
                 <span style="padding:4px 5px;text-align:right;font-family:var(--fnum);font-size:12px">{{ r.level }}</span>
                 <span style="padding:4px 5px;text-align:right;font-family:var(--fnum);font-size:12px;color:{{ r.tempFg }}">{{ r.temp }}</span>
-                <span style="padding:4px 5px;font-size:11.5px;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.activity }}</span>
+                <span title="{{ r.activity }}" style="padding:4px 5px;font-size:11.5px;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0">{{ r.activity }}</span>
               </div>
             </sc-for>
             <div style="display:grid;grid-template-columns:{{ cols }};padding:0 10px;min-height:36px;align-items:center;background:var(--surf2);font-weight:600">
@@ -146,22 +146,22 @@
     </div>
 
     <sc-if value="{{ showInspector }}" hint-placeholder-val="{{ true }}">
-      <aside aria-label="Inspector" style="overflow-x:hidden;width:{{ inspW }};flex:none;border-left:1px solid var(--line);background:var(--surf);display:flex;flex-direction:column;min-height:0;position:{{ inspPos }};right:0;top:0;bottom:0;z-index:5;box-shadow:{{ inspSh }}">
+      <aside aria-label="Inspector" class="tn-drawer" style="overflow-x:hidden;width:{{ inspW }};flex:none;border-left:1px solid var(--line);background:var(--surf);display:flex;flex-direction:column;min-height:0;position:{{ inspPos }};right:0;top:0;bottom:0;z-index:5;box-shadow:{{ inspSh }}">
 
         <sc-if value="{{ mode.summary }}" hint-placeholder-val="{{ true }}">
-          <div style="padding:14px 16px;border-bottom:1px solid var(--line2)">
+          <div class="tn-fade" style="padding:14px 16px;border-bottom:1px solid var(--line2)">
             <div style="font-size:12.5px;color:var(--ink3)">Terminal summary</div>
-            <div style="display:flex;align-items:center;gap:8px;margin-top:2px"><div style="font-weight:600;font-size:14px;flex:1">Select a tank, pump, manifold or transfer</div><button onClick="{{ clearSel }}" aria-label="Close summary" style="width:30px;height:30px;border:0;background:transparent;display:grid;place-items:center;color:var(--ink2)">{{ I.close }}</button></div>
+            <div style="display:flex;align-items:center;gap:8px;margin-top:2px"><div style="font-weight:600;font-size:14px;flex:1;min-width:0">Select a tank, pump, manifold or transfer</div><button onClick="{{ clearSel }}" aria-label="Close summary" style="width:30px;height:30px;flex:none;border:0;background:transparent;display:grid;place-items:center;color:var(--ink2)" style-hover="background:var(--surf2)">{{ I.close }}</button></div>
           </div>
-          <div style="flex:1;overflow:auto;padding:14px 16px;display:flex;flex-direction:column;gap:18px">
+          <div class="tn-pop" style="flex:1;overflow:auto;padding:14px 16px;display:flex;flex-direction:column;gap:18px">
             <div style="display:flex;flex-direction:column;gap:6px">
               <div style="font-size:12.5px;color:var(--ink3)">Active transfers</div>
               <sc-if value="{{ noTransfers }}" hint-placeholder-val="{{ false }}"><div style="color:var(--ink3)">None.</div></sc-if>
               <sc-for list="{{ trChips }}" as="c" hint-placeholder-count="3">
-                <button onClick="{{ c.onClick }}" style="display:flex;flex-direction:column;gap:5px;padding:9px 10px;border:1px solid var(--line);border-radius:0;background:var(--surf);text-align:left" style-hover="border-color:var(--ink4)">
-                  <div style="display:flex;align-items:center;gap:7px;width:100%"><span style="width:9px;height:9px;background:{{ c.color }}"></span><span style="font-family:var(--fid);white-space:nowrap;letter-spacing:-.02em;font-size:11.5px;font-weight:600">{{ c.id }}</span><div style="flex:1"></div><span style="display:flex;align-items:center;gap:5px;font-size:11.5px">{{ c.icon }}{{ c.state }}</span></div>
-                  <div style="font-size:12px;color:var(--ink2)">{{ c.type }} · {{ c.route }}</div>
-                  <div style="display:flex;align-items:center;gap:8px;width:100%"><span style="flex:1;height:4px;background:var(--surf3)"><span style="display:block;height:4px;width:{{ c.pct }};background:var(--ink2)"></span></span><span style="font-family:var(--fnum);font-size:11px">{{ c.prog }}</span></div>
+                <button class="tn-lift" onClick="{{ c.onClick }}" style="display:flex;flex-direction:column;gap:5px;padding:9px 10px;border:1px solid var(--line);border-radius:0;background:var(--surf);text-align:left;min-width:0" style-hover="border-color:var(--ink4)">
+                  <div style="display:flex;align-items:center;gap:7px;width:100%;min-width:0"><span style="width:9px;height:9px;flex:none;background:{{ c.color }}"></span><span style="font-family:var(--fid);white-space:nowrap;letter-spacing:-.02em;font-size:11.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;min-width:0">{{ c.id }}</span><div style="flex:1"></div><span style="display:flex;align-items:center;gap:5px;font-size:11.5px;flex:none;white-space:nowrap">{{ c.icon }}{{ c.state }}</span></div>
+                  <div style="font-size:12px;color:var(--ink2);overflow-wrap:anywhere">{{ c.type }} · {{ c.route }}</div>
+                  <div style="display:flex;align-items:center;gap:8px;width:100%"><span style="flex:1;height:4px;background:var(--surf3)"><span class="tn-bar" style="display:block;height:4px;width:{{ c.pct }};background:var(--ink2)"></span></span><span style="font-family:var(--fnum);font-size:11px;flex:none;white-space:nowrap">{{ c.prog }}</span></div>
                 </button>
               </sc-for>
             </div>
@@ -169,7 +169,7 @@
               <div style="font-size:12.5px;color:var(--ink3)">Open exceptions</div>
               <sc-if value="{{ noEx }}" hint-placeholder-val="{{ false }}"><div style="color:var(--ink3)">No open exceptions.</div></sc-if>
               <sc-for list="{{ exList }}" as="e" hint-placeholder-count="2">
-                <div style="display:flex;gap:8px;align-items:flex-start;padding:8px 0;border-bottom:1px solid var(--line2)"><span style="margin-top:1px">{{ e.icon }}</span><div style="min-width:0"><div style="font-weight:500;text-wrap:pretty">{{ e.what }}</div><div style="font-size:11.5px;color:var(--ink3)">{{ e.sub }}</div></div></div>
+                <div style="display:flex;gap:8px;align-items:flex-start;padding:8px 0;border-bottom:1px solid var(--line2)"><span style="margin-top:1px;flex:none">{{ e.icon }}</span><div style="min-width:0"><div style="font-weight:500;text-wrap:pretty">{{ e.what }}</div><div style="font-size:11.5px;color:var(--ink3)">{{ e.sub }}</div></div></div>
               </sc-for>
               <button onClick="{{ openAlarmsTerm }}" style="align-self:flex-start;border:0;background:transparent;color:var(--acc);padding:2px 0;display:flex;gap:4px;align-items:center">Alarm centre {{ I.arrowR }}</button>
             </div>
@@ -177,8 +177,8 @@
               <div style="font-size:12.5px;color:var(--ink3)">Stock by product · kL</div>
               <sc-for list="{{ byProd }}" as="p" hint-placeholder-count="5">
                 <div style="display:flex;flex-direction:column;gap:3px">
-                  <div style="display:flex;align-items:center;gap:6px;font-size:12px"><span style="width:9px;height:9px;background:{{ p.sw }};border:1px solid {{ p.swBd }}"></span><span>{{ p.label }}</span><div style="flex:1"></div><span style="font-family:var(--fnum);font-size:11.5px">{{ p.total }}</span></div>
-                  <div style="display:flex;height:6px;background:var(--surf3)"><div style="width:{{ p.wAvail }};background:{{ p.color }}"></div><div style="width:{{ p.wRes }};background:var(--ink3)"></div><div style="width:{{ p.wHeld }};background:repeating-linear-gradient(135deg, var(--holdA) 0 2px, var(--holdB) 2px 4px)"></div></div>
+                  <div style="display:flex;align-items:center;gap:6px;font-size:12px;min-width:0"><span style="width:9px;height:9px;flex:none;background:{{ p.sw }};border:1px solid {{ p.swBd }}"></span><span style="min-width:0">{{ p.label }}</span><div style="flex:1"></div><span style="font-family:var(--fnum);font-size:11.5px;flex:none;white-space:nowrap">{{ p.total }}</span></div>
+                  <div style="display:flex;height:6px;background:var(--surf3)"><div class="tn-bar" style="width:{{ p.wAvail }};background:{{ p.color }}"></div><div class="tn-bar" style="width:{{ p.wRes }};background:var(--ink3)"></div><div class="tn-bar" style="width:{{ p.wHeld }};background:repeating-linear-gradient(135deg, var(--holdA) 0 2px, var(--holdB) 2px 4px)"></div></div>
                   <div style="font-size:10.5px;color:var(--ink3);font-family:var(--fnum)">avail {{ p.avail }} · reserved {{ p.res }} · hold {{ p.held }}</div>
                 </div>
               </sc-for>
@@ -188,17 +188,17 @@
 
         <sc-if value="{{ mode.tank }}" hint-placeholder-val="{{ false }}">
           <div style="background:var(--bar);color:var(--barInk);--ink:var(--barInk);--ink2:var(--barInk2);--ink3:var(--barInk3);--acc:var(--barAcc);padding:9px 14px;display:flex;align-items:flex-start;gap:10px">
-            <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:4px">
-              <div style="display:flex;align-items:center;gap:8px"><span style="font-family:var(--fid);white-space:nowrap;letter-spacing:-.02em;font-size:17px;font-weight:600">{{ tk.id }}</span><span style="display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:500"><span style="width:10px;height:10px;background:{{ tk.sw }};border:1px solid {{ tk.swBd }}"></span>{{ tk.prod }}</span></div>
-              <div style="display:flex;gap:10px;font-size:12px;color:var(--ink2);flex-wrap:wrap"><span style="display:flex;align-items:center;gap:5px">{{ tk.stIcon }}{{ tk.status }}</span><span style="color:var(--ink3)">Bund {{ tk.bund }} · {{ tk.kindLabel }}</span></div>
+            <div key="{{ tk.kh }}" class="tn-fade" style="flex:1;min-width:0;display:flex;flex-direction:column;gap:4px">
+              <div style="display:flex;align-items:center;gap:8px;min-width:0"><span style="font-family:var(--fid);white-space:nowrap;letter-spacing:-.02em;font-size:17px;font-weight:600;flex:none">{{ tk.id }}</span><span title="{{ tk.prod }}" style="display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:500;min-width:0"><span style="width:10px;height:10px;flex:none;background:{{ tk.sw }};border:1px solid {{ tk.swBd }}"></span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0">{{ tk.prod }}</span></span></div>
+              <div style="display:flex;gap:4px 10px;font-size:12px;color:var(--ink2);flex-wrap:wrap"><span style="display:flex;align-items:center;gap:5px">{{ tk.stIcon }}{{ tk.status }}</span><span style="color:var(--ink3)">Bund {{ tk.bund }} · {{ tk.kindLabel }}</span></div>
             </div>
-            <button onClick="{{ clearSel }}" aria-label="Close tank details" style="width:30px;height:30px;border:0;background:transparent;display:grid;place-items:center;color:var(--ink2);white-space:nowrap">{{ I.close }}</button>
+            <button onClick="{{ clearSel }}" aria-label="Close tank details" style="width:30px;height:30px;flex:none;border:0;background:transparent;display:grid;place-items:center;color:var(--ink2);white-space:nowrap" style-hover="background:rgba(255,255,255,.12)">{{ I.close }}</button>
           </div>
-          <div style="flex:1;overflow:auto;padding:14px 16px 20px;display:flex;flex-direction:column;gap:18px">
+          <div key="{{ tk.kb }}" class="tn-pop" style="flex:1;overflow:auto;padding:14px 16px 20px;display:flex;flex-direction:column;gap:18px">
             <div style="display:flex;flex-direction:column;gap:8px">
               <div style="font-size:12.5px;color:var(--ink3)">Capacity and stock</div>
               <div style="display:flex;height:14px;border:1px solid var(--line)">
-                <sc-for list="{{ tk.bar }}" as="b" hint-placeholder-count="5"><div title="{{ b.title }}" style="width:{{ b.w }};background:{{ b.bg }}"></div></sc-for>
+                <sc-for list="{{ tk.bar }}" as="b" hint-placeholder-count="5"><div class="tn-bar" title="{{ b.title }}" style="width:{{ b.w }};background:{{ b.bg }}"></div></sc-for>
               </div>
               <div style="display:flex;flex-wrap:wrap;gap:3px 10px;font-size:10.5px;color:var(--ink2)">
                 <sc-for list="{{ tk.bar }}" as="b" hint-placeholder-count="5"><span style="display:flex;align-items:center;gap:4px"><span style="width:8px;height:8px;background:{{ b.bg }};border:1px solid var(--line)"></span>{{ b.label }}</span></sc-for>
@@ -270,14 +270,14 @@
 
         <sc-if value="{{ mode.eq }}" hint-placeholder-val="{{ false }}">
           <div style="padding:12px 16px;border-bottom:1px solid var(--line);display:flex;align-items:flex-start;gap:10px">
-            <div style="flex:1;min-width:0">
+            <div key="{{ eq.kh }}" class="tn-fade" style="flex:1;min-width:0">
               <div style="font-size:12.5px;color:var(--ink3)">{{ eq.type }}</div>
-              <div style="display:flex;align-items:center;gap:8px;margin-top:2px"><span style="font-family:var(--fid);white-space:nowrap;letter-spacing:-.02em;font-size:17px;font-weight:600">{{ eq.id }}</span><span style="font-weight:500">{{ eq.name }}</span></div>
+              <div style="display:flex;align-items:baseline;gap:2px 8px;margin-top:2px;flex-wrap:wrap;min-width:0"><span style="font-family:var(--fid);white-space:nowrap;letter-spacing:-.02em;font-size:17px;font-weight:600">{{ eq.id }}</span><span style="font-weight:500;min-width:0">{{ eq.name }}</span></div>
               <div style="display:flex;align-items:center;gap:6px;font-size:12px;margin-top:4px">{{ eq.stIcon }}{{ eq.status }}</div>
             </div>
-            <button onClick="{{ clearSel }}" aria-label="Close equipment details" style="width:30px;height:30px;border:0;background:transparent;display:grid;place-items:center;color:var(--ink2);white-space:nowrap">{{ I.close }}</button>
+            <button onClick="{{ clearSel }}" aria-label="Close equipment details" style="width:30px;height:30px;flex:none;border:0;background:transparent;display:grid;place-items:center;color:var(--ink2);white-space:nowrap" style-hover="background:var(--surf2)">{{ I.close }}</button>
           </div>
-          <div style="flex:1;overflow:auto;padding:14px 16px;display:flex;flex-direction:column;gap:16px">
+          <div key="{{ eq.kb }}" class="tn-pop" style="flex:1;overflow:auto;padding:14px 16px;display:flex;flex-direction:column;gap:16px">
             <div style="display:flex;flex-direction:column">
               <sc-for list="{{ eq.readings }}" as="m" hint-placeholder-count="3">
                 <div style="display:grid;grid-template-columns:1fr auto;gap:10px;padding:7px 0;border-bottom:1px solid var(--line2);align-items:baseline">
@@ -298,17 +298,17 @@
 
         <sc-if value="{{ mode.tr }}" hint-placeholder-val="{{ false }}">
           <div style="padding:12px 16px;border-bottom:1px solid var(--line);display:flex;align-items:flex-start;gap:10px">
-            <div style="flex:1;min-width:0">
+            <div key="{{ trd.kh }}" class="tn-fade" style="flex:1;min-width:0">
               <div style="font-size:12.5px;color:var(--ink3)">{{ trd.type }}</div>
-              <div style="font-family:var(--fid);white-space:nowrap;letter-spacing:-.02em;font-size:15px;font-weight:600;margin-top:2px">{{ trd.id }}</div>
-              <div style="display:flex;align-items:center;gap:6px;font-size:12px;margin-top:4px">{{ trd.icon }}{{ trd.state }}<span style="color:var(--ink3)">· {{ trd.prod }}</span></div>
+              <div style="font-family:var(--fid);white-space:nowrap;letter-spacing:-.02em;font-size:15px;font-weight:600;margin-top:2px;overflow:hidden;text-overflow:ellipsis">{{ trd.id }}</div>
+              <div style="display:flex;align-items:center;gap:6px;font-size:12px;margin-top:4px;flex-wrap:wrap">{{ trd.icon }}{{ trd.state }}<span style="color:var(--ink3)">· {{ trd.prod }}</span></div>
             </div>
-            <button onClick="{{ clearSel }}" aria-label="Close transfer details" style="width:30px;height:30px;border:0;background:transparent;display:grid;place-items:center;color:var(--ink2);white-space:nowrap">{{ I.close }}</button>
+            <button onClick="{{ clearSel }}" aria-label="Close transfer details" style="width:30px;height:30px;flex:none;border:0;background:transparent;display:grid;place-items:center;color:var(--ink2);white-space:nowrap" style-hover="background:var(--surf2)">{{ I.close }}</button>
           </div>
-          <div style="flex:1;overflow:auto;padding:14px 16px;display:flex;flex-direction:column;gap:14px">
+          <div key="{{ trd.kb }}" class="tn-pop" style="flex:1;overflow:auto;padding:14px 16px;display:flex;flex-direction:column;gap:14px">
             <div style="display:flex;flex-direction:column;gap:6px">
-              <div style="display:flex;justify-content:space-between;font-size:12px"><span>{{ trd.recvLabel }}</span><span style="font-family:var(--fnum)">{{ trd.prog }}</span></div>
-              <div style="height:8px;background:var(--surf3)"><div style="height:8px;width:{{ trd.pct }};background:var(--ink)"></div></div>
+              <div style="display:flex;justify-content:space-between;gap:10px;font-size:12px"><span>{{ trd.recvLabel }}</span><span style="font-family:var(--fnum);white-space:nowrap">{{ trd.prog }}</span></div>
+              <div style="height:8px;background:var(--surf3)"><div class="tn-bar" style="height:8px;width:{{ trd.pct }};background:var(--ink)"></div></div>
             </div>
             <div style="display:grid;grid-template-columns:120px 1fr;gap:6px 10px;font-size:12.5px">
               <sc-for list="{{ trd.rows }}" as="x" hint-placeholder-count="6"><span style="color:var(--ink3)">{{ x.k }}</span><span style="font-family:{{ x.ff }}">{{ x.v }}</span></sc-for>
@@ -335,26 +335,48 @@ class Component extends DCLogic {
     const D = p.d;
     this.state = { ...(D ? D.ui.load('tw', { view: 'split', sort: 'id', dir: 1, sel: {} }) : {}), hl: null, ht: null, scale: 1, zv: null, hov: null, mode: 'level', sumOpen: false, panning: false };
     this.wrapRef = React.createRef();
+    this.svgRef = React.createRef();
+    // window listeners are bound once; they read the current canvas element, so re-showing the schematic never stacks stale handlers
+    this.onPM = e => { const d = this.drag, el = this.wrapRef.current; if (!d || !this.S || !el || !el.clientWidth) return; const dx = e.clientX - d.x, dy = e.clientY - d.y; if (!d.moved && Math.hypot(dx, dy) < 5) return; if (!d.moved) { d.moved = true; this.dragged = true; this.stopAnim(); this.setState({ panning: true }); } const sc = d.v.w / el.clientWidth; this.paintView({ x: d.v.x - dx * sc, y: d.v.y - dy * sc, w: d.v.w }); };
+    this.onPU = () => { const d = this.drag; this.drag = null; if (d && d.moved) { setTimeout(() => { this.dragged = false; }, 0); this.setView(this.view()); } if (this.state.panning) this.setState({ panning: false }); };
   }
-  componentDidMount() { import(new URL('./schematic.js', document.baseURI).href).then(m => { this.S = m; this.forceUpdate(); }); this.applyFocus(); }
+  componentDidMount() { import(new URL('./schematic.js', document.baseURI).href).then(m => { this.S = m; this.forceUpdate(); }); this.applyFocus(); window.addEventListener('pointermove', this.onPM); window.addEventListener('pointerup', this.onPU); window.addEventListener('pointercancel', this.onPU); }
   componentDidUpdate(pp) { this.bindCanvas(); const f = this.props.ctx && this.props.ctx.focus; if (f && f.n !== this.lastFocus) this.applyFocus(); }
-  componentWillUnmount() { window.removeEventListener('pointermove', this.onPM); window.removeEventListener('pointerup', this.onPU); cancelAnimationFrame(this.raf); }
+  componentWillUnmount() { window.removeEventListener('pointermove', this.onPM); window.removeEventListener('pointerup', this.onPU); window.removeEventListener('pointercancel', this.onPU); this.stopAnim(); clearTimeout(this.wheelT); }
   applyFocus() { const f = this.props.ctx && this.props.ctx.focus; if (!f || f.n === this.lastFocus) return; this.lastFocus = f.n; if (f.type === 'tank') this.select({ tank: f.id, tr: null, eq: null }); if (f.type === 'transfer') this.select({ tr: f.id, tank: null, eq: null }); }
   cur() { return (this.state.sel || {})[this.props.ctx.terminalId] || {}; }
   select(patch) { const tid = this.props.ctx.terminalId; if (patch.tank) setTimeout(() => this.revealTank(patch.tank), 0); this.upd({ sel: { ...(this.state.sel || {}), [tid]: { ...this.cur(), ...patch } } }); }
   upd(p) { this.setState(p, () => { const { hl, ht, scale, zv, hov, panning, ...rest } = this.state; this.props.d.ui.save('tw', rest); }); }
 
-  view() { return this.state.zv || { x: 0, y: 0, w: 1400 }; }
-  setView(v) { const S = this.S; if (!S) return; const w = Math.max(320, Math.min(S.W, v.w)); const h = w * S.H / S.W; const x = Math.max(-260, Math.min(S.W - w + 420, v.x)); const y = Math.max(-80, Math.min(S.H - h + 80, v.y)); this.setState({ zv: w >= S.W - 1 && Math.abs(x) < 1 && Math.abs(y) < 1 ? null : { x, y, w } }); }
-  animView(to) { const from = this.view(); const t0 = performance.now(); const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches; if (reduce) return this.setView(to); const step = n => { const f = Math.min(1, (n - t0) / 260); const e = 1 - Math.pow(1 - f, 3); this.setView({ x: from.x + (to.x - from.x) * e, y: from.y + (to.y - from.y) * e, w: from.w + (to.w - from.w) * e }); if (f < 1) this.raf = requestAnimationFrame(step); }; cancelAnimationFrame(this.raf); this.raf = requestAnimationFrame(step); }
-  zoomBy(f, fx = 0.5, fy = 0.5) { const S = this.S; const v = this.view(); const vh = v.w * S.H / S.W; const nw = Math.max(320, Math.min(S.W, v.w * f)); const nh = nw * S.H / S.W; this.setView({ x: v.x + fx * (v.w - nw), y: v.y + fy * (vh - nh), w: nw }); }
+  // view = the visible part of the 1400 × 800 schematic. Zoom/pan frames never go through React: each frame paints the
+  // viewBox straight onto the SVG (this.live) and React state is committed once at the end, so the motion stays smooth
+  // however heavy the rest of the page is.
+  view() { return this.live || this.state.zv || { x: 0, y: 0, w: 1400 }; }
+  clampView(v) { const S = this.S; const w = Math.max(320, Math.min(S.W, v.w)); const h = w * S.H / S.W; return { x: Math.max(-260, Math.min(S.W - w + 420, v.x)), y: Math.max(-80, Math.min(S.H - h + 80, v.y)), w }; }
+  paintView(v) { if (!this.S) return; const c = this.clampView(v); this.live = c; const svg = this.svgRef.current; if (svg) svg.setAttribute('viewBox', `${c.x} ${c.y} ${c.w} ${c.w * this.S.H / this.S.W}`); }
+  stopAnim() { cancelAnimationFrame(this.raf); this.raf = 0; }
+  setView(v) { const S = this.S; if (!S) return; this.stopAnim(); const c = this.clampView(v); this.live = null; this.setState({ zv: c.w >= S.W - 1 && Math.abs(c.x) < 1 && Math.abs(c.y) < 1 ? null : c }); }
+  motionOff() { const el = this.wrapRef.current; return window.matchMedia('(prefers-reduced-motion: reduce)').matches || !!(el && el.closest('[data-motion="off"]')); }
+  animView(target) {
+    this.stopAnim(); clearTimeout(this.wheelT);
+    if (!this.S) return;
+    const to = this.clampView(target), from = this.view();
+    if (this.motionOff() || !this.svgRef.current) return this.setView(to);
+    const t0 = performance.now();
+    const step = n => { const f = Math.min(1, Math.max(0, (n - t0) / 280)), e = 1 - Math.pow(1 - f, 3); if (f < 1) { this.paintView({ x: from.x + (to.x - from.x) * e, y: from.y + (to.y - from.y) * e, w: from.w + (to.w - from.w) * e }); this.raf = requestAnimationFrame(step); } else this.setView(to); };
+    this.raf = requestAnimationFrame(step);
+  }
+  zoomBy(f, fx = 0.5, fy = 0.5, anim) {
+    const S = this.S; if (!S) return; this.stopAnim(); const v = this.view(); const vh = v.w * S.H / S.W; const nw = Math.max(320, Math.min(S.W, v.w * f)); const nh = nw * S.H / S.W;
+    const to = nw >= S.W - 1 ? { x: 0, y: 0, w: S.W } : { x: v.x + fx * (v.w - nw), y: v.y + fy * (vh - nh), w: nw }; // zooming all the way out lands on "Fit"
+    if (anim) return this.animView(to);
+    this.paintView(to); clearTimeout(this.wheelT); this.wheelT = setTimeout(() => this.setView(this.view()), 140);
+  }
   revealTank(id) { const el = this.wrapRef.current, L = this.L, S = this.S; if (!el || !L || !S || !L.tanks[id]) return; const a = L.tanks[id]; const v = this.view(); const pxW = el.clientWidth; const cover = this.props.ctx.mobile ? 0 : 410; const frac = Math.max(0.3, (pxW - cover) / pxW); const sx = (a.cx - v.x) / v.w; if (sx > frac - 0.06 || sx < 0.04) this.animView({ x: a.cx - v.w * frac * 0.5, y: v.y, w: v.w }); }
   bindCanvas() {
     const el = this.wrapRef.current; if (!el || el === this.bound) return; this.bound = el;
     el.addEventListener('wheel', e => { if (!(e.ctrlKey || e.metaKey) || !this.S) return; e.preventDefault(); const r = el.getBoundingClientRect(); this.zoomBy(e.deltaY > 0 ? 1.12 : 1 / 1.12, (e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height); }, { passive: false });
-    el.addEventListener('pointerdown', e => { if (e.button !== 0 || e.target.closest('button')) return; this.drag = { x: e.clientX, y: e.clientY, v: this.view(), moved: false }; });
-    window.addEventListener('pointermove', this.onPM = e => { const d = this.drag; if (!d || !this.S) return; const dx = e.clientX - d.x, dy = e.clientY - d.y; if (!d.moved && Math.hypot(dx, dy) < 5) return; d.moved = true; this.dragged = true; if (!this.state.panning) this.setState({ panning: true }); const s = d.v.w / el.clientWidth; this.setView({ x: d.v.x - dx * s, y: d.v.y - dy * s, w: d.v.w }); });
-    window.addEventListener('pointerup', this.onPU = () => { if (this.drag && this.drag.moved) setTimeout(() => { this.dragged = false; }, 0); this.drag = null; if (this.state.panning) this.setState({ panning: false }); });
+    el.addEventListener('pointerdown', e => { if (e.button !== 0 || e.target.closest('button')) return; this.stopAnim(); clearTimeout(this.wheelT); this.drag = { x: e.clientX, y: e.clientY, v: this.view(), moved: false }; });
   }
   badge(src) {
     if (src === 'M') return { src: 'measured', bBd: 'var(--ink2)', bBg: 'var(--ink2)', bFg: 'var(--surf)', bStyle: 'solid' };
@@ -387,7 +409,7 @@ class Component extends DCLogic {
     // transfer chips
     const trChips = active.map(tr => {
       const p = D.prod(tr.code), sel = selIds.includes(tr.id);
-      return { id: tr.id, short: tr.id.replace(/^(TRF|BLD)-[A-Z]+-/, ''), type: tr.type, route: `${tr.marine ? tr.berth : tr.src} → ${tr.dst}`, state: tr.state, icon: I.st[D.statKind(tr.state)], stFg: tr.state === 'Paused' ? 'var(--warnInk)' : 'var(--ink3)', color: p.color, pct: Math.round(tr.recv / tr.planned * 100) + '%', prog: tr.truck ? `${tr.trucksDone} / ${tr.truckN} trucks` : `${D.fmt(tr.recv)} / ${D.fmt(tr.planned)} kL`, pressed: sel ? 'true' : 'false', bd: sel ? 'var(--acc)' : 'var(--line)', bg: sel ? 'var(--accSoft)' : 'transparent', onClick: () => this.select({ tr: sel ? null : tr.id, tank: null, eq: null }) };
+      return { id: tr.id, short: tr.id.replace(/^(TRF|BLD)-[A-Z]+-/, ''), type: tr.type, route: `${tr.marine ? tr.berth : tr.src} → ${tr.dst}`, state: tr.state, icon: I.st[D.statKind(tr.state)], stFg: tr.state === 'Paused' ? 'var(--warnInk)' : 'var(--ink3)', color: p.color, pct: Math.round(tr.recv / tr.planned * 100) + '%', prog: tr.truck ? `${tr.trucksDone} / ${tr.truckN} trucks` : `${D.fmt(tr.recv)} / ${D.fmt(tr.planned)} kL`, pressed: sel ? 'true' : 'false', bd: sel ? 'var(--acc)' : 'var(--line)', bg: sel ? 'var(--accSoft)' : 'transparent', sh: sel ? '0 0 0 1px var(--acc)' : '0 0 0 0 transparent', bdHov: sel ? 'var(--acc)' : 'var(--ink4)', title: `${tr.id} · ${tr.type} · ${tr.marine ? tr.berth : tr.src} → ${tr.dst} · ${tr.state}`, onClick: () => this.select({ tr: sel ? null : tr.id, tank: null, eq: null }) };
     });
     // stock strip
     const sm = D.tsum(t, prods);
@@ -409,12 +431,12 @@ class Component extends DCLogic {
       const act = k.activity ? `${k.activity.kind === 'receipt' ? 'Receiving ←' : 'Dispatching →'} ${k.activity.ref}` : (k.note || '—');
       return { id: k.id, prod: p.label + (k.kind === 'component' ? ' (component)' : ''), sw: p.sw, swBd: k.kind === 'component' ? p.color : 'transparent', color: p.color, status: k.q !== 'Released' ? `${k.status} · ${k.q}` : k.status, stIcon: I.st[D.statKind(k.q === 'On hold' ? 'hold' : k.alarm ? k.alarm.sev : k.status)],
         fill: Math.round(st.fill * 100) + '%', fillW: (st.fill * 100).toFixed(1) + '%', mocW: (k.moc / k.nominal * 100).toFixed(1) + '%', vol: D.fmt(k.vol), usable: D.fmt(st.usable), reserved: st.reserved ? D.fmt(st.reserved) : '—', held: st.held ? D.fmt(st.held) : '—', heldFg: st.held ? 'var(--ink)' : 'var(--ink4)', avail: D.fmt(st.avail), rx: k.status === 'Out of service' ? 'Out of service' : D.fmt(st.rx), level: D.fmt(st.level), temp: k.tempSrc === 'unavailable' ? 'Unavailable' : D.fmt(k.temp, 1), tempFg: k.tempSrc === 'unavailable' ? 'var(--warnInk)' : 'var(--ink)', activity: act,
-        bg: sel ? 'var(--accSoft)' : rel ? 'var(--surf2)' : 'transparent', sh: sel ? 'inset 2px 0 0 var(--acc)' : 'none',
+        bg: sel ? 'var(--accSoft)' : rel ? 'var(--surf2)' : 'transparent', sh: sel ? 'inset 3px 0 0 var(--acc)' : 'inset 0 0 0 0 transparent', hov: sel ? 'var(--accSoft)' : 'var(--surf2)', act: sel ? 'var(--accSoft)' : 'var(--surf3)', ariaSel: sel ? 'true' : 'false',
         onClick: () => this.select({ tank: sel ? null : k.id, eq: null, tr: null }), onKey: e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); this.select({ tank: k.id, eq: null, tr: null }); } } };
     });
     const tsumRow = { vol: 0, usable: 0, reserved: 0, held: 0, avail: 0, rx: 0 };
     list.filter(k => k.kind === 'product').forEach(k => { const st = D.stock(k); tsumRow.vol += k.vol; tsumRow.usable += st.usable; tsumRow.reserved += st.reserved; tsumRow.held += st.held; tsumRow.avail += st.avail; tsumRow.rx += st.rx; });
-    const heads = [['id', 'Tank', 'flex-start'], ['prod', 'Product', 'flex-start'], ['status', 'Status', 'flex-start'], ['fill', 'Fill · MOC mark', 'flex-start'], ['vol', 'Total', 'flex-end'], ['usable', 'Usable', 'flex-end'], ['reserved', 'Reserved', 'flex-end'], ['held', 'Hold', 'flex-end'], ['avail', 'Available', 'flex-end'], ['rx', 'Rx capacity', 'flex-end'], ['level', 'Level mm', 'flex-end'], ['temp', 'Temp °C', 'flex-end'], ['activity', 'Activity', 'flex-start']].map(([k, label, jc]) => ({ label, jc, onClick: () => this.upd({ sort: k, dir: s.sort === k ? -s.dir : 1 }), icon: s.sort === k && s.dir < 0 ? I.chevD : I.chevU, op: s.sort === k ? 1 : 0, fg: 'var(--ink)', aria: s.sort === k ? (s.dir > 0 ? 'ascending' : 'descending') : 'none' }));
+    const heads = [['id', 'Tank', 'flex-start'], ['prod', 'Product', 'flex-start'], ['status', 'Status', 'flex-start'], ['fill', 'Fill · MOC mark', 'flex-start'], ['vol', 'Total', 'flex-end'], ['usable', 'Usable', 'flex-end'], ['reserved', 'Reserved', 'flex-end'], ['held', 'Hold', 'flex-end'], ['avail', 'Available', 'flex-end'], ['rx', 'Rx capacity', 'flex-end'], ['level', 'Level mm', 'flex-end'], ['temp', 'Temp °C', 'flex-end'], ['activity', 'Activity', 'flex-start']].map(([k, label, jc]) => ({ label, jc, ta: jc === 'flex-end' ? 'right' : 'left', title: `Sort by ${label}`, onClick: () => this.upd({ sort: k, dir: s.sort === k ? -s.dir : 1 }), icon: s.sort === k && s.dir < 0 ? I.chevD : I.chevU, iconDisp: s.sort === k ? 'inline-flex' : 'none', fg: s.sort === k ? 'var(--ink)' : 'var(--ink2)', aria: s.sort === k ? (s.dir > 0 ? 'ascending' : 'descending') : 'none' }));
 
     // inspector modes
     const mode = { summary: !selTank && !selEq && !selTr, tank: !!selTank, eq: !!selEq && !selTank, tr: !!selTr && !selTank && !selEq };
@@ -459,7 +481,7 @@ class Component extends DCLogic {
       const recv = act && act.dst === k.id, disp = act && act.dst !== k.id;
       const sen = (name, tag, state) => ({ name, tag, state, icon: I.st[state === 'OK' || state === 'Open' || state === 'Closed' ? (state === 'Open' ? 'active' : 'ok') : state === 'Fault' ? 'attention' : 'idle'], fg: state === 'Fault' ? 'var(--warnInk)' : 'var(--ink2)' });
       tk = {
-        id: k.id, prod: p.label, sw: p.sw, swBd: p.kind === 'component' ? p.color : 'transparent', status: k.status, stIcon: I.st[D.statKind(k.status)], bund: k.bund, kindLabel: k.kind === 'component' ? 'Blend component' : 'Finished product',
+        kh: 'tkh-' + t.id + k.id, kb: 'tkb-' + t.id + k.id, id: k.id, prod: p.label, sw: p.sw, swBd: p.kind === 'component' ? p.color : 'transparent', status: k.status, stIcon: I.st[D.statKind(k.status)], bund: k.bund, kindLabel: k.kind === 'component' ? 'Blend component' : 'Finished product',
         bar, cap, meas, measAt: `Updated ${D.tm(D.NOW, tz)}`,
         batch: k.batch || '—', q: k.q, qIcon: I.st[k.q === 'Released' ? 'ok' : k.q === 'On hold' ? 'hold' : 'pending'], sample: sample ? `${sample.id} · ${sample.status}` : 'No open sample',
         openQuality: () => this.props.go('quality', { terminalId: t.id, focus: sample ? { type: 'sample', id: sample.id } : { type: 'batch', id: k.batch } }),
@@ -472,11 +494,11 @@ class Component extends DCLogic {
     }
     if (selEq && !selTank) {
       const e = L.eqs.find(x => x.id === selEq) || { id: selEq, type: 'Equipment', name: selEq, status: 'In service', readings: [] };
-      eq = { id: e.id, type: e.type, name: e.name, status: e.status, stIcon: I.st[D.statKind(e.status)], duty: e.duty || 'None', material: e.material || 'Configured per terminal', note: e.note || '—', readings: e.readings.map(r => ({ k: r.k, ...this.val(r.v == null ? null : (typeof r.v === 'number' ? D.fmt(r.v, r.v % 1 ? (r.v < 2 ? 4 : 1) : 0) : r.v), r.src, r.u, '', r.k) })) };
+      eq = { kh: 'eqh-' + t.id + e.id, kb: 'eqb-' + t.id + e.id, id: e.id, type: e.type, name: e.name, status: e.status, stIcon: I.st[D.statKind(e.status)], duty: e.duty || 'None', material: e.material || 'Configured per terminal', note: e.note || '—', readings: e.readings.map(r => ({ k: r.k, ...this.val(r.v == null ? null : (typeof r.v === 'number' ? D.fmt(r.v, r.v % 1 ? (r.v < 2 ? 4 : 1) : 0) : r.v), r.src, r.u, '', r.k) })) };
     }
     if (selTr && !selTank && !selEq && selTrObj) {
       const tr = selTrObj, p = D.prod(tr.code);
-      trd = { id: tr.id, type: tr.type, state: tr.state, icon: I.st[D.statKind(tr.state)], prod: p.label, recvLabel: tr.type.includes('dispatch') ? 'Dispatched' : 'Received', prog: `${D.fmt(tr.recv)} / ${D.fmt(tr.planned)} kL`, pct: (tr.recv / tr.planned * 100).toFixed(1) + '%', marine: tr.marine, blend: tr.type.includes('blend'),
+      trd = { kh: 'trh-' + tr.id, kb: 'trb-' + tr.id, id: tr.id, type: tr.type, state: tr.state, icon: I.st[D.statKind(tr.state)], prod: p.label, recvLabel: tr.type.includes('dispatch') ? 'Dispatched' : 'Received', prog: `${D.fmt(tr.recv)} / ${D.fmt(tr.planned)} kL`, pct: (tr.recv / tr.planned * 100).toFixed(1) + '%', marine: tr.marine, blend: tr.type.includes('blend'),
         rows: [{ k: 'Source', v: tr.marine ? `${tr.vessel} · ${tr.comp}` : tr.src, ff: 'var(--fsans)' }, { k: 'Destination', v: tr.dst, ff: 'var(--fsans)' }, { k: tr.truck ? 'Gantry throughput' : 'Flow rate', v: tr.flow ? D.flowText(tr) : (tr.state === 'Paused' ? 'Paused' : 'Unavailable'), ff: 'var(--fnum)' }, ...(tr.truck ? [{ k: 'Trucks loaded', v: `${tr.trucksDone} of ${tr.truckN} · ${tr.truck} kL tankers`, ff: 'var(--fnum)' }] : []), { k: 'Started', v: D.tm(tr.start, tz), ff: 'var(--fnum)' }, { k: 'Remaining', v: D.fmt(tr.remaining) + ' kL', ff: 'var(--fnum)' }, { k: 'Est. completion', v: tr.etaMin ? D.tm(tr.etaMin, tz) : 'Unavailable', ff: 'var(--fnum)' }],
         open: () => this.props.go(tr.marine ? 'transfers' : 'blending', { terminalId: t.id, focus: { type: tr.marine ? 'transfer' : 'blend', id: tr.id } }) };
     }
@@ -489,18 +511,20 @@ class Component extends DCLogic {
     const hasSel = !!(selTank || selEq || selTr);
     return {
       ready: true, I, t, tStatusIcon: I.st[t.status === 'Operating' ? 'ok' : 'attention'], localTime: D.tm(ctx.now, tz), capsText: D.caps(t).join(' · '),
-      stockStrip, showViewToggle: !mobile, setSplit: () => this.upd({ view: 'split' }), setTable: () => this.upd({ view: 'table' }),
+      stockStrip, showViewToggle: !mobile, h1fs: mobile ? '24px' : '30px',
+      kpi: mobile ? { disp: 'grid', cols: 'repeat(3,minmax(0,1fr))', flex: '1 1 100%', pad: '5px 8px', minW: '0', fs: '12px' } : { disp: 'flex', cols: 'none', flex: '0 1 auto', pad: '6px 12px', minW: '92px', fs: '12.5px' }, setSplit: () => this.upd({ view: 'split' }), setTable: () => this.upd({ view: 'table' }),
       splitBg: s.view !== 'table' ? 'var(--ink)' : 'var(--surf)', splitFg: s.view !== 'table' ? 'var(--surf)' : 'var(--ink)', tableBg: s.view === 'table' ? 'var(--ink)' : 'var(--surf)', tableFg: s.view === 'table' ? 'var(--surf)' : 'var(--ink)',
       showSchematic, wrapRef: this.wrapRef, cursor: s.panning ? 'grabbing' : 'grab',
-      svg: showSchematic && S ? S.render(React.createElement, D, t, L, { theme: ctx.theme, active, selIds, selTank, selEq, related, focus: new Set([...(selTank ? [selTank] : []), ...related]), has, mode: s.mode, hover: s.hov, view: this.view(), onTank: id => { if (this.dragged) return; this.select({ tank: id === selTank ? null : id, eq: null, tr: null }); }, onEq: id => { if (this.dragged) return; this.select({ eq: selEq === id ? null : id, tank: null, tr: null }); }, onHover: id => { if (this.state.hov !== id) this.setState({ hov: id }); }, onBg: () => {} }) : null,
-      modes: [['level', 'Level'], ['temp', 'Temperature'], ['status', 'Status']].map(([id, label]) => ({ label, on: s.mode === id ? 'true' : 'false', onClick: () => this.upd({ mode: id }), bg: s.mode === id ? 'var(--ink)' : 'transparent', fg: s.mode === id ? 'var(--surf)' : 'var(--ink)' })),
-      zoomIn: () => this.zoomBy(1 / 1.3), zoomOut: () => this.zoomBy(1.3), zoomFit: () => this.animView({ x: 0, y: 0, w: 1400 }),
+      svg: showSchematic && S ? S.render(React.createElement, D, t, L, { svgRef: this.svgRef, theme: ctx.theme, active, selIds, selTank, selEq, related, focus: new Set([...(selTank ? [selTank] : []), ...related]), has, mode: s.mode, hover: s.hov, view: this.view(), onTank: id => { if (this.dragged) return; this.select({ tank: id === selTank ? null : id, eq: null, tr: null }); }, onEq: id => { if (this.dragged) return; this.select({ eq: selEq === id ? null : id, tank: null, tr: null }); }, onHover: id => { if (this.state.hov !== id) this.setState({ hov: id }); }, onBg: () => {} }) : null,
+      modes: [['level', 'Level'], ['temp', 'Temperature'], ['status', 'Status']].map(([id, label]) => ({ label, on: s.mode === id ? 'true' : 'false', onClick: () => this.upd({ mode: id }), bg: s.mode === id ? 'var(--ink)' : 'transparent', fg: s.mode === id ? 'var(--surf)' : 'var(--ink)', hov: s.mode === id ? 'var(--ink)' : 'var(--surf2)' })),
+      zoomIn: () => this.zoomBy(1 / 1.3, 0.5, 0.5, true), zoomOut: () => this.zoomBy(1.3, 0.5, 0.5, true), zoomFit: () => this.animView({ x: 0, y: 0, w: 1400 }),
+      noZoomIn: !!(s.zv && s.zv.w <= 321), zoomInOp: s.zv && s.zv.w <= 321 ? 0.35 : 1, noZoomOut: !s.zv, zoomOutOp: s.zv ? 1 : 0.35,
       zoomSel: () => { const a2 = selTank && L.tanks[selTank]; if (a2) this.animView({ x: a2.cx - 300, y: a2.top - 170, w: 640 }); }, noSelZoom: !selTank, selZoomOp: selTank ? 1 : 0.35,
       zoomHint: 'Drag to pan · Ctrl + scroll to zoom', zoomPct: s.zv ? Math.round(1400 / s.zv.w * 100) + ' %' : 'Fit',
-      toggleSummary: () => this.upd({ sumOpen: !s.sumOpen }), sumBg: s.sumOpen ? 'var(--surf2)' : 'transparent',
+      toggleSummary: () => this.upd({ sumOpen: !s.sumOpen }), sumBg: s.sumOpen ? 'var(--surf2)' : 'transparent', sumPressed: s.sumOpen ? 'true' : 'false',
       trChips, noTransfers: !active.length, hasSel, clearSel: () => { this.select({ tank: null, eq: null, tr: null }); this.upd({ sumOpen: false }); },
       showMobileList: mobile, mobileEx: exList.map((e, i) => ({ ...e, icon: e.icon })),
-      cols: '62px minmax(0,1.25fr) minmax(0,1.5fr) minmax(0,1.15fr) minmax(0,0.8fr) minmax(0,0.8fr) minmax(0,0.75fr) minmax(0,0.75fr) minmax(0,0.8fr) minmax(0,0.85fr) minmax(0,0.7fr) minmax(0,0.75fr) minmax(0,1.5fr)', heads, rows, tableEmpty: !rows.length, tankCount: `${rows.length} of ${t.tanks.length}`,
+      cols: '62px minmax(110px,1.25fr) minmax(120px,1.5fr) minmax(110px,1.15fr) minmax(64px,0.8fr) minmax(72px,0.8fr) minmax(86px,0.75fr) minmax(60px,0.75fr) minmax(90px,0.8fr) minmax(90px,0.85fr) minmax(70px,0.7fr) minmax(72px,0.75fr) minmax(130px,1.5fr)', heads, rows, tableEmpty: !rows.length, tankCount: `${rows.length} of ${t.tanks.length}`,
       tot: { vol: D.fmt(tsumRow.vol), usable: D.fmt(tsumRow.usable), reserved: D.fmt(tsumRow.reserved), held: D.fmt(tsumRow.held), avail: D.fmt(tsumRow.avail), rx: D.fmt(tsumRow.rx) },
       showInspector: hasSel || s.sumOpen, inspW: mobile ? '100%' : '400px', inspPos: 'absolute', inspSh: 'var(--shadow)',
       mode, tk, eq, trd, exList, noEx: !exList.length, byProd, openAlarmsTerm: () => this.props.openAlarms && this.props.openAlarms('terminal'),

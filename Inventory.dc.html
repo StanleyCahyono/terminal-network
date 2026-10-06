@@ -7,90 +7,106 @@
 </head>
 <body>
 <x-dc>
-<div style="position:absolute;inset:0;overflow:auto;background:var(--bg)">
+<div ref="{{ boxRef }}" style="position:absolute;inset:0;overflow:auto">
 <sc-if value="{{ ready }}" hint-placeholder-val="{{ true }}">
-<div style="padding:32px 40px 56px;display:flex;flex-direction:column;gap:40px">
-  <div style="display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap">
-    <div>
-      <div style="display:flex;align-items:center;gap:10px"><h1 style="margin:0;font-size:30px;font-weight:500;letter-spacing:-.015em;line-height:1.1">Inventory and reconciliation</h1></div>
-      <div style="font-size:12px;color:var(--ink3);margin-top:3px">{{ periodText }}</div>
+<div style="padding:{{ L.pad }};display:flex;flex-direction:column;gap:{{ L.gap }};min-width:0">
+  <div class="tn-rise" style="display:flex;align-items:flex-end;gap:14px 24px;flex-wrap:wrap">
+    <div style="flex:1 1 340px;min-width:0">
+      <h1 style="margin:0;font-size:{{ L.h1 }};font-weight:500;letter-spacing:-.015em;line-height:1.1">Inventory and reconciliation</h1>
+      <div key="{{ dataKey }}" class="tn-fade" style="font-size:12px;color:var(--ink3);margin-top:4px;text-wrap:pretty;overflow-wrap:anywhere">{{ periodText }}</div>
     </div>
-    <div style="flex:1"></div>
-    <div role="group" aria-label="Scope" style="display:flex;border:1px solid var(--line);border-radius:0;overflow:hidden">
-      <sc-for list="{{ scopeOpts }}" as="o" hint-placeholder-count="2"><button onClick="{{ o.onClick }}" style="height:32px;padding:0 12px;border:0;background:{{ o.bg }};color:{{ o.fg }};white-space:nowrap">{{ o.label }}</button></sc-for>
+    <div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;min-width:0;flex:{{ L.ctlFlex }}">
+      <div role="group" aria-label="Scope" style="position:relative;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));min-width:0;flex:{{ L.segFlex }};max-width:{{ L.scopeMax }};border:1px solid var(--line);background:var(--surf)">
+        <span aria-hidden="true" style="position:absolute;top:0;bottom:0;left:{{ scopeX }};width:50%;background:var(--ink);transition:left var(--t-med) var(--ease-out)"></span>
+        <sc-for list="{{ scopeOpts }}" as="o" hint-placeholder-count="2"><button onClick="{{ o.onClick }}" aria-pressed="{{ o.pressed }}" title="{{ o.title }}" style="position:relative;min-width:0;height:32px;padding:0 {{ L.segPad }};border:0;border-radius:0;background:transparent;color:{{ o.fg }}" style-hover="background:color-mix(in srgb,var(--ink) 7%,transparent)"><span style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ o.label }}</span></button></sc-for>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;min-width:0;flex:{{ L.segFlex }}">
+        <span style="flex:none;font-size:12px;color:var(--ink3)">Basis</span>
+        <div role="group" aria-label="Basis" style="position:relative;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));min-width:0;flex:1 1 auto;border:1px solid var(--line);background:var(--surf)">
+          <span aria-hidden="true" style="position:absolute;top:0;bottom:0;left:{{ basisX }};width:50%;background:var(--ink);transition:left var(--t-med) var(--ease-out)"></span>
+          <sc-for list="{{ basisOpts }}" as="o" hint-placeholder-count="2"><button onClick="{{ o.onClick }}" aria-pressed="{{ o.pressed }}" title="{{ o.title }}" style="position:relative;min-width:0;height:32px;padding:0 {{ L.segPad }};border:0;border-radius:0;background:transparent;color:{{ o.fg }}" style-hover="background:color-mix(in srgb,var(--ink) 7%,transparent)"><span style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ o.label }}</span></button></sc-for>
+        </div>
+      </div>
     </div>
-    <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink3)">Basis
-      <select value="{{ basis }}" onChange="{{ onBasis }}" style="height:32px;border:1px solid var(--line);border-radius:0;background:var(--surf);padding:0 8px;color:var(--ink)">
-        <option value="gsv">Standard volume · kL @ 15 °C</option>
-        <option value="mass">Mass · t (in vacuum)</option>
-      </select>
-    </label>
   </div>
 
   <sc-if value="{{ unavailable }}" hint-placeholder-val="{{ false }}">
-    <div style="padding:28px 22px;background:var(--surf);border:1px solid var(--pBd);display:flex;flex-direction:column;gap:8px;align-items:flex-start">
+    <div class="tn-pop" style="padding:28px 22px;background:var(--surf);border:1px solid var(--pBd);display:flex;flex-direction:column;gap:8px;align-items:flex-start">
       <span style="color:var(--ink3)">{{ I.inventory }}</span>
-      <div style="font-weight:600;font-size:15px">No reconciliation available for {{ rangeName }}</div>
-      <div style="color:var(--ink2)">Balances before {{ archivedBefore }} are archived. Choose Current shift, Today or Last 24 h in the time range selector.</div>
+      <div style="font-weight:600;font-size:15px;text-wrap:pretty">No reconciliation available for {{ rangeName }}</div>
+      <div style="color:var(--ink2);text-wrap:pretty">Balances before {{ archivedBefore }} are archived. Choose Current shift, Today or Last 24 h in the time range selector.</div>
     </div>
   </sc-if>
 
   <sc-if value="{{ available }}" hint-placeholder-val="{{ true }}">
-    <section aria-label="Balance" style="display:grid;grid-template-columns:{{ balCols }};background:var(--surf);border:1px solid var(--pBd)">
-      <sc-for list="{{ summary }}" as="x" hint-placeholder-count="7">
-        <div style="padding:12px 14px;border-right:1px solid var(--line2);border-bottom:{{ balBd }};display:flex;flex-direction:column;gap:2px;min-width:0">
-          <span style="font-size:12.5px;color:var(--ink3);white-space:nowrap">{{ x.op }} {{ x.label }}</span>
-          <span style="font-family:var(--fnum);font-size:17px;font-weight:600;white-space:nowrap">{{ x.v }}</span>
-        </div>
-      </sc-for>
-    </section>
-    <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink2)">{{ balIcon }}<span>{{ balText }}</span></div>
-
-    <section aria-label="Inventory table" style="background:var(--surf);border:1px solid var(--pBd);overflow:hidden">
-      <div style="overflow-x:auto">
-        <div style="min-width:1080px">
-          <div style="display:grid;grid-template-columns:{{ cols }};padding:7px 14px;background:var(--surf);font-size:12.5px;font-weight:600;color:var(--ink);border-bottom:2px solid var(--line);gap:8px;border-bottom:1px solid var(--line)">
-            <span>Terminal</span><span>Tank</span><span>Product</span><span style="text-align:right">Opening</span><span style="text-align:right">+ Receipts</span><span style="text-align:right">− Dispatches</span><span style="text-align:right">± Adjust.</span><span style="text-align:right">= Closing</span><span style="text-align:right">Quality held</span><span style="text-align:right">Available</span>
+    <div style="display:flex;flex-direction:column;gap:10px;min-width:0;animation:tnrise var(--t-slow) var(--ease-out) 40ms both">
+      <section aria-label="Balance" style="display:grid;grid-template-columns:{{ L.kpiCols }};gap:1px;background:var(--line2);border:1px solid var(--pBd)">
+        <sc-for list="{{ summary }}" as="x" hint-placeholder-count="7">
+          <div style="grid-column:{{ x.span }};min-width:0;padding:12px 14px;display:flex;flex-direction:column;gap:2px;background:var(--surf)">
+            <span style="font-size:12.5px;color:var(--ink3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ x.label }}</span>
+            <span key="{{ dataKey }}" class="tn-fade" style="font-family:var(--fnum);font-size:17px;font-weight:600;line-height:1.3"><span style="white-space:nowrap">{{ x.n }}</span> <span style="white-space:nowrap">{{ x.unit }}</span></span>
           </div>
-          <sc-if value="{{ empty }}" hint-placeholder-val="{{ false }}"><div style="padding:22px 14px;color:var(--ink3)">No tanks store the selected products in this scope.</div></sc-if>
-          <sc-for list="{{ rows }}" as="r" hint-placeholder-count="12">
-            <div role="row" tabindex="{{ r.tab }}" onClick="{{ r.onClick }}" style="display:grid;grid-template-columns:{{ cols }};padding:7px 14px;gap:8px;border-bottom:1px solid var(--line2);align-items:center;background:{{ r.bg }};cursor:{{ r.cursor }};font-weight:{{ r.fw }}" style-hover="background:var(--surf2)">
-              <span style="display:flex;align-items:center;gap:6px;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-left:{{ r.ind }}"><span style="color:var(--ink3)">{{ r.chev }}</span>{{ r.term }}</span>
-              <span style="font-family:var(--fid);white-space:nowrap;letter-spacing:-.02em;font-size:12px">{{ r.tank }}</span>
-              <span style="display:flex;align-items:center;gap:6px;min-width:0;white-space:nowrap;overflow:hidden"><span style="width:9px;height:9px;flex:none;background:{{ r.sw }};border:1px solid {{ r.swBd }}"></span><span style="overflow:hidden;text-overflow:ellipsis">{{ r.prod }}</span></span>
-              <span style="text-align:right;font-family:var(--fnum);font-size:12px">{{ r.open }}</span>
-              <span style="text-align:right;font-family:var(--fnum);font-size:12px;color:{{ r.recFg }}">{{ r.rec }}</span>
-              <span style="text-align:right;font-family:var(--fnum);font-size:12px;color:{{ r.disFg }}">{{ r.dis }}</span>
-              <span style="text-align:right;font-family:var(--fnum);font-size:12px;color:{{ r.adjFg }}">{{ r.adj }}</span>
-              <span style="text-align:right;font-family:var(--fnum);font-size:12px;font-weight:600">{{ r.close }}</span>
-              <span style="text-align:right;font-family:var(--fnum);font-size:12px;display:flex;justify-content:flex-end;align-items:center;gap:6px"><span style="width:10px;height:10px;background:{{ r.heldSw }}"></span>{{ r.held }}</span>
-              <span style="text-align:right;font-family:var(--fnum);font-size:12px">{{ r.avail }}</span>
+        </sc-for>
+      </section>
+      <div key="{{ dataKey }}" class="tn-fade" style="display:flex;align-items:flex-start;gap:8px;font-size:12px;color:var(--ink2)"><span style="flex:none;margin-top:1px">{{ balIcon }}</span><span style="min-width:0;text-wrap:pretty">{{ balText }}</span></div>
+    </div>
+
+    <sc-for list="{{ tables }}" as="tb" hint-placeholder-count="2">
+      <section aria-label="{{ tb.aria }}" style="min-width:0;background:var(--surf);border:1px solid var(--pBd);overflow:hidden;animation:tnrise var(--t-slow) var(--ease-out) {{ tb.delay }} both">
+        <sc-if value="{{ tb.bar }}" hint-placeholder-val="{{ false }}">
+          <div style="background:var(--bar);color:var(--barInk);--ink:var(--barInk);--ink2:var(--barInk2);--ink3:var(--barInk3);--acc:var(--barAcc);padding:9px 14px;display:flex;flex-wrap:wrap;gap:2px 10px;align-items:baseline"><span style="font-weight:600">{{ tb.title }}</span><span style="font-size:11.5px;color:var(--ink3)">{{ tb.sub }}</span></div>
+        </sc-if>
+        <sc-if value="{{ tb.emptyOut }}" hint-placeholder-val="{{ false }}"><div style="padding:14px;color:var(--ink3)">{{ tb.emptyOut }}</div></sc-if>
+        <sc-if value="{{ tb.show }}" hint-placeholder-val="{{ true }}">
+          <div style="overflow-x:auto;overscroll-behavior-x:contain;scroll-snap-type:{{ L.snap }};scroll-padding-left:{{ L.snapPad }}">
+            <div style="min-width:{{ L.tableMin }}">
+              <div role="row" style="display:grid;grid-template-columns:{{ L.cols }};column-gap:8px;align-items:center;padding-right:14px;border-bottom:1px solid var(--line);background:var(--surf);font-size:12.5px;font-weight:600">
+                <span style="position:{{ L.stick }};left:0;z-index:1;align-self:stretch;display:flex;align-items:center;min-width:0;padding:8px 8px 8px 14px;background:var(--surf);box-shadow:{{ L.edge }}"><span style="min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ tb.idHead }}</span></span>
+                <sc-if value="{{ L.wide }}" hint-placeholder-val="{{ true }}"><span style="white-space:nowrap">Tank</span><span style="min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ tb.prodHead }}</span></sc-if>
+                <sc-for list="{{ numHeads }}" as="h" hint-placeholder-count="7"><span style="text-align:right;white-space:nowrap;scroll-snap-align:start">{{ h }}</span></sc-for>
+              </div>
+              <div key="{{ dataKey }}" class="tn-fade">
+                <sc-if value="{{ tb.emptyIn }}" hint-placeholder-val="{{ false }}"><div style="position:{{ L.stick }};left:0;max-width:{{ L.msgMax }};padding:22px 14px;color:var(--ink3);text-wrap:pretty">{{ tb.emptyIn }}</div></sc-if>
+                <sc-for list="{{ tb.groups }}" as="g" hint-placeholder-count="1">
+                  <sc-for list="{{ g.rows }}" as="r" hint-placeholder-count="12">
+                    <div role="row" tabIndex="{{ r.tab }}" aria-expanded="{{ r.exp }}" onClick="{{ r.onClick }}" onKeyDown="{{ r.onKey }}" style="display:grid;grid-template-columns:{{ L.cols }};column-gap:8px;align-items:center;min-height:35px;padding-right:14px;border-bottom:1px solid var(--line2);--rbg:{{ r.bg }};--rhov:{{ r.hov }};--ract:{{ r.act }};background:var(--rbg);cursor:{{ r.cursor }};font-weight:{{ r.fw }};transition:background-color var(--t-fast) var(--ease-out);animation:{{ r.anim }}" style-hover="--rbg:var(--rhov)" style-active="--rbg:var(--ract)" style-focus-visible="outline-offset:-2px;--rring:var(--acc)">
+                      <span style="position:{{ L.stick }};left:0;z-index:1;align-self:stretch;display:flex;align-items:center;gap:6px;min-width:0;padding:7px 8px 7px calc(14px + {{ r.ind }});background:var(--rbg);transition:background-color var(--t-fast) var(--ease-out);box-shadow:inset 2px 0 0 var(--rring,transparent),inset 0 2px 0 var(--rring,transparent),inset 0 -2px 0 var(--rring,transparent),{{ L.edge }}">
+                        <sc-if value="{{ r.chev }}" hint-placeholder-val="{{ false }}"><span style="display:flex;flex:none;color:var(--ink3);transform:rotate({{ r.rot }});transition:transform var(--t-med) var(--ease-out)">{{ I.chevR }}</span></sc-if>
+                        <sc-if value="{{ L.wide }}" hint-placeholder-val="{{ true }}"><span title="{{ r.c1 }}" style="min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.c1 }}</span></sc-if>
+                        <sc-if value="{{ L.narrow }}" hint-placeholder-val="{{ false }}">
+                          <span style="display:flex;flex-direction:column;gap:1px;min-width:0;flex:1 1 auto">
+                            <span title="{{ r.t1 }}" style="display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;text-overflow:ellipsis;overflow-wrap:break-word;min-width:0;font-family:{{ r.f1 }};font-size:{{ r.fs1 }};letter-spacing:{{ r.ls1 }};line-height:1.25">{{ r.t1 }}</span>
+                            <span title="{{ r.t2 }}" style="display:flex;align-items:center;gap:5px;min-width:0;font-size:11.5px;font-weight:400;line-height:1.3;color:var(--ink3)"><span style="display:{{ r.swD }};width:8px;height:8px;flex:none;background:{{ r.sw }};border:1px solid {{ r.swBd }}"></span><span style="min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.t2 }}</span></span>
+                          </span>
+                        </sc-if>
+                      </span>
+                      <sc-if value="{{ L.wide }}" hint-placeholder-val="{{ true }}">
+                        <span style="min-width:0;font-family:var(--fid);font-size:12px;letter-spacing:-.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.tank }}</span>
+                        <span title="{{ r.prod }}" style="display:flex;align-items:center;gap:6px;min-width:0"><span style="width:9px;height:9px;flex:none;background:{{ r.sw }};border:1px solid {{ r.swBd }}"></span><span style="min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.prod }}</span></span>
+                      </sc-if>
+                      <sc-for list="{{ r.nums }}" as="c" hint-placeholder-count="7"><span style="display:flex;align-items:center;justify-content:flex-end;gap:6px;min-width:0;white-space:nowrap;font-family:var(--fnum);font-size:12px;font-weight:{{ c.fw }};color:{{ c.fg }}"><sc-if value="{{ c.hatch }}" hint-placeholder-val="{{ false }}"><span style="width:10px;height:10px;flex:none;background:{{ c.hatch }}"></span></sc-if>{{ c.v }}</span></sc-for>
+                    </div>
+                  </sc-for>
+                </sc-for>
+                <sc-if value="{{ tb.totals }}" hint-placeholder-val="{{ true }}">
+                  <div role="row" style="display:grid;grid-template-columns:{{ L.cols }};column-gap:8px;align-items:center;padding-right:14px;background:var(--surf2);border-top:1px solid var(--ink4);font-weight:600">
+                    <span style="grid-column:{{ L.totSpan }};position:{{ L.stick }};left:0;z-index:1;align-self:stretch;display:flex;align-items:center;min-width:0;padding:10px 8px 10px 14px;background:var(--surf2);box-shadow:{{ L.edge }};line-height:1.25;text-wrap:pretty">{{ tb.totals.label }}</span>
+                    <sc-for list="{{ tb.totals.vals }}" as="v" hint-placeholder-count="7"><span style="text-align:right;white-space:nowrap;font-family:var(--fnum);font-size:12.5px">{{ v }}</span></sc-for>
+                  </div>
+                </sc-if>
+              </div>
             </div>
-          </sc-for>
-          <div style="display:grid;grid-template-columns:{{ cols }};padding:9px 14px;gap:8px;background:var(--surf2);font-weight:600;align-items:center">
-            <span>Total finished products</span><span></span><span></span>
-            <sc-for list="{{ totals }}" as="v" hint-placeholder-count="7"><span style="text-align:right;font-family:var(--fnum);font-size:12px">{{ v }}</span></sc-for>
           </div>
-        </div>
-      </div>
-      <div style="padding:8px 14px;border-top:1px solid var(--line2);font-size:11.5px;color:var(--ink3);display:flex;gap:14px;flex-wrap:wrap">
-        <span>Opening + receipts − dispatches ± adjustments = closing, on one basis per reconciliation.</span>
-        <span>Adjustments: gauge corrections and temperature recalculations.</span>
-        <span>Quality held is part of closing stock and is not available.</span>
-      </div>
-    </section>
-
-    <section aria-label="Blend components" style="background:var(--surf);border:1px solid var(--pBd);overflow:hidden">
-      <div style="background:var(--bar);color:var(--barInk);--ink:var(--barInk);--ink2:var(--barInk2);--ink3:var(--barInk3);--acc:var(--barAcc);padding:9px 14px;display:flex;gap:10px;align-items:baseline"><span style="font-weight:600">Blend components</span><span style="font-size:11.5px;color:var(--ink3)">Separate inventory category — excluded from finished-product totals</span></div>
-      <sc-if value="{{ noComp }}" hint-placeholder-val="{{ false }}"><div style="padding:14px;color:var(--ink3)">No blend components stored in this scope.</div></sc-if>
-      <sc-for list="{{ compRows }}" as="r" hint-placeholder-count="2">
-        <div style="display:grid;grid-template-columns:{{ cols }};padding:7px 14px;gap:8px;border-bottom:1px solid var(--line2);align-items:center">
-          <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.term }}</span><span style="font-family:var(--fid);white-space:nowrap;letter-spacing:-.02em;font-size:12px">{{ r.tank }}</span>
-          <span style="display:flex;align-items:center;gap:6px;white-space:nowrap;overflow:hidden"><span style="width:9px;height:9px;flex:none;background:{{ r.sw }};border:1px solid {{ r.swBd }}"></span>{{ r.prod }}</span>
-          <span style="text-align:right;font-family:var(--fnum);font-size:12px">{{ r.open }}</span><span style="text-align:right;font-family:var(--fnum);font-size:12px">{{ r.rec }}</span><span style="text-align:right;font-family:var(--fnum);font-size:12px">{{ r.dis }}</span><span style="text-align:right;font-family:var(--fnum);font-size:12px">{{ r.adj }}</span><span style="text-align:right;font-family:var(--fnum);font-size:12px;font-weight:600">{{ r.close }}</span><span style="text-align:right;font-family:var(--fnum);font-size:12px">{{ r.held }}</span><span style="text-align:right;font-family:var(--fnum);font-size:12px">{{ r.avail }}</span>
-        </div>
-      </sc-for>
-    </section>
+        </sc-if>
+        <sc-if value="{{ tb.notes }}" hint-placeholder-val="{{ true }}">
+          <div style="padding:8px 14px;border-top:1px solid var(--line2);font-size:11.5px;color:var(--ink3);display:flex;gap:4px 14px;flex-wrap:wrap">
+            <span>Opening + receipts − dispatches ± adjustments = closing, on one basis per reconciliation.</span>
+            <span>Adjustments: gauge corrections and temperature recalculations.</span>
+            <span>Quality held is part of closing stock and is not available.</span>
+          </div>
+        </sc-if>
+      </section>
+    </sc-for>
   </sc-if>
 </div>
 </sc-if>
@@ -98,46 +114,116 @@
 </x-dc>
 <script type="text/x-dc" data-dc-script>
 class Component extends DCLogic {
-  constructor(p) { super(p); this.state = p.d ? p.d.ui.load('inv', { basis: 'gsv', open: {}, scopeLocal: null }) : {}; }
-  upd(p) { this.setState(p, () => this.props.d.ui.save('inv', this.state)); }
+  constructor(p) { super(p); this.state = p.d ? p.d.ui.load('inv', { basis: 'gsv', open: {}, scopeLocal: null }) : {}; this.boxRef = React.createRef(); }
+  componentDidMount() { this.observe(); }
+  componentDidUpdate() { this.observe(); }
+  componentWillUnmount() { if (this.ro) this.ro.disconnect(); }
+  // measures the page width (the navigation rail and window size both change it) to pick the table layout
+  observe() {
+    const el = this.boxRef.current; if (!el || this.ro || typeof ResizeObserver === 'undefined') return;
+    this.ro = new ResizeObserver(es => { const w = Math.round(es[0].contentRect.width); if (w && Math.abs(w - (this.state.w || 0)) > 1) this.setState({ w }); });
+    this.ro.observe(el);
+  }
+  upd(p) { this.setState(p, () => { const { w, ...keep } = this.state; this.props.d.ui.save('inv', keep); }); }
   renderVals() {
     const D = this.props.d, ctx = this.props.ctx;
-    if (!D || !ctx) return { ready: false };
-    const I = ctx.I, s = this.state, prods = ctx.products, has = c => !prods.length || prods.includes(c);
+    if (!D || !ctx) return { ready: false, boxRef: this.boxRef };
+    const I = ctx.I, s = this.state, prods = ctx.products || [], has = c => !prods.length || prods.includes(c);
+    const mobile = !!ctx.mobile;
+    // Page width: measured, estimated from the viewport until then. The wide table needs 1040 px plus 2 × 40 px
+    // padding, so a narrower window or an expanded navigation rail switches to the sticky-column table.
+    const W = s.w || (ctx.vw || 1280) - (mobile ? 0 : 72);
+    const wide = !mobile && W >= 1120;
     const net = (s.scopeLocal || (ctx.scope === 'network' ? 'network' : 'terminal')) === 'network';
-    const t = D.term(ctx.terminalId);
+    const t = D.term(ctx.terminalId) || D.TERMINALS[0];
+    const mass = s.basis === 'mass';
+    // Layout. The wide table keeps separate Terminal / Tank / Product columns. Otherwise the table uses one sticky
+    // two-line identity column (tank or terminal + product) and the numbers scroll sideways underneath it.
+    const numW = 88, idW = mobile ? 160 : 180;
+    const L = {
+      wide, narrow: !wide,
+      pad: mobile ? '20px 16px 40px' : wide ? '32px 40px 56px' : '26px 24px 48px',
+      gap: mobile ? '22px' : wide ? '36px' : '28px',
+      h1: mobile ? '26px' : '30px',
+      ctlFlex: mobile ? '1 1 100%' : '0 1 auto', segFlex: mobile ? '1 1 100%' : '0 1 auto', scopeMax: mobile ? 'none' : '440px', segPad: mobile ? '10px' : '12px',
+      kpiCols: mobile ? 'repeat(2,minmax(0,1fr))' : wide ? 'repeat(7,minmax(0,1fr))' : 'repeat(4,minmax(0,1fr))',
+      cols: wide ? `minmax(0,${net ? 1.5 : 1.1}fr) 70px minmax(0,${net ? 1.1 : 1.5}fr) repeat(7,minmax(${numW}px,.75fr))` : `${mobile ? idW + 'px' : `minmax(${idW}px,1.7fr)`} repeat(7,minmax(${numW}px,1fr))`,
+      tableMin: wide ? '1040px' : idW + 7 * numW + 7 * 8 + 14 + 'px',
+      stick: wide ? 'static' : 'sticky', edge: wide ? '0 0 transparent' : '1px 0 0 var(--line2)', totSpan: wide ? '1 / 4' : 'auto',
+      // sideways scrolling snaps to whole columns, so no number rests half-hidden under the sticky column
+      snap: wide ? 'none' : 'x mandatory', snapPad: idW + 8 + 'px',
+      msgMax: wide ? 'none' : W - (mobile ? 34 : 50) + 'px', // visible width of a sideways-scrolling table
+    };
+    // Segmented toggles: equal halves, the dark indicator slides to the selected half (animated with left, not
+    // transform, so it stays in step with the label colour change even while the main thread is busy re-rendering).
+    const seg = (opts, cur, set) => ({ x: Math.max(0, opts.findIndex(o => o.id === cur)) * 50 + '%', opts: opts.map(o => ({ ...o, pressed: o.id === cur ? 'true' : 'false', fg: o.id === cur ? 'var(--surf)' : 'var(--ink)', onClick: () => set(o.id) })) });
+    const scope = seg([{ id: 'terminal', label: t.name, title: t.name }, { id: 'network', label: 'Network · by terminal', title: 'Network · all terminals, grouped by terminal' }], net ? 'network' : 'terminal', id => this.upd({ scopeLocal: id }));
+    const basis = seg([{ id: 'gsv', label: 'Volume · kL @ 15 °C', title: 'Standard volume · kL @ 15 °C' }, { id: 'mass', label: 'Mass · t (in vacuum)', title: 'Mass · t (in vacuum)' }], mass ? 'mass' : 'gsv', id => this.upd({ basis: id }));
+    // Changing scope, period, basis or product filter re-mounts the numbers so they fade in (tn-fade).
+    const dataKey = [net ? 'net' : t.id, ctx.range, ctx.range === 'Current shift' ? ctx.shift : '', mass ? 'mass' : 'gsv', prods.join('+')].join('|');
+    // Only the terminal the user just expanded cascades its tank rows in; a data change fades the whole table instead.
+    if (this.lastKey !== dataKey) { this.lastKey = dataKey; this.justOpened = null; }
+    const base = { ready: true, boxRef: this.boxRef, I, L, dataKey, scopeX: scope.x, scopeOpts: scope.opts, basisX: basis.x, basisOpts: basis.opts };
     const per = { 'Current shift': D.shiftSpan(ctx.shift), Today: [D.dayStart(0), D.NOW], 'Last 24 h': [D.NOW - 1440, D.NOW] }[ctx.range];
-    const base = { ready: true, I, scopeOpts: [['terminal', t.name], ['network', 'Network · by terminal']].map(([id, label]) => ({ label, onClick: () => this.upd({ scopeLocal: id }), bg: (net ? 'network' : 'terminal') === id ? 'var(--ink)' : 'var(--surf)', fg: (net ? 'network' : 'terminal') === id ? 'var(--surf)' : 'var(--ink)' })), basis: s.basis, onBasis: e => this.upd({ basis: e.target.value }) };
     if (!per) return { ...base, unavailable: true, available: false, rangeName: ctx.range.toLowerCase(), archivedBefore: D.tm(D.NOW - 1440, 'WIB', { date: true }), periodText: `${ctx.range} · archived` };
     const [a, b] = per;
-    const mass = s.basis === 'mass';
     const f = k => mass ? k.dens15 / 1000 : 1;
     const calc = k => { const m = D.movements(k, a, b); const close = Math.round(D.volAt(k, b)); const adj = m.adj; const open = close - m.rec + m.dis - adj; const st = D.stock(k); const held = b >= D.NOW - 1 ? st.held : 0; const avail = b >= D.NOW - 1 ? st.avail : null; const x = f(k); return { open: open * x, rec: m.rec * x, dis: m.dis * x, adj: adj * x, close: close * x, held: held * x, avail: avail == null ? null : avail * x }; };
-    const dp = mass ? 0 : 0;
-    const F = v => v == null ? '—' : D.fmt(v, dp);
+    const F = v => v == null ? '—' : D.fmt(v, 0);
+    const HATCH = 'repeating-linear-gradient(135deg, var(--holdA) 0 2px, var(--holdB) 2px 4px)';
+    const dim = v => v ? 'var(--ink)' : 'var(--ink4)';
+    const nums = x => [
+      { v: F(x.open), fg: 'var(--ink)', fw: 'inherit' },
+      { v: x.rec ? F(x.rec) : '—', fg: dim(x.rec), fw: 'inherit' },
+      { v: x.dis ? F(x.dis) : '—', fg: dim(x.dis), fw: 'inherit' },
+      { v: x.adj ? D.sgn(x.adj) : '—', fg: x.adj ? 'var(--warnInk)' : 'var(--ink4)', fw: 'inherit' },
+      { v: F(x.close), fg: 'var(--ink)', fw: 600 },
+      { v: x.held ? F(x.held) : '—', fg: dim(x.held), fw: 'inherit', hatch: x.held ? HATCH : null },
+      { v: F(x.avail), fg: x.avail == null ? 'var(--ink4)' : 'var(--ink)', fw: 'inherit' },
+    ];
+    const ID = { f1: 'var(--fid)', fs1: '12px', ls1: '-.02em' }, NAME = { f1: 'var(--fsans)', fs1: '13.5px', ls1: 'normal' };
+    const row = o => ({ bg: 'var(--surf)', hov: 'var(--surf2)', act: 'var(--surf2)', cursor: 'default', fw: 400, ind: '0px', chev: false, rot: '0deg', anim: 'none', swD: 'block', ...o });
+    // mode: 'tank' (terminal scope), 'sub' (tank under an expanded terminal), 'comp' (blend component)
+    const tankRow = (k, T, mode, j) => {
+      const x = calc(k), P = D.prod(k.code), sub = mode === 'sub', compNet = mode === 'comp' && net;
+      return row({ x, c1: sub ? '' : T.name, tank: k.id, prod: P.label, sw: P.sw, swBd: P.kind === 'component' ? P.color : 'transparent',
+        t1: compNet ? T.name : k.id, ...(compNet ? NAME : ID), t2: compNet ? `${k.id} · ${P.label}` : P.label,
+        ind: sub ? (wide ? '22px' : '14px') : '0px', anim: sub && this.justOpened === T.id ? `tndrop var(--t-med) var(--ease-out) ${Math.min(j * 12, 120)}ms both` : 'none', nums: nums(x) });
+    };
     const terms = net ? D.TERMINALS : [t];
-    const rows = []; const tot = { open: 0, rec: 0, dis: 0, adj: 0, close: 0, held: 0, avail: 0 };
+    const groups = []; const tot = { open: 0, rec: 0, dis: 0, adj: 0, close: 0, held: 0, avail: 0 };
     const add = (A, x) => Object.keys(tot).forEach(k => A[k] += x[k] || 0);
-    const rowOf = (k, T, ind) => { const x = calc(k); const P = D.prod(k.code); return { term: ind ? '' : T.name, tank: k.id, prod: P.label, sw: P.sw, swBd: P.kind === 'component' ? P.color : 'transparent', open: F(x.open), rec: x.rec ? F(x.rec) : '—', dis: x.dis ? F(x.dis) : '—', adj: x.adj ? D.sgn(x.adj) : '—', close: F(x.close), held: x.held ? F(x.held) : '—', heldSw: x.held ? 'repeating-linear-gradient(135deg, var(--holdA) 0 2px, var(--holdB) 2px 4px)' : 'transparent', avail: F(x.avail), recFg: x.rec ? 'var(--ink)' : 'var(--ink4)', disFg: x.dis ? 'var(--ink)' : 'var(--ink4)', adjFg: x.adj ? 'var(--warnInk)' : 'var(--ink4)', bg: 'transparent', cursor: 'default', fw: 400, ind: ind ? '22px' : '0', chev: null, tab: -1, x }; };
     terms.forEach(T => {
       const ks = T.tanks.filter(k => k.kind === 'product' && has(k.code)); if (!ks.length) return;
       if (net) {
-        const agg = { open: 0, rec: 0, dis: 0, adj: 0, close: 0, held: 0, avail: 0 }; const sub = ks.map(k => rowOf(k, T, true)); sub.forEach(r => add(agg, r.x)); add(tot, agg);
-        const open = !!s.open[T.id];
-        rows.push({ term: T.name, tank: `${ks.length} tanks`, prod: [...new Set(ks.map(k => D.prod(k.code).short))].join(' · '), sw: 'transparent', swBd: 'transparent', open: F(agg.open), rec: agg.rec ? F(agg.rec) : '—', dis: agg.dis ? F(agg.dis) : '—', adj: agg.adj ? D.sgn(agg.adj) : '—', close: F(agg.close), held: agg.held ? F(agg.held) : '—', heldSw: agg.held ? 'repeating-linear-gradient(135deg, var(--holdA) 0 2px, var(--holdB) 2px 4px)' : 'transparent', avail: F(agg.avail), recFg: 'var(--ink)', disFg: 'var(--ink)', adjFg: agg.adj ? 'var(--warnInk)' : 'var(--ink4)', bg: open ? 'var(--surf2)' : 'transparent', cursor: 'pointer', fw: 500, ind: '0', chev: open ? I.chevD : I.chevR, tab: 0, onClick: () => this.upd({ open: { ...s.open, [T.id]: !open } }) });
-        if (open) sub.forEach(r => rows.push(r));
-      } else ks.forEach(k => { const r = rowOf(k, T, false); add(tot, r.x); rows.push(r); });
+        const agg = { open: 0, rec: 0, dis: 0, adj: 0, close: 0, held: 0, avail: 0 }; const sub = ks.map((k, j) => tankRow(k, T, 'sub', j)); sub.forEach(r => add(agg, r.x)); add(tot, agg);
+        const open = !!s.open[T.id], toggle = () => { if (!open) this.justOpened = T.id; else if (this.justOpened === T.id) this.justOpened = null; this.upd({ open: { ...s.open, [T.id]: !open } }); };
+        const shorts = [...new Set(ks.map(k => D.prod(k.code).short))].join(' · ');
+        const head = row({ x: agg, c1: T.name, tank: `${ks.length} tanks`, prod: shorts, sw: 'transparent', swBd: 'transparent', swD: 'none', t1: T.name, ...NAME, t2: `${ks.length} tanks · ${shorts}`,
+          bg: open ? 'var(--surf2)' : 'var(--surf)', hov: open ? 'var(--surf3)' : 'var(--surf2)', act: 'var(--surf3)', cursor: 'pointer', fw: 500, chev: true, rot: open ? '90deg' : '0deg',
+          tab: 0, exp: open ? 'true' : 'false', onClick: toggle, onKey: e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); } }, nums: nums(agg) });
+        groups.push({ rows: open ? [head, ...sub] : [head] });
+      } else { const rs = ks.map(k => tankRow(k, T, 'tank')); rs.forEach(r => add(tot, r.x)); groups.push({ rows: rs }); }
     });
-    const comps = []; terms.forEach(T => T.tanks.filter(k => k.kind === 'component').forEach(k => comps.push(rowOf(k, T, false))));
+    const comps = []; terms.forEach(T => T.tanks.filter(k => k.kind === 'component').forEach(k => comps.push(tankRow(k, T, 'comp'))));
+    const empty = !groups.some(g => g.rows.length);
     const unit = mass ? 't' : 'kL';
-    const summary = [['', 'Opening', tot.open], ['+', 'Receipts', tot.rec], ['−', 'Dispatches', tot.dis], ['±', 'Adjustments', tot.adj], ['=', 'Closing', tot.close], ['', 'Quality held', tot.held], ['', 'Available', tot.avail]].map(([op, label, v]) => ({ op, label, v: (label === 'Adjustments' ? D.sgn(v) : F(v)) + ' ' + unit }));
+    const summary = [['', 'Opening', tot.open], ['+', 'Receipts', tot.rec], ['−', 'Dispatches', tot.dis], ['±', 'Adjustments', tot.adj], ['=', 'Closing', tot.close], ['', 'Quality held', tot.held], ['', 'Available', tot.avail]]
+      .map(([op, label, v]) => ({ label: (op ? op + ' ' : '') + label, n: label === 'Adjustments' ? D.sgn(v) : F(v), unit, span: label === 'Closing' && !wide ? 'span 2' : 'auto' }));
     const bal = tot.open + tot.rec - tot.dis + tot.adj - tot.close;
     const tz = net ? 'WIB' : t.tz;
-    return { ...base, unavailable: false, available: true, rows, empty: !rows.length, compRows: comps, noComp: !comps.length,
-      totals: [F(tot.open), F(tot.rec), F(tot.dis), D.sgn(tot.adj), F(tot.close), F(tot.held), F(tot.avail)], summary, balCols: ctx.mobile ? 'repeat(2,minmax(0,1fr))' : ctx.tablet ? 'repeat(4,minmax(0,1fr))' : 'repeat(7,minmax(0,1fr))', balBd: ctx.tablet ? '1px solid var(--line2)' : '0',
+    const idHead = what => wide ? 'Terminal' : net ? 'Terminal · tank' : 'Tank · ' + what;
+    const tables = [
+      { aria: 'Inventory table', delay: '80ms', bar: false, show: true, emptyIn: empty ? 'No tanks store the selected products in this scope.' : null, emptyOut: null, idHead: idHead('product'), prodHead: 'Product', groups,
+        totals: { label: 'Total finished products', vals: [F(tot.open), F(tot.rec), F(tot.dis), D.sgn(tot.adj), F(tot.close), F(tot.held), F(tot.avail)] }, notes: true },
+      { aria: 'Blend components', delay: '120ms', bar: true, title: 'Blend components', sub: 'Separate inventory category — excluded from finished-product totals', show: comps.length > 0, emptyIn: null,
+        emptyOut: comps.length ? null : 'No blend components stored in this scope.', idHead: idHead('component'), prodHead: 'Component', groups: [{ rows: comps }], totals: null, notes: false },
+    ];
+    return { ...base, unavailable: false, available: true, summary, tables,
+      numHeads: ['Opening', '+ Receipts', '− Dispatches', '± Adjust.', '= Closing', 'Quality held', 'Available'],
       balIcon: Math.abs(bal) < 1 ? I.st.ok : I.st.attention, balText: Math.abs(bal) < 1 ? `Balance closes: opening + receipts − dispatches ± adjustments equals closing (difference ${D.fmt(bal, 0)} ${unit}).` : `Balance difference ${D.fmt(bal, 1)} ${unit}.`,
-      periodText: `${net ? `Network · ${D.TERMINALS.length} terminals` : t.name} · ${ctx.range}${ctx.range === 'Current shift' ? ' ' + ctx.shift : ''} · ${D.tm(a, tz, { date: true })} → ${D.tm(b, tz, { date: true })} · basis ${mass ? 'mass t (in vacuum)' : 'GSV kL @ 15 °C'}`,
-      cols: 'minmax(0,1.5fr) 70px minmax(0,1.2fr) repeat(7,minmax(0,0.85fr))' };
+      // each phrase stays on one line; the text wraps only after a · separator
+      periodText: [net ? `Network · ${D.TERMINALS.length} terminals` : t.name, ctx.range + (ctx.range === 'Current shift' ? ' ' + ctx.shift : ''), `${D.tm(a, tz, { date: true })} → ${D.tm(b, tz, { date: true })}`, `basis ${mass ? 'mass t (in vacuum)' : 'GSV kL @ 15 °C'}`].map(p => p.replace(/ /g, '\u00a0')).join('\u00a0· ') };
   }
 }
 </script>
