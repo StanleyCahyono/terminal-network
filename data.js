@@ -1,4 +1,5 @@
 // Fictional demonstration data for the terminal network prototype. NOT live telemetry.
+import * as SH from './superhub.js';
 // Times are scenario minutes. Minute REF is the moment the data below describes; it is pinned to the
 // real clock when the console opens, and tick() runs transfers, blends and tank levels forward in real time.
 const REF = 860;
@@ -60,6 +61,7 @@ export const COMPONENTS = [
 const ALL = {};
 PRODUCTS.forEach(p => { ALL[p.code] = { ...p, kind: 'product', sw: p.color }; });
 COMPONENTS.forEach(c => { ALL[c.code] = { ...c, kind: 'component', sw: `repeating-linear-gradient(135deg, ${c.color} 0 2px, transparent 2px 4px)` }; });
+SH.CATALOG.forEach(p => { ALL[p.code] = { ...p, sw: p.kind === 'component' ? `repeating-linear-gradient(135deg, ${p.color} 0 2px, transparent 2px 4px)` : p.color }; });
 export const prod = c => ALL[c] || { code: c, label: c, short: c, color: '#888', sw: '#888', kind: 'product' };
 
 // ── Terminals ──────────────────────────────────────────────────────────
@@ -80,7 +82,7 @@ const TDEF = [
   { id: 'VPK', name: 'Vopak Terminal Jakarta', area: 'Tanjung Priok, Jakarta', tz: 'WIB', lat: -6.0982, lon: 106.8805, kind: 'Third-party storage', marine: ['Berth 1', 'Berth 2', 'Berth 3'], blend: { mode: 'Inline', products: ['B40', 'R95'] }, alt: ['R95'], truck: 6, upd: 0.8, spec: 'R92:20,R92:20,R92:20,R92:20|R95:10,R95:10,R98:10,R98:10|B0:20,B0:20,B0:20,B40:20|J2:15,J2:15,FAME:8' },
 ];
 
-function roofFor(code) { if (['FAME', 'B0', 'B40'].includes(code)) return 'Fixed cone roof'; if (['HOMC', 'NAP'].includes(code)) return 'External floating roof'; return 'Internal floating roof'; }
+function roofFor(code) { if (SH.isLube(code)) return 'Fixed cone roof · N₂ blanket'; if (['FAME', 'B0', 'B40'].includes(code)) return 'Fixed cone roof'; if (['HOMC', 'NAP'].includes(code)) return 'External floating roof'; return 'Internal floating roof'; }
 function dims(nominal) { const h = Math.min(20, 12 + nominal / 30000 * 5.5); const d = Math.sqrt(nominal / (Math.PI / 4 * h)); return { d: +d.toFixed(1), h: +h.toFixed(1) }; }
 const r10 = v => Math.round(v / 10) * 10;
 
@@ -103,6 +105,7 @@ const PLM_OVR = {
   'T-16': { vol: 6407, batch: 'PLM-FAME-2609-012' },
 };
 
+if (SH.TERMINAL) TDEF.push(SH.TERMINAL);
 export const TERMINALS = TDEF.map(t => {
   const r = rng(hash(t.id));
   const bunds = []; const tanks = []; let n = 0;
@@ -221,11 +224,12 @@ export const ADJ = { 'PLM:T-08': -6, 'PLM:T-14': 3, 'SBY:T-03': -4, 'VPK:T-02': 
 export function movements(k, a, b) {
   let rec = 0, dis = 0;
   tankFlows(k).forEach(f => { const v = moved(f.tr, a, b) * f.share; if (f.sign > 0) rec += v; else dis += v; });
+  if (HUB.id && k.term === HUB.id) { const f = HUB.flow(k.id, a, b); rec += f.rec; dis += f.dis; }
   const adj = (a <= 0 && b >= 600) ? (ADJ[k.term + ':' + k.id] || 0) : 0;
   rec = Math.round(rec); dis = Math.round(dis);
   return { open: k.vol - rec + dis - adj, rec, dis, adj, close: k.vol };
 }
-export function volAt(k, t) { let v = k.vol; tankFlows(k).forEach(f => { v -= f.sign * f.share * moved(f.tr, t, NOW); }); return v; }
+export function volAt(k, t) { let v = k.vol; tankFlows(k).forEach(f => { v -= f.sign * f.share * moved(f.tr, t, NOW); }); if (HUB.id && k.term === HUB.id) { const f = HUB.flow(k.id, t, NOW); v -= f.rec - f.dis; } return v; }
 export function tankHistory(k, hours = 24, step = 30) {
   const pts = [], seed = hash(k.term + k.id + 'h');
   const area = Math.PI / 4 * k.diam * k.diam;
@@ -300,7 +304,7 @@ const ALT = {
   R95: { ...RECIPES.R95, comps: [['R92', 50.0], ['R98', 50.0]] },
   J53: { ...RECIPES.J53, comps: [['J2', 96.6], ['HEFA', 3.4]] }, // Jet A-1 2 % bio topped up with HEFA to ≈ 5.3 %
 };
-export const recipeFor = (t, code) => ((t.alt || []).includes(code) && ALT[code]) || RECIPES[code];
+export const recipeFor = (t, code) => ((t.alt || []).includes(code) && ALT[code]) || RECIPES[code] || SH.RECIPES[code];
 const BIO = { FAME: 100, HEFA: 100, B40: 40.4, J2: 2.04, J53: 5.38 };
 export const bioShare = code => BIO[code] || 0; // bio or synthetic share of a blend stock, % v/v
 export const BLENDS = [
@@ -387,6 +391,7 @@ export const SCHEDULE = {
   },
 };
 export function scheduleFor(tid) {
+  if (HUB.id && tid === HUB.id) return HUB.schedule();
   const t = term(tid), S = SCHEDULE[tid]; // a fixed plan where one exists, plus everything generated live
   const lanes = S ? [...S.lanes] : [...(t.marine || [])], items = S ? [...S.items] : [];
   const lane = n => { if (!lanes.includes(n)) lanes.push(n); return n; };
@@ -509,6 +514,7 @@ function settle(tr, end, ev) {
 
 // ── Quality: samples, results and release ─────────────────────────────
 function testsFor(code) {
+  if (SH.isLube(code)) return HUB.tests(code);
   const p = prod(code), d = Math.round(p.dens), T = (prop, method, unit, spec, now) => ({ prop, method, unit, spec, now });
   if (p.fam === 'Gasoline') return [T('Appearance', 'Visual', '', 'Clear & bright', 1), T('Density @ 15 °C', 'ASTM D4052', 'kg/m³', '715 – 770', 1), T('Research octane number', 'ASTM D2699', 'RON', '≥ ' + (RON[code] || 92).toFixed(1)), T('Distillation FBP', 'ASTM D86', '°C', '≤ 215')];
   if (code === 'B0') return [T('Density @ 15 °C', 'ASTM D4052', 'kg/m³', '815 – 860', 1), T('Sulphur content', 'ASTM D5453', 'mg/kg', '≤ 50'), T('Water content', 'ASTM D6304', 'mg/kg', '≤ 200'), T('FAME content', 'EN 14078', '%v/v', '≤ 0.5')];
@@ -517,6 +523,7 @@ function testsFor(code) {
   return [T('Appearance', 'Visual', '', 'Clear & bright', 1), T('Density @ 15 °C', 'ASTM D4052', 'kg/m³', `${d - 25} – ${d + 25}`, 1)];
 }
 function measure(x, code, r, bad) {
+  if (SH.isLube(code)) return HUB.measure(x, code, r, bad);
   const p = prod(code), v = (lo, hi, dp) => +(lo + r() * (hi - lo)).toFixed(dp), B40 = code === 'B40', m = RON[code] || 92;
   const res = {
     'Appearance': () => bad ? 'Hazy' : 'Clear & bright',
@@ -656,6 +663,7 @@ function generate(s, ev) {
     else if ((smp.status === 'Passed' || smp.status === 'Failed') && s >= (smp.decAt ?? 0)) decide(smp, s, ev);
   });
   TERMINALS.forEach(t => {
+    if (t.superhub) return; // the superhub generates its own activity below
     const r = R(`${t.id}|${s}`), running = f => TRANSFERS.filter(x => x.term === t.id && x.active && f(x)).length;
     (t.marine || []).forEach(berth => { // one vessel alongside and one waiting per berth
       if (EXCEPTIONS.some(e => e.term === t.id && e.status !== 'Resolved' && e.asset === berth)) return; // berth closed
@@ -670,6 +678,7 @@ function generate(s, ev) {
     if (t.blend && r() < 0.3) genBlend(t, s, r, ev);
     if (t.truck && r() < 0.003) bayFault(t, s, r, ev);
   });
+  HUB.generate(s, ev);
   prune(TRANSFERS, x => x.state === 'Completed' && x.end < s - 2880);
   prune(BLENDS, x => x.state === 'Released' && x.end != null && x.end < s - 4320);
   prune(SAMPLES, x => x.decision !== 'Pending' && x.at < s - 4320);
@@ -711,6 +720,7 @@ function advance(to, ev) {
     }
     if (tr.qty >= tr.planned - 1e-6) settle(tr, t0 + Math.max(0, q) / rate * 60, ev);
   });
+  HUB.advance(from, to, ev);
   NOW = to;
   TRANSFERS.forEach(tr => { if (tr.active) mark(tr); derive(tr); });
   TERMINALS.forEach(t => t.tanks.forEach(k => { k.temp = +(k.temp0 - diurnal(REF) + diurnal(NOW)).toFixed(1); }));
@@ -726,6 +736,12 @@ export function tick(to = Date.now() / 60000 - BASE) {
   SNAPSHOT = `${day(NOW, 'WIB', true)} · ${hhmm(NOW)} WIB`;
   return ev;
 }
+// the lubricant superhub: its own plant model and simulation, sharing the run's clock, random keys and records
+export const HUB = SH.createSuperhub({
+  REF, SLOT, now: () => NOW, R, between, pick, rng, hash, tm, hhmm, day, dur, fmt, ymd, seq,
+  term, tank, prod, stock, room, spare, recipeFor, srcsOf, derive, mark, add, takeSample,
+  TERMINALS, TRANSFERS, BLENDS, SAMPLES, EXCEPTIONS, TRACE, QUEUE, LOG,
+});
 TERMINALS.forEach(t => t.tanks.forEach(k => { k.temp0 = k.temp; }));
 tick(); // catch up from the reference moment to the real clock
 
