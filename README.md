@@ -31,14 +31,19 @@ Operations console for the fuel terminal network: network overview, terminal and
 
 ## Live clock
 
-The console runs on the real date and time (WIB, WITA and WIT per terminal). The fictional scenario in `data.js` is pinned to the moment you open the console, shifted by whole hours. Every 3 seconds `tick()` moves it forward with the real clock:
+The console runs on the real date and time (WIB, WITA and WIT per terminal). The fictional scenario in `data.js` starts from the moment you open the console, shifted by whole hours. From there `tick()` keeps the network running in real time, refreshing every 3 seconds:
 
 - Transfers pump at their flow rates, tank levels rise and fall, and completion estimates count down.
-- Blends progress through their components.
-- Transfers and blends finish on their own, and the operator gets a notice when they do.
-- Shifts, "Today" and the chart time axes follow the real calendar.
+- New activity is generated continuously in 5-minute steps:
+  - vessels (made-up names) are nominated, berth and discharge;
+  - trucks load inside the gantry loading windows;
+  - airport depots run hydrant supply and pipeline receipts, and FAME arrives by road;
+  - blend skids schedule and run new batches.
+- Completed receipts and blends are sampled, lab results arrive a few hours later, and batches are released (or held if a test fails).
+- Story alarms clear over time (the Biak swell, the Sambu meter), and vessel pump trips occasionally pause a discharge.
+- Shifts, "Today", the scheduling horizon and chart time axes follow the real calendar.
 
-Reopening the console within 6 hours continues the same run. After that it starts a fresh one. The header shows **Live · simulated data**: values move in real time but are not plant telemetry.
+Terminal names, tanks and the starting story are unchanged. A run plays out the same however often the page refreshes, and reopening within 24 hours continues the same run. The header shows **Live · simulated data**: values move in real time but are not plant telemetry.
 
 ## Connecting live data
 

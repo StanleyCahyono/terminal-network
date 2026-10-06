@@ -66,7 +66,7 @@ export function route(L, tr) {
   const into = id => { const a = L.tanks[id]; return a ? [[a.gapX, RY], [a.gapX, a.nozY], [a.nozX, a.nozY]] : []; };
   const outOf = id => { const a = L.tanks[id]; return a ? [[a.nozX, a.nozY], [a.gapX, a.nozY], [a.gapX, DY]] : []; };
   if (tr.marine) { const b = L.berths.find(x => x.name === tr.berth) || L.berths[0]; if (!b) return []; return [[[150, b.y], [300, b.y], [300, RY], [344, RY], ...into(tr.dst)]]; }
-  if (tr.type === 'Pipeline receipt') return [[[20, RY], [344, RY], ...into(tr.dst)]];
+  if (tr.type === 'Pipeline receipt' || tr.type === 'Road receipt') return [[[20, RY], [344, RY], ...into(tr.dst)]];
   const p = L.pr.find(x => x.id === tr.pump) || L.pr[0]; if (!p) return [];
   const srcs = tr.srcs || [[tr.src, 1]];
   const toPump = [[1176, DY], [1200, DY], [1200, p.py], [1208, p.py]];

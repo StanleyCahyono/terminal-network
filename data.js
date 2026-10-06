@@ -2,7 +2,7 @@
 // Times are scenario minutes. Minute REF is the moment the data below describes; it is pinned to the
 // real clock when the console opens, and tick() runs transfers, blends and tank levels forward in real time.
 const REF = 860;
-const KEEP_H = 6; // reopening within this many hours continues the same run instead of starting a fresh one
+const KEEP_H = 24; // reopening within this many hours continues the same run instead of starting a fresh one
 const OFF = { WIB: 420, WITA: 480, WIT: 540 }; // minutes ahead of UTC
 const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const pad = n => String(n).padStart(2, '0');
@@ -346,8 +346,6 @@ export const TRACE = {
 
 // ── Scheduling ─────────────────────────────────────────────────────────
 const span = (a, b) => `${hhmm(a)}–${hhmm(b)}, ${day(a)}`;
-// daily truck loading windows, moving with the scenario so dispatches stay inside them
-const gantry = id => [-1440, 0, 1440].map((d, i) => ({ id: id + i, lane: 'Gantry', type: 'Dispatch', label: `Loading window ${hhmm(360 + d)}–${hhmm(1320 + d)}`, a: 360 + d, b: 1320 + d }));
 export const SCHEDULE = {
   PLM: {
     lanes: ['Jetty 1', 'Jetty 2', 'Jetty 1 line', 'T-03', 'T-04', 'T-11', 'T-12', 'T-15', 'BS-1', 'P-03', 'Gantry'],
@@ -372,7 +370,6 @@ export const SCHEDULE = {
       { id: 'BS-CAL', lane: 'BS-1', type: 'Maintenance', label: 'FAME meter calibration', a: 2220, b: 2340 },
       { id: 'BS-008', lane: 'BS-1', type: 'Blending', label: 'BLD-PLM-2610-008 (draft)', a: 2100, b: 2760 },
       { id: 'P03-M', lane: 'P-03', type: 'Maintenance', label: 'Seal replacement', a: 1740, b: 2100 },
-      ...gantry('GTY-'),
     ],
     conflicts: [
       { id: 'CF-01', kind: 'Route availability', items: ['L1-PIG', 'L1-0422'], text: `Jetty 1 line pigging (${span(1920, 2160)}) overlaps the planned TRF-PLM-26-0422 discharge.`, fix: `Move pigging after ${hhmm(2400)} or delay discharge start.` },
@@ -382,18 +379,24 @@ export const SCHEDULE = {
   },
 };
 export function scheduleFor(tid) {
-  if (SCHEDULE[tid]) return SCHEDULE[tid];
-  const t = term(tid); const items = []; const lanes = [];
-  (t.marine || []).forEach(b => lanes.push(b));
-  TRANSFERS.filter(tr => tr.term === tid).forEach(tr => {
-    if (tr.marine) items.push({ id: tr.id, lane: tr.berth, type: 'Receipt', label: `${tr.vessel} · ${prod(tr.code).short}`, a: tr.arrive, b: tr.etaMin ? tr.etaMin + 60 : tr.start + Math.max(240, tr.planned / 1200 * 60) + 60, ref: tr.id });
-    const lane = tr.dst && tr.dst.startsWith('T-') ? tr.dst : tr.src; if (!lanes.includes(lane)) lanes.push(lane);
-    items.push({ id: tr.id + '-t', lane, type: tr.type.includes('dispatch') ? 'Dispatch' : tr.type.includes('blend') ? 'Blending' : 'Receipt', label: tr.id.slice(-7) + ' · ' + tr.type, a: tr.start, b: tr.etaMin || tr.start + Math.max(300, tr.planned / Math.max(tr.flow || 400, 1) * 60) });
+  const t = term(tid), S = SCHEDULE[tid]; // a fixed plan where one exists, plus everything generated live
+  const lanes = S ? [...S.lanes] : [...(t.marine || [])], items = S ? [...S.items] : [];
+  const lane = n => { if (!lanes.includes(n)) lanes.push(n); return n; };
+  TRANSFERS.filter(tr => tr.term === tid && (!S || tr.gen) && !BLENDS.some(b => b.id === tr.id)).forEach(tr => {
+    const end = tr.end != null ? tr.end : tr.etaMin || tr.start + Math.max(300, tr.planned / Math.max(tr.flow || tr.flow0 || 400, 1) * 60);
+    if (tr.berth) items.push({ id: tr.id, lane: lane(tr.berth), type: tr.marine ? 'Receipt' : 'Dispatch', label: `${tr.vessel} · ${prod(tr.code).short}`, a: tr.arrive != null ? tr.arrive : tr.start, b: end + 60, ref: tr.id });
+    items.push({ id: tr.id + '-t', lane: lane(tr.dst && tr.dst.startsWith('T-') ? tr.dst : tr.src), type: /dispatch|loading/i.test(tr.type) ? 'Dispatch' : 'Receipt', label: tr.id.slice(-7) + ' · ' + tr.type, a: tr.start, b: end });
   });
-  BLENDS.filter(b => b.term === tid && b.start != null && b.state !== 'Released').forEach(b => { if (!lanes.includes(b.dst)) lanes.push(b.dst); items.push({ id: b.id, lane: b.dst, type: 'Blending', label: b.id, a: b.start, b: b.end || b.start + b.target / (b.rate || 500) * 60 }); });
-  if (t.truck) { lanes.push('Gantry'); items.push(...gantry(tid + '-g')); }
-  if (t.hydrant) { lanes.push('Hydrant'); items.push({ id: tid + '-h', lane: 'Hydrant', type: 'Dispatch', label: 'Hydrant supply · continuous', a: 0, b: 2880 }); }
-  return { lanes, items, conflicts: [] };
+  BLENDS.filter(b => b.term === tid && b.start != null && b.state !== 'Released' && (!S || b.gen)).forEach(b => {
+    const end = b.end || b.start + b.target / (b.rate || 500) * 60;
+    items.push({ id: b.id, lane: lane(b.dst), type: 'Blending', label: b.id, a: b.start, b: end });
+    if (S) items.push({ id: b.id + '-s', lane: lane('BS-1'), type: 'Blending', label: b.id, a: b.start, b: end });
+  });
+  // daily truck loading windows, moving with the scenario so dispatches stay inside them
+  if (t.truck) { const d0 = Math.floor((NOW - 360) / 1440) * 1440; [-1440, 0, 1440, 2880].forEach((d, i) => items.push({ id: `${tid}-g${i}`, lane: lane('Gantry'), type: 'Dispatch', label: `Loading window ${hhmm(360 + d0 + d)}–${hhmm(1320 + d0 + d)}`, a: 360 + d0 + d, b: 1320 + d0 + d })); }
+  if (t.hydrant) items.push({ id: tid + '-h', lane: lane('Hydrant'), type: 'Dispatch', label: 'Hydrant supply · continuous', a: NOW - 1440, b: NOW + 2880 });
+  const conflicts = S ? S.conflicts.filter(c => c.items.some(id => { const i = items.find(x => x.id === id); return i && i.b > NOW; })) : [];
+  return { lanes, items, conflicts };
 }
 
 // ── Summaries ──────────────────────────────────────────────────────────
@@ -444,53 +447,258 @@ export function ackEx(id, who, at) { const e = EXCEPTIONS.find(x => x.id === id)
 export function resolveEx(id, who, at, note) { const e = EXCEPTIONS.find(x => x.id === id); if (e) { e.res = { by: who, at, note: note || 'Resolved by operator.' }; e.status = 'Resolved'; } }
 
 // ── Live clock (simulation only; no equipment is controlled) ───────────
+// The network runs in 5-minute slots. Product moves continuously; at every slot boundary new activity is
+// generated: vessels, truck loading, pipeline and hydrant runs, blends, lab results, releases and the odd
+// pump trip. Random draws are keyed to the run and the slot, so a reopened console replays the same story.
+const SLOT = 5;
 const diurnal = m => 0.7 * Math.sin((clockMin(m) - 600) / 1440 * 2 * Math.PI); // tank temperature swing, warmest late afternoon
 const wave = (id, m, amp) => { const h = hash(id) & 1023; return 1 + amp * (0.67 * Math.sin(m / 3.7 + h) + 0.33 * Math.sin(m / 1.3 + h * 2)); };
-function begin(tr) { tr.state = 'In progress'; tr.flow0 = tr.flow0 || tr.rate || Math.round(tr.planned / 10); tr.flow = tr.flow0; tr.recv = tr.qty = 0; tr.active = true; mark(tr); }
+const R = key => rng(hash(BASE + '|' + key));
+const pick = (r, a) => a[Math.floor(r() * a.length)];
+const between = (r, lo, hi, step = 1) => Math.round((lo + r() * (hi - lo)) / step) * step;
+const ymd = m => { const d = local(m, 'WIB'); return pad(d.getUTCFullYear() % 100) + pad(d.getUTCMonth() + 1) + pad(d.getUTCDate()); };
+const SEQ = {};
+function seq(key, list, re) { if (SEQ[key] == null) SEQ[key] = list.reduce((a, x) => { const m = re.exec(x.id); return m ? Math.max(a, +m[1]) : a; }, 0); return ++SEQ[key]; }
+const VESSELS = ['MT Arunika Bahari', 'MT Seruni Jaya', 'MT Kencana Samudra', 'MT Larasati Timur', 'MT Tirta Mandala', 'MT Gelora Bahari', 'MT Baruna Sakti', 'MT Pelangi Timur', 'MT Mutiara Selatan', 'MT Surya Kencana', 'MT Bintang Selatan', 'MT Dewi Samudra', 'MT Cahaya Bahari', 'MT Rajawali Biru', 'MT Anggrek Laut', 'MT Sinar Kartika', 'MT Nirwana Jaya', 'MT Puspa Bahari', 'MT Melati Samudra', 'MT Kirana Timur', 'MT Samudra Abadi', 'MT Laut Teduh', 'MT Mega Lestari', 'MT Citra Samudra'];
+const COTS = ['COT 1P / 1S', 'COT 2P / 2S', 'COT 1–4 P/S', 'COT 3P / 3S / 5C', 'COT 1–6 P/S', 'COT 2P / 2S / 4P / 4S'];
+const RON = { R90: 90, R92: 92, R95: 95, R98: 98 };
+const LIVE = ['Scheduled', 'Delayed', 'In progress', 'Paused'];
+const QUEUE = []; // follow-ups due later: samples after a receipt or blend
+const busy = (t, id) => TRANSFERS.some(tr => tr.term === t.id && LIVE.includes(tr.state) && (tr.dst === id || srcsOf(tr).some(([x]) => x === id))) || BLENDS.some(b => b.term === t.id && (b.state === 'Scheduled' || b.state === 'In progress') && (b.dst === id || b.comps.some(c => c.tank === id)));
+const free = (t, k) => k.status === 'Idle' && k.q === 'Released' && !busy(t, k.id);
+const room = k => k.hla - k.vol - 300;
+const spare = k => stock(k).avail - 300;
+const fill = t => { let v = 0, c = 0; t.tanks.forEach(k => { if (k.kind === 'product') { v += k.vol; c += k.nominal; } }); return c ? v / c : 0; };
+const officer = tid => tid === 'PLM' ? 'S. Wulandari · Quality officer' : tid === 'PLJ' ? 'M. Lubis · Quality officer' : 'Quality officer · ' + tid;
+const trfId = (t, s) => `TRF-${t.id}-${ymd(s).slice(0, 2)}-${String(seq('TRF' + t.id, TRANSFERS, new RegExp(`^TRF-${t.id}-\\d\\d-(\\d+)$`))).padStart(4, '0')}`;
+function add(tr) { Object.assign(tr, { gen: true, pauses: [], recv: 0, qty: 0 }); TRANSFERS.push(tr); derive(tr); mark(tr); return tr; }
+
+function begin(tr, ev) {
+  const t = term(tr.term), r = R('go' + tr.id);
+  tr.state = 'In progress'; tr.flow0 = tr.flow0 || tr.rate || Math.round(tr.planned / 10); tr.flow = tr.flow0; tr.recv = tr.qty = 0; tr.active = true;
+  if (tr.marine) {
+    tr.press = +(5 + r() * 2).toFixed(1); tr.vesselPress = +(tr.press + 1.5 + r()).toFixed(1); tr.vesselTemp = +((tr.temp || 31) + r() * 0.4).toFixed(1);
+    const k = t.tanks.find(x => x.id === tr.dst); if (k) { k.q = 'Awaiting test results'; k.batch = tr.batch; }
+  }
+  mark(tr);
+  if (tr.vessel) ev.push(`${tr.vessel} ${tr.marine ? 'discharging' : 'loading'} at ${t.name} ${tr.berth} · ${fmt(tr.planned)} kL ${prod(tr.code).label}.`);
+}
 function blendTransfer(b) {
-  const done = b.comps.reduce((a, c) => a + (c.done || 0), 0);
-  const tr = { id: b.id, term: b.term, type: b.mode + ' blend', code: b.code, src: b.comps.map(c => c.tank).join(' + '), srcs: b.comps.map(c => [c.tank, c.qty / b.target]), dst: b.dst, pump: 'P-04', planned: b.target, recv: Math.round(done), qty: done, flow: b.rate, flow0: b.rate, start: b.start, pauses: [], state: 'In progress' };
+  const done = b.comps.reduce((a, c) => a + (c.done || 0), 0), t = term(b.term);
+  const tr = { id: b.id, term: b.term, type: b.mode + ' blend', code: b.code, src: b.comps.map(c => c.tank).join(' + '), srcs: b.comps.map(c => [c.tank, c.qty / b.target]), dst: b.dst, pump: 'P-04', planned: b.target, recv: Math.round(done), qty: done, flow: b.rate, flow0: b.rate, start: b.start, pauses: [], state: 'In progress', gen: b.gen };
+  const k = t.tanks.find(x => x.id === b.dst); if (k) { k.batch = b.id; k.q = 'Awaiting test results'; }
   TRANSFERS.push(tr); derive(tr); mark(tr);
 }
-function settle(tr, end) {
+function settle(tr, end, ev) {
   const t = term(tr.term), blend = tr.type.includes('blend');
   tr.state = 'Completed'; tr.end = end; tr.flow = 0; tr.qty = tr.recv = tr.planned; tr.active = false;
   t.tanks.forEach(k => { if (k.activity && k.activity.ref === tr.id) { k.activity = null; k.status = k.id === tr.dst && (blend || tr.marine) ? 'Settling' : 'Idle'; if (k.id === tr.dst && blend) k.q = 'Awaiting test results'; } });
   const b = BLENDS.find(x => x.id === tr.id); if (b) { b.state = 'Awaiting test results'; b.end = end; b.comps.forEach(c => { c.done = c.qty; }); }
+  if (!blend && !tr.vessel) return; // routine truck, pipeline and hydrant runs finish quietly
+  ev.push(`${tr.id} completed · ${fmt(tr.planned)} kL ${t.tanks.some(k => k.id === tr.dst) ? 'received' : 'loaded'}${blend ? '. Batch awaiting test results — not released' : ''}.`);
+  if (blend || tr.marine) { const k = t.tanks.find(x => x.id === tr.dst); QUEUE.push({ at: end + between(R('q' + tr.id), 20, 60, 5), run: at => takeSample(t, at, b ? b.id : k && k.batch, b ? { type: 'blend', id: b.id } : { type: 'tank', id: tr.dst }, tr.code, tr) }); }
+}
+
+// ── Quality: samples, results and release ─────────────────────────────
+function testsFor(code) {
+  const p = prod(code), d = Math.round(p.dens), T = (prop, method, unit, spec, now) => ({ prop, method, unit, spec, now });
+  if (p.fam === 'Gasoline') return [T('Appearance', 'Visual', '', 'Clear & bright', 1), T('Density @ 15 °C', 'ASTM D4052', 'kg/m³', '715 – 770', 1), T('Research octane number', 'ASTM D2699', 'RON', '≥ ' + (RON[code] || 92).toFixed(1)), T('Distillation FBP', 'ASTM D86', '°C', '≤ 215')];
+  if (code === 'B0') return [T('Density @ 15 °C', 'ASTM D4052', 'kg/m³', '815 – 860', 1), T('Sulphur content', 'ASTM D5453', 'mg/kg', '≤ 50'), T('Water content', 'ASTM D6304', 'mg/kg', '≤ 200'), T('FAME content', 'EN 14078', '%v/v', '≤ 0.5')];
+  if (code === 'B40') return [T('FAME content', 'EN 14078', '%v/v', '39.0 – 41.0'), T('Density @ 15 °C', 'ASTM D4052', 'kg/m³', '840 – 870', 1), T('Oxidation stability', 'EN 15751', 'h', '≥ 35'), T('Water content', 'ASTM D6304', 'mg/kg', '≤ 350')];
+  if (p.fam === 'Aviation') return [T('Density @ 15 °C', 'ASTM D4052', 'kg/m³', '775 – 840', 1), T('Flash point', 'IP 170', '°C', '≥ 38'), T('Freezing point', 'ASTM D5972', '°C', '≤ −47'), T('Thermal stability (JFTOT)', 'ASTM D3241', '—', 'Pass')];
+  return [T('Appearance', 'Visual', '', 'Clear & bright', 1), T('Density @ 15 °C', 'ASTM D4052', 'kg/m³', `${d - 25} – ${d + 25}`, 1)];
+}
+function measure(x, code, r, bad) {
+  const p = prod(code), v = (lo, hi, dp) => +(lo + r() * (hi - lo)).toFixed(dp), B40 = code === 'B40', m = RON[code] || 92;
+  const res = {
+    'Appearance': () => bad ? 'Hazy' : 'Clear & bright',
+    'Research octane number': () => bad ? v(m - 0.8, m - 0.2, 1) : v(m + 0.2, m + 0.9, 1),
+    'Distillation FBP': () => bad ? v(216, 221, 0) : v(194, 210, 0),
+    'Sulphur content': () => bad ? v(52, 60, 0) : v(18, 45, 0),
+    'Water content': () => B40 ? (bad ? v(360, 420, 0) : v(120, 280, 0)) : (bad ? v(205, 260, 0) : v(60, 170, 0)),
+    'FAME content': () => B40 ? (bad ? v(38.1, 38.8, 1) : v(39.5, 40.6, 1)) : (bad ? v(0.6, 0.9, 1) : v(0, 0.3, 1)),
+    'Oxidation stability': () => bad ? v(29, 34, 0) : v(37, 46, 0),
+    'Flash point': () => bad ? v(35, 37.5, 1) : v(40, 48, 1),
+    'Freezing point': () => bad ? v(-46.5, -45, 1) : v(-56, -49, 1),
+    'Thermal stability (JFTOT)': () => bad ? 'Fail' : 'Pass',
+  }[x.prop];
+  const result = res ? res() : x.prop.startsWith('Density') ? v(p.dens - 1.5, p.dens + 1.5, 1) : (x.result != null ? x.result : '—');
+  return { prop: x.prop, method: x.method, result, unit: x.unit, spec: x.spec, status: res && bad ? 'Failed' : 'Passed' };
+}
+function takeSample(t, at, batch, link, code, tr) {
+  if (!batch || SAMPLES.some(x => x.batch === batch && (x.decision === 'Pending' || (tr && x.at >= tr.start)))) return; // already sampled during this movement
+  const r = R('smp' + batch), id = `S-${t.id}-${ymd(at)}-${String(seq('S' + t.id, SAMPLES, new RegExp(`^S-${t.id}-\\d{6}-(\\d+)$`))).padStart(3, '0')}`;
+  const tests = testsFor(code).map(x => x.now ? measure(x, code, r, false) : { prop: x.prop, method: x.method, result: null, unit: x.unit, spec: x.spec, status: 'Pending' });
+  const b = BLENDS.find(x => x.id === batch);
+  SAMPLES.unshift({ id, term: t.id, code, batch, loc: `${b ? b.dst : link.id} · upper / middle / lower running sample`, link, at, status: 'Pending', lab: `LAB-${t.id} · job ${ymd(at).slice(0, 2)}-${between(r, 1000, 9999)}`, decision: 'Pending', by: null, tests, resAt: at + between(r, 90, 180, 5), gen: true });
+  if (b && !b.sample) b.sample = id;
+  if (!TRACE[batch] && tr && tr.vessel) TRACE[batch] = { product: code, tank: link.id, comps: [{ c: code, tank: tr.vessel, batch: `Cargo ${tr.voyage}`, share: 100, src: tr.id, docs: [`Bill of lading ${tr.voyage}`, 'Load-port certificate of quality'] }], docs: [`Tank sample ${id}`] };
+}
+function results(smp, s, ev) {
+  const r = R('res' + smp.id), bad = r() < 0.04 ? Math.floor(r() * smp.tests.length) : -1;
+  smp.tests = smp.tests.map((x, i) => x.status === 'Pending' ? measure(x, smp.code, r, i === bad) : x);
+  smp.status = smp.tests.some(x => x.status === 'Failed') ? 'Failed' : 'Passed';
+  smp.decAt = s + between(r, 30, 90, 5);
+  if (smp.status === 'Failed') ev.push(`${smp.id} · ${smp.tests.find(x => x.status === 'Failed').prop} out of specification for ${smp.batch}.`);
+}
+function decide(smp, s, ev) {
+  const t = term(smp.term), b = BLENDS.find(x => x.id === smp.batch);
+  const ready = smp.link.type === 'blend' ? b && b.state === 'Awaiting test results' : !TRANSFERS.some(x => x.term === smp.term && x.dst === smp.link.id && x.active);
+  if (!ready) return; // a running sample waits until the tank or batch is complete
+  const ok = smp.status === 'Passed';
+  smp.decision = ok ? 'Released' : 'On hold'; smp.by = { who: officer(t.id), at: s };
+  const k = t.tanks.find(x => x.batch === smp.batch); if (k) { k.q = ok ? 'Released' : 'On hold'; if (k.status === 'Settling') k.status = 'Idle'; }
+  if (b) { b.state = ok ? 'Released' : 'On hold'; if (ok && b.certs) b.certs = b.certs.map(([n, , ref]) => [n, 'Received', ref || `DOC-${t.id}-${between(R('doc' + b.id + n), 5000, 9999)}`]); }
+  ev.push(ok ? `${smp.batch} released at ${t.name} · all tests passed.` : `${smp.batch} placed on hold at ${t.name}.`);
+}
+
+// ── Generators ─────────────────────────────────────────────────────────
+function genVessel(t, s, r, berth) {
+  const bi = t.marine.indexOf(berth) + 1, vessel = pick(r, VESSELS.filter(v => !TRANSFERS.some(x => x.vessel === v && x.state !== 'Completed'))); if (!vessel) return;
+  const arrive = s + between(r, 30, 180, 5), base = { id: trfId(t, s), term: t.id, vessel, voyage: 'V.' + between(r, 1000, 9999), berth, arm: 'MLA-' + bi, meter: 'FM-0' + bi, comp: pick(r, COTS), arrive, start: arrive + between(r, 45, 120, 5), state: 'Scheduled', flow: null };
+  if (t.shipOut && fill(t) > 0.55 && r() < 0.6) { // strategic storage also loads vessels out
+    const k = t.tanks.filter(x => x.kind === 'product' && free(t, x) && spare(x) >= 6000).sort((a, b) => spare(b) - spare(a))[0]; if (!k) return;
+    add({ ...base, type: 'Ship loading', code: k.code, src: k.id, dst: `${berth} · ${vessel}`, node: 'ship', pump: 'P-01', planned: Math.min(Math.round(spare(k)), between(r, 8000, 20000)), flow0: between(r, 1200, 2000, 10), batch: k.batch });
+    return;
+  }
+  const ks = t.tanks.filter(k => k.code !== 'FAME' && free(t, k) && room(k) >= Math.max(800, k.nominal * 0.3)).sort((a, b) => room(b) / b.nominal - room(a) / a.nominal);
+  const k = pick(r, ks.slice(0, 3)); if (!k) return;
+  const p = prod(k.code), planned = Math.min(30000, between(r, room(k) * 0.55, room(k) * 0.85));
+  add({ ...base, type: 'Ship-to-shore', code: k.code, dst: k.id, planned, flow0: Math.max(250, between(r, planned / 13, planned / 8, 10)), temp: +(30 + r() * 2).toFixed(1), dens: +(p.dens + (r() - 0.5) * 2).toFixed(1), batch: `${t.id}-${p.short.replace(/[^A-Z0-9.]/gi, '')}-${ymd(s).slice(0, 4)}-${pad(30 + seq('B' + t.id, [], /$^/))}` });
+}
+function genTruck(t, s, r) {
+  const sod = ((s % 1440) + 1440) % 1440; if (sod < 360 || sod > 1260) return; // inside the loading window
+  const used = new Set();
+  TRANSFERS.filter(x => x.term === t.id && x.active && x.node === 'gantry').forEach(x => (x.dst.match(/\d+(?:\s*[–-]\s*\d+)?/g) || []).forEach(g => { const [a, b] = g.split(/[–-]/).map(Number); for (let i = a; i <= (b || a); i++) used.add(i); }));
+  const k = pick(r, t.tanks.filter(x => x.kind === 'product' && free(t, x) && spare(x) >= 1500).sort((a, b) => spare(b) - spare(a)).slice(0, 4)); if (!k) return;
+  const truck = /^B/.test(k.code) ? 32 : t.truck <= 4 ? 16 : 24, flow0 = between(r, 80, 170), n = Math.max(1, Math.min(4, Math.round(flow0 / 45)));
+  let a = 0; for (let i = 1; i + n - 1 <= t.truck && !a; i++) { let ok = true; for (let j = i; j < i + n; j++) if (used.has(j)) ok = false; if (ok) a = i; }
+  const planned = Math.floor(Math.min(between(r, 1200, 2600), spare(k), flow0 * (1320 - sod) / 60) / truck) * truck;
+  if (!a || planned < truck * 15) return;
+  add({ id: trfId(t, s), term: t.id, type: 'Truck dispatch', truck, code: k.code, src: k.id, dst: n === 1 ? `Gantry bay ${a}` : `Gantry bays ${a}–${a + n - 1}`, node: 'gantry', pump: pick(r, ['P-01', 'P-02']), planned, flow: flow0, flow0, start: s, state: 'In progress' });
+}
+function genFeed(t, s, r, node) { // hydrant or outbound pipeline, run back to back
+  const k = t.tanks.filter(x => x.kind === 'product' && free(t, x) && spare(x) >= 800).sort((a, b) => spare(b) - spare(a))[0]; if (!k) return;
+  const size = Math.min(1, t.tanks.reduce((a, x) => a + x.nominal, 0) / 30000); // small airport depots draw less
+  const flow0 = node === 'hydrant' ? Math.round(between(r, 150, 420) * size) : between(r, 280, 420);
+  add({ id: trfId(t, s), term: t.id, type: node === 'hydrant' ? 'Hydrant dispatch' : 'Pipeline dispatch', code: k.code, src: k.id, dst: node === 'hydrant' ? 'Hydrant network' : t.pipeOut, node, pump: node === 'hydrant' ? 'P-01' : 'P-02', planned: Math.min(Math.round(spare(k)), between(r, 1500, 4500)), flow: flow0, flow0, start: s, state: 'In progress' });
+}
+function genInflow(t, s, r, type, fame) { // pipeline or road receipt into the emptiest tank
+  const k = t.tanks.filter(x => (fame ? x.code === 'FAME' : x.kind === 'product') && free(t, x) && room(x) >= Math.max(500, x.nominal * 0.25)).sort((a, b) => a.vol / a.nominal - b.vol / b.nominal)[0]; if (!k) return;
+  const flow0 = fame ? between(r, 60, 120) : between(r, 200, 350);
+  add({ id: trfId(t, s), term: t.id, type, code: k.code, src: type === 'Road receipt' ? 'Road tankers' : 'Pipeline', dst: k.id, planned: between(r, room(k) * 0.5, room(k) * 0.85), flow: flow0, flow0, start: s, state: 'In progress' });
+}
+function genBlend(t, s, r, ev) {
+  if (BLENDS.some(b => b.term === t.id && (b.state === 'Scheduled' || b.state === 'In progress'))) return; // one batch on the skid at a time
+  const code = pick(r, t.blend.products), rec = RECIPES[code]; if (!rec) return;
+  const dst = t.tanks.filter(k => k.code === code && free(t, k) && room(k) >= 1500).sort((a, b) => room(b) - room(a))[0]; if (!dst) return;
+  const src = rec.comps.map(([c, pct]) => ({ c, pct, k: t.tanks.filter(k => k.code === c && free(t, k) && spare(k) > 500).sort((a, b) => spare(b) - spare(a))[0] }));
+  if (src.some(x => !x.k)) return;
+  const target = Math.floor(Math.min(room(dst) * 0.9, t.blend.mode === 'Inline' ? 6500 : 4500, ...src.map(x => spare(x.k) / x.pct * 100)) / 10) * 10; if (target < 1500) return;
+  const comps = src.map(x => ({ c: x.c, tank: x.k.id, qty: Math.round(target * x.pct / 100) })); comps[0].qty += target - comps.reduce((a, c) => a + c.qty, 0);
+  const id = `BLD-${t.id}-${ymd(s).slice(0, 4)}-${String(seq('BLD' + t.id, BLENDS, new RegExp(`^BLD-${t.id}-\\d{4}-(\\d+)$`))).padStart(3, '0')}`, start = s + between(r, 30, 90, 5);
+  const b = { id, term: t.id, code, mode: t.blend.mode, state: 'Scheduled', target, dst: dst.id, comps, rate: t.blend.mode === 'Inline' ? between(r, 500, 600, 2) : between(r, 550, 900, 10), start, created: `${t.id === 'PLM' ? 'R. Hakim' : 'Shift supervisor · ' + t.id} · ${tm(s, t.tz, { date: true })}`, gen: true };
+  if (prod(code).fam === 'Aviation') { b.certs = [[`HEFA-SPK component certificate · lot HS-${ymd(s).slice(0, 4)}-${between(r, 10, 99)}`, 'Received', `DOC-${t.id}-${between(r, 5000, 9999)}`], [`Conventional jet refinery certificate · JFC batch ${ymd(s).slice(0, 4)}-${between(r, 10, 99)}`, 'Received', `DOC-${t.id}-${between(r, 5000, 9999)}`], ['Blended batch certificate of analysis', 'Pending', null], ['Release certificate (RCQ)', 'Not issued', null]]; b.pathway = 'HEFA-SPK synthetic blending component · pathway per terminal procedure'; }
+  BLENDS.push(b);
+  TRACE[id] = { product: code, tank: dst.id, comps: src.map(x => ({ c: x.c, tank: x.k.id, batch: x.k.batch || '—', share: x.pct, src: 'Released tank stock', docs: [] })), docs: [`Blend order ${id}`] };
+  ev.push(`${id} scheduled at ${t.name} · ${fmt(target)} kL ${prod(code).label} into ${dst.id}, start ${tm(start, t.tz)}.`);
+}
+function trip(tr, s, r, ev) { // vessel cargo pump trip pauses the discharge for a while
+  const id = 'EX-' + seq('EX', EXCEPTIONS, /^EX-(\d+)$/);
+  tr.state = 'Paused'; tr.flow = 0; tr.pauses.push([s, null, 'Vessel cargo pump trip (vessel side)']); tr.resumeAt = s + between(r, 20, 60, 5); tr.trip = id;
+  EXCEPTIONS.unshift({ id, sev: 'attention', term: tr.term, asset: tr.vessel, what: 'Vessel cargo pump trip — transfer paused', since: s, op: tr.id, owner: `Loading master · ${tr.berth}`, status: 'Open', ack: null, res: null, gen: true });
+  mark(tr); ev.push(`${id} · ${tr.vessel} cargo pump trip, ${tr.id} paused.`);
+}
+// story alarms that clear on their own: swell at Biak eases, the Sambu meter comes back
+const CLEARS = [
+  ['EX-3107', REF + 300, 'D. Rumbewas', 'Swell below berthing limit; Berth 1 reopened.'],
+  ['EX-3117', REF + 200, 'Control room · SMB', 'FM-02 communication restored; metered flow available again.', () => { const tr = TRANSFERS.find(x => x.id === 'TRF-SMB-26-0144'); if (tr && tr.meterLost != null) { delete tr.meterLost; tr.flow0 = tr.lastFlow; } }],
+];
+const prune = (a, old) => { for (let i = a.length - 1; i >= 0; i--) if (old(a[i])) a.splice(i, 1); };
+
+// slot boundary: follow-ups, quality, alarms and new activity
+function generate(s, ev) {
+  QUEUE.sort((a, b) => a.at - b.at); while (QUEUE.length && QUEUE[0].at <= s) QUEUE.shift().run(s);
+  CLEARS.forEach(([id, at, by, note, fix]) => { const e = EXCEPTIONS.find(x => x.id === id); if (e && e.status !== 'Resolved' && s >= at) { e.status = 'Resolved'; e.ack = e.ack || { by, at }; e.res = { by, at: s, note }; if (fix) fix(); ev.push(`${id} resolved · ${note}`); } });
+  TRANSFERS.forEach(tr => {
+    if (tr.state === 'Delayed') { // waits while its cause is open, then berths
+      if (EXCEPTIONS.some(e => e.status !== 'Resolved' && e.op.includes(tr.id))) { if (tr.start < s + 30) tr.start = Math.ceil(s / 15) * 15 + 60; }
+      else { tr.state = 'Scheduled'; tr.start = Math.max(tr.start, Math.ceil(s / 15) * 15 + 60); ev.push(`${tr.vessel} cleared to berth at ${term(tr.term).name} · discharge from ${tm(tr.start, term(tr.term).tz)}.`); }
+    }
+    if (tr.state === 'Paused' && tr.resumeAt == null) tr.resumeAt = Math.max(s + 30, (tr.pauses.find(p => p[1] == null) || [s])[0] + between(R('rs' + tr.id), 150, 300, 5));
+    if (tr.marine && tr.state === 'In progress' && tr.meterLost == null) { const r = R(`trip|${tr.id}|${s}`); if (r() < 0.002) trip(tr, s, r, ev); }
+  });
+  SAMPLES.forEach(smp => {
+    if (smp.decision !== 'Pending') return;
+    if (smp.status === 'Pending') { if (smp.resAt == null) smp.resAt = Math.max(smp.at + 120, REF + between(R('ra' + smp.id), 20, 240, 5)); if (s >= smp.resAt) results(smp, s, ev); }
+    else if ((smp.status === 'Passed' || smp.status === 'Failed') && s >= (smp.decAt ?? 0)) decide(smp, s, ev);
+  });
+  TERMINALS.forEach(t => {
+    const r = R(`${t.id}|${s}`), act = node => TRANSFERS.some(x => x.term === t.id && x.active && x.node === node);
+    (t.marine || []).forEach(berth => {
+      if (TRANSFERS.some(x => x.term === t.id && x.berth === berth && LIVE.includes(x.state))) return;
+      if (EXCEPTIONS.some(e => e.term === t.id && e.status !== 'Resolved' && e.asset === berth)) return; // berth closed
+      if (r() < 0.12) genVessel(t, s, r, berth);
+    });
+    if (t.truck && TRANSFERS.filter(x => x.term === t.id && x.active && x.node === 'gantry').length < Math.max(1, Math.min(3, Math.floor(t.truck / 2.5))) && r() < 0.25) genTruck(t, s, r);
+    if (t.hydrant && !act('hydrant') && r() < 0.35) genFeed(t, s, r, 'hydrant');
+    if (t.pipeOut && !act('pipeout') && r() < 0.35) genFeed(t, s, r, 'pipeout');
+    if (t.pipeIn) { const type = /^Road/.test(t.pipeIn) ? 'Road receipt' : 'Pipeline receipt'; if (!TRANSFERS.some(x => x.term === t.id && x.active && x.type === type) && r() < 0.12) genInflow(t, s, r, type, false); }
+    if (t.tanks.some(k => k.code === 'FAME') && !TRANSFERS.some(x => x.term === t.id && x.active && x.code === 'FAME' && x.type === 'Road receipt') && r() < 0.05) genInflow(t, s, r, 'Road receipt', true);
+    if (t.blend && r() < 0.06) genBlend(t, s, r, ev);
+  });
+  prune(TRANSFERS, x => x.state === 'Completed' && x.end < s - 2880);
+  prune(BLENDS, x => x.state === 'Released' && x.end != null && x.end < s - 4320);
+  prune(SAMPLES, x => x.decision !== 'Pending' && x.at < s - 4320);
+  prune(EXCEPTIONS, x => x.status === 'Resolved' && x.res && x.res.at < s - 1440);
+}
+
+// product movement between NOW and `to` (both inside one slot)
+function advance(to, ev) {
+  const from = NOW, slot = Math.floor(from / SLOT + 1e-9) * SLOT;
+  BLENDS.forEach(b => {
+    if (b.state === 'Scheduled' && b.start != null && b.start <= to) { b.state = 'In progress'; b.comps.forEach(c => { c.done = 0; c.flow = Math.round(b.rate * c.qty / b.target); }); ev.push(`${b.id} started into ${b.dst}.`); }
+    if (b.state === 'In progress' && !TRANSFERS.some(tr => tr.id === b.id)) blendTransfer(b);
+  });
+  TRANSFERS.forEach(tr => {
+    if (tr.state === 'Scheduled' && tr.start <= to) begin(tr, ev);
+    if (tr.state === 'Paused' && tr.resumeAt != null && tr.resumeAt <= to) {
+      const p = tr.pauses.find(x => x[1] == null), at = tr.resumeAt; if (p) p[1] = at;
+      tr.state = 'In progress'; tr.resumedAt = at; tr.resumeAt = null; tr.flow0 = tr.flow0 || Math.round(tr.avgRate) || Math.round(tr.planned / 10); mark(tr);
+      const e = tr.trip && EXCEPTIONS.find(x => x.id === tr.trip);
+      if (e) { e.status = 'Resolved'; e.what = `Vessel cargo pump trip — transfer paused ${Math.round(at - e.since)} min`; e.ack = e.ack || { by: e.owner.split(' · ')[0], at: e.since + 5 }; e.res = { by: e.owner.split(' · ')[0], at, note: `Vessel pump restarted; transfer resumed ${tm(at, term(tr.term).tz)}.` }; }
+      ev.push(`${tr.id} resumed${tr.vessel ? ' · ' + tr.vessel : ''}.`);
+    }
+    if (tr.state !== 'In progress') return;
+    // flow holds for the whole slot, so the result does not depend on how often the page ticks
+    if (tr.flow0) tr.flow = Math.round(tr.flow0 * wave(tr.id, slot, 0.012));
+    if (tr.press != null) { if (tr.press0 == null) tr.press0 = tr.press; tr.press = +(tr.press0 * wave(tr.id + 'p', slot, 0.02)).toFixed(1); }
+    const rate = tr.flow != null ? tr.flow : tr.lastFlow; // meter offline: progress from tank gauging
+    const t0 = Math.max(from, tr.start, tr.resumedAt ?? -Infinity), mins = to - t0;
+    if (!(rate > 0) || mins <= 0) return;
+    const t = term(tr.term), dst = t.tanks.find(k => k.id === tr.dst);
+    let q = Math.min(rate * mins / 60, tr.planned - tr.qty);
+    if (dst && q > dst.moc - 50 - dst.vol) { q = Math.max(0, dst.moc - 50 - dst.vol); tr.planned = tr.qty + q; } // operator stops the receipt at the tank limit
+    if (q > 0) {
+      tr.qty += q; tr.recv = tr.truck ? Math.floor(tr.qty / tr.truck + 1e-9) * tr.truck : Math.round(tr.qty);
+      if (dst) dst.vol += q;
+      srcsOf(tr).forEach(([sid, sh]) => { const k = t.tanks.find(x => x.id === sid); if (k) k.vol -= q * sh; });
+      const b = BLENDS.find(x => x.id === tr.id);
+      if (b) { const fs = b.comps.reduce((a, c) => a + (c.flow || 0), 0) || 1; b.comps.forEach(c => { c.done = Math.min(c.qty, (c.done || 0) + q * (c.flow || 0) / fs); }); }
+    }
+    if (tr.qty >= tr.planned - 1e-6) settle(tr, t0 + Math.max(0, q) / rate * 60, ev);
+  });
+  NOW = to;
+  TRANSFERS.forEach(tr => { if (tr.active) mark(tr); derive(tr); });
+  TERMINALS.forEach(t => t.tanks.forEach(k => { k.temp = +(k.temp0 - diurnal(REF) + diurnal(NOW)).toFixed(1); }));
 }
 // Moves the network forward to the real clock. Returns events worth telling the operator about.
 export function tick(to = Date.now() / 60000 - BASE) {
-  const from = NOW, ev = [];
-  if (to > from) {
-    BLENDS.forEach(b => {
-      if (b.state === 'Scheduled' && b.start != null && b.start <= to) { b.state = 'In progress'; b.comps.forEach(c => { c.done = 0; c.flow = Math.round(b.rate * c.qty / b.target); }); ev.push(`${b.id} started into ${b.dst}.`); }
-      if (b.state === 'In progress' && !TRANSFERS.some(tr => tr.id === b.id)) blendTransfer(b);
-    });
-    TRANSFERS.forEach(tr => {
-      if (tr.state === 'Scheduled' && tr.start <= to) { begin(tr); ev.push(`${tr.id} started · ${tr.type.toLowerCase()} into ${tr.dst}.`); }
-      if (tr.state === 'Delayed' && tr.start < to + 30) tr.start = Math.ceil(to / 15) * 15 + 60; // revised start keeps moving while the cause is open
-      if (tr.state !== 'In progress') return;
-      const rate = tr.flow != null ? tr.flow : tr.lastFlow; // meter offline: progress from tank gauging
-      const t0 = Math.max(from, tr.start), mins = to - t0;
-      if (!(rate > 0) || mins <= 0) return;
-      const t = term(tr.term), q = Math.min(rate * mins / 60, tr.planned - tr.qty);
-      if (q > 0) {
-        tr.qty += q; tr.recv = tr.truck ? Math.floor(tr.qty / tr.truck + 1e-9) * tr.truck : Math.round(tr.qty);
-        const dst = t.tanks.find(k => k.id === tr.dst); if (dst) dst.vol += q;
-        srcsOf(tr).forEach(([sid, sh]) => { const k = t.tanks.find(x => x.id === sid); if (k) k.vol -= q * sh; });
-        const b = BLENDS.find(x => x.id === tr.id);
-        if (b) { const fs = b.comps.reduce((a, c) => a + (c.flow || 0), 0) || 1; b.comps.forEach(c => { c.done = Math.min(c.qty, (c.done || 0) + q * (c.flow || 0) / fs); }); }
-      }
-      if (tr.qty >= tr.planned - 1e-6) { settle(tr, t0 + Math.max(0, q) / rate * 60); ev.push(`${tr.id} completed · ${fmt(tr.planned)} kL ${tr.type.includes('dispatch') ? 'dispatched' : 'received'}${tr.type.includes('blend') ? '. Batch awaiting test results — not released' : ''}.`); }
-    });
-    NOW = to;
-    TRANSFERS.forEach(tr => {
-      if (tr.state === 'In progress' && tr.flow0) tr.flow = Math.round(tr.flow0 * wave(tr.id, NOW, 0.012));
-      if (tr.state === 'In progress' && tr.press != null) { if (tr.press0 == null) tr.press0 = tr.press; tr.press = +(tr.press0 * wave(tr.id + 'p', NOW, 0.02)).toFixed(1); }
-      if (tr.active) mark(tr);
-      derive(tr);
-    });
-    TERMINALS.forEach(t => t.tanks.forEach(k => { k.temp = +(k.temp0 - diurnal(REF) + diurnal(NOW)).toFixed(1); }));
+  const ev = [];
+  while (NOW < to) {
+    const edge = (Math.floor(NOW / SLOT + 1e-9) + 1) * SLOT, next = Math.min(to, edge);
+    advance(next, ev);
+    if (next === edge) generate(edge, ev);
   }
   SNAPSHOT = `${day(NOW, 'WIB', true)} · ${hhmm(NOW)} WIB`;
   return ev;

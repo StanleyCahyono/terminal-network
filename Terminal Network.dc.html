@@ -358,7 +358,7 @@ class Component extends DCLogic {
     import(new URL('./data.js', document.baseURI).href).then(m => { this.D = m; this.I = m.icons(React.createElement); this.idx = m.searchIndex(); this.setState({ ready: true }); });
     this.onResize = () => this.setState({ vw: window.innerWidth });
     window.addEventListener('resize', this.onResize);
-    this.timer = setInterval(() => { const ev = this.D ? this.D.tick() : []; if (ev.length) this.toast(ev.slice(0, 2).join(' ') + (ev.length > 2 ? ` +${ev.length - 2} more` : '')); this.setState(s => ({ tick: s.tick + 1 })); }, 3000);
+    this.timer = setInterval(() => { const ev = this.D ? this.D.tick() : []; if (ev.length) { this.idx = this.D.searchIndex(); this.toast(ev.slice(0, 2).join(' ') + (ev.length > 2 ? ` +${ev.length - 2} more` : '')); } this.setState(s => ({ tick: s.tick + 1 })); }, 3000);
     this.onKey = e => {
       if (e.key === '/' && !/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) { e.preventDefault(); this.searchRef.current && this.searchRef.current.focus(); }
       if (e.key === 'Escape') this.closeMenus();
