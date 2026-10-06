@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<div style="position:absolute;inset:0;display:flex;background:var(--bg);overflow:hidden">
+<sc-if value="{{ ready }}" hint-placeholder-val="{{ true }}">
+  <sc-if value="{{ noBlend }}" hint-placeholder-val="{{ false }}">
+    <div style="padding:40px 32px;max-width:640px;display:flex;flex-direction:column;gap:12px">
+      <span style="color:var(--ink3)">{{ I.blend }}</span>
+      <div style="font-size:30px;font-weight:500;letter-spacing:-.015em;line-height:1.1">Blending is not configured at {{ t.name }}</div>
+      <div style="color:var(--ink2);text-wrap:pretty">This terminal has no blend skid or blend procedure in its configuration. Choose a terminal with blending capability:</div>
+      <div style="display:flex;flex-direction:column;gap:6px;margin-top:4px">
+        <sc-for list="{{ blendTerms }}" as="b" hint-placeholder-count="4">
+          <button onClick="{{ b.onClick }}" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line);border-radius:0;background:var(--surf);text-align:left" style-hover="border-color:var(--ink4)"><span style="font-weight:600;flex:1">{{ b.name }}</span><span style="font-size:12px;color:var(--ink3)">{{ b.sub }}</span>{{ I.arrowR }}</button>
+        </sc-for>
+      </div>
+    </div>
+  </sc-if>
+  <sc-if value="{{ hasBlend }}" hint-placeholder-val="{{ true }}">
+    <aside aria-label="Blend batches" style="width:{{ listW }};flex:none;border-right:1px solid var(--line);background:var(--surf);display:flex;flex-direction:column;min-height:0">
+      <div style="padding:14px 16px 10px;border-bottom:1px solid var(--line2);display:flex;flex-direction:column;gap:8px">
+        <div>
+          <div style="font-size:12.5px;color:var(--ink3)">Blend batches</div>
+          <div style="font-weight:600;font-size:14px;margin-top:2px">{{ t.name }}</div>
+          <div style="font-size:11.5px;color:var(--ink3)">{{ blendCfg }}</div>
+        </div>
+        <button onClick="{{ newBatch }}" disabled="{{ noAct }}" title="{{ actTitle }}" style="height:32px;border:1px solid var(--ink);border-radius:0;background:var(--surf);font-weight:500;display:flex;align-items:center;justify-content:center;gap:6px;opacity:{{ actOp }};white-space:nowrap">{{ newIcon }}Create batch</button>
+      </div>
+      <div style="flex:1;overflow:auto;padding:8px">
+        <sc-for list="{{ batches }}" as="b" hint-placeholder-count="4">
+          <button onClick="{{ b.onClick }}" aria-pressed="{{ b.pressed }}" style="width:100%;display:flex;flex-direction:column;gap:4px;padding:9px 10px;margin-bottom:4px;border:1px solid {{ b.bd }};border-radius:0;background:{{ b.bg }};text-align:left;box-shadow:{{ b.sh }}" style-hover="border-color:var(--ink4)">
+            <div style="display:flex;align-items:center;gap:7px;width:100%"><span style="width:9px;height:9px;background:{{ b.color }}"></span><span style="font-family:var(--fid);white-space:nowrap;letter-spacing:-.02em;font-size:11.5px;font-weight:600">{{ b.id }}</span></div>
+            <div style="display:flex;align-items:center;gap:6px;font-size:12px">{{ b.icon }}<span style="font-weight:500">{{ b.state }}</span></div>
+            <div style="font-size:11px;color:var(--ink3)">{{ b.sub }}</div>
+          </button>
+        </sc-for>
+      </div>
+      
+    </aside>
+
+    <div style="flex:1;min-width:0;overflow:auto">
+      <div style="padding:32px 40px 56px;display:flex;flex-direction:column;gap:40px">
+        <div style="display:flex;align-items:flex-start;gap:14px;flex-wrap:wrap">
+          <div style="display:flex;flex-direction:column;gap:4px">
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+              <h1 style="margin:0;font-size:30px;font-weight:500;letter-spacing:-.015em;line-height:1.1;font-family:var(--fid);white-space:nowrap;letter-spacing:-.02em;letter-spacing:-.01em">{{ b.id }}</h1>
+              <span style="display:flex;align-items:center;gap:6px;padding:2px 9px;border:1px solid {{ b.stBd }};background:{{ b.stBg }};border-radius:0;font-weight:600;font-size:12px;white-space:nowrap">{{ b.stIcon }}{{ b.state }}</span>
+            </div>
+            <div style="display:flex;gap:12px;font-size:12px;color:var(--ink2);flex-wrap:wrap">
+              <span style="display:flex;align-items:center;gap:6px"><span style="width:9px;height:9px;background:{{ b.color }}"></span>{{ b.prod }}</span>
+              <span>{{ b.mode }} blending</span><span>Destination {{ b.dst }}</span><span>{{ b.meta }}</span>
+            </div>
+          </div>
+        </div>
+
+        <nav aria-label="Blend workflow" style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));background:var(--surf);border:1px solid var(--pBd);overflow:hidden">
+          <sc-for list="{{ steps }}" as="st" hint-placeholder-count="7">
+            <div style="padding:9px 12px;border-right:1px solid var(--line2);display:flex;flex-direction:column;gap:3px;background:{{ st.bg }};box-shadow:{{ st.sh }}">
+              <span style="display:flex;align-items:center;gap:6px;font-family:var(--fnum);font-size:10.5px;color:{{ st.nf }}"><span style="width:16px;height:16px;border-radius:50%;border:1.5px solid {{ st.cb }};background:{{ st.cbg }};display:grid;place-items:center;color:var(--surf)">{{ st.check }}</span>{{ st.n }}</span>
+              <span style="font-size:12px;font-weight:{{ st.fw }};color:{{ st.fg }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ st.label }}</span>
+            </div>
+          </sc-for>
+        </nav>
+
+        <sc-if value="{{ view.plan }}" hint-placeholder-val="{{ false }}">
+          <div style="display:grid;grid-template-columns:{{ planCols }};gap:40px;align-items:start">
+            <div style="display:flex;flex-direction:column;gap:40px;min-width:0">
+              <section style="background:var(--surf);border:1px solid var(--pBd);padding:14px 16px;display:flex;flex-direction:column;gap:12px">
+                <div style="display:flex;align-items:baseline;gap:8px"><span style="font-family:var(--fnum);font-size:11px;color:var(--ink3)">01–03</span><span style="font-weight:600">Batch, target and destination</span></div>
+                <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px">
+                  <label style="display:flex;flex-direction:column;gap:4px;font-size:11.5px;color:var(--ink3)">Target product
+                    <select value="{{ pl.code }}" onChange="{{ onProd }}" disabled="{{ noAct }}" style="height:34px;border:1px solid var(--line);border-radius:0;background:var(--surf);padding:0 8px;color:var(--ink);font-size:13px">
+                      <sc-for list="{{ prodOpts }}" as="o" hint-placeholder-count="2"><option value="{{ o.code }}">{{ o.label }}</option></sc-for>
+                    </select>
+                  </label>
+                  <label style="display:flex;flex-direction:column;gap:4px;font-size:11.5px;color:var(--ink3)">Blending mode
+                    <select value="{{ pl.mode }}" onChange="{{ onMode }}" disabled="{{ noAct }}" style="height:34px;border:1px solid var(--line);border-radius:0;background:var(--surf);padding:0 8px;color:var(--ink);font-size:13px">
+                      <sc-for list="{{ modeOpts }}" as="o" hint-placeholder-count="1"><option value="{{ o }}">{{ o }}</option></sc-for>
+                    </select>
+                  </label>
+                  <label style="display:flex;flex-direction:column;gap:4px;font-size:11.5px;color:var(--ink3)">Target quantity · kL @ 15 °C
+                    <input type="number" step="100" min="0" value="{{ pl.target }}" onChange="{{ onTarget }}" disabled="{{ noAct }}" style="height:34px;border:1px solid var(--line);border-radius:0;background:var(--surf);padding:0 8px;color:var(--ink);font-family:var(--fnum);font-size:13px">
+                  </label>
+                  <label style="display:flex;flex-direction:column;gap:4px;font-size:11.5px;color:var(--ink3)">Destination tank
+                    <select value="{{ pl.dst }}" onChange="{{ onDst }}" disabled="{{ noAct }}" style="height:34px;border:1px solid var(--line);border-radius:0;background:var(--surf);padding:0 8px;color:var(--ink);font-size:13px">
+                      <sc-for list="{{ dstOpts }}" as="o" hint-placeholder-count="3"><option value="{{ o.id }}">{{ o.label }}</option></sc-for>
+                    </select>
+                  </label>
+                </div>
+                <div style="display:flex;gap:18px;flex-wrap:wrap;font-size:12px;color:var(--ink2)">
+                  <span>Destination receiving capacity <b style="font-family:var(--fnum);font-weight:500;color:var(--ink)">{{ pl.dstRx }}</b></span>
+                  <span>After blend <b style="font-family:var(--fnum);font-weight:500;color:{{ pl.dstAfterFg }}">{{ pl.dstAfter }}</b></span>
+                  <span>Recipe {{ pl.recipeText }} <span style="color:var(--ink3)">· tolerance ±{{ pl.tol }} pp</span></span>
+                </div>
+              </section>
+
+              <section style="background:var(--surf);border:1px solid var(--pBd);overflow:hidden">
+                <div style="padding:12px 16px 10px;display:flex;align-items:baseline;gap:8px;flex-wrap:wrap"><span style="font-family:var(--fnum);font-size:11px;color:var(--ink3)">02</span><span style="font-weight:600">Components</span><span style="font-size:11.5px;color:var(--ink3)">Blend components are tracked separately from finished products. Drag the divider or edit quantities.</span></div>
+                <div style="padding:0 16px 12px;display:flex;flex-direction:column;gap:6px">
+                  <div ref="{{ barRef }}" style="position:relative;height:40px;display:flex;border:1px solid var(--line);user-select:none;touch-action:none">
+                    <sc-for list="{{ segs }}" as="g" hint-placeholder-count="2">
+                      <div style="width:{{ g.w }};background:{{ g.bg }};display:flex;align-items:center;padding:0 10px;gap:8px;overflow:hidden;color:{{ g.fg }};white-space:nowrap;border-right:1px solid var(--surf)"><span style="font-weight:600;font-size:12px">{{ g.short }}</span><span style="font-family:var(--fnum);font-size:12px">{{ g.pct }}</span><span style="font-family:var(--fnum);font-size:11px;opacity:.8">{{ g.qty }} kL</span></div>
+                    </sc-for>
+                    <sc-for list="{{ handles }}" as="hd" hint-placeholder-count="1">
+                      <div role="slider" tabindex="0" aria-label="{{ hd.aria }}" aria-valuenow="{{ hd.now }}" aria-valuemin="0" aria-valuemax="100" onPointerDown="{{ hd.onDown }}" onKeyDown="{{ hd.onKey }}" style="position:absolute;top:-6px;bottom:-6px;left:{{ hd.x }};width:14px;margin-left:-7px;cursor:ew-resize;display:flex;justify-content:center">
+                        <div style="width:3px;height:100%;background:var(--ink);box-shadow:0 0 0 2px var(--surf)"></div>
+                      </div>
+                    </sc-for>
+                    <sc-for list="{{ recipeMarks }}" as="m" hint-placeholder-count="1">
+                      <div title="Recipe target" style="position:absolute;bottom:-9px;left:{{ m.x }};width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-bottom:6px solid var(--ink2);margin-left:-5px"></div>
+                    </sc-for>
+                  </div>
+                  <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--ink3);padding-top:4px"><span>▲ recipe target · arrow keys move the divider by 0.1 pp</span><span>Batch total <b style="font-family:var(--fnum);color:var(--ink);font-weight:500">{{ pl.total }} kL</b></span></div>
+                </div>
+                <div style="overflow-x:auto">
+                  <div style="min-width:860px">
+                    <div style="display:grid;grid-template-columns:{{ compCols }};padding:7px 16px;background:var(--surf);font-size:12.5px;font-weight:600;color:var(--ink);border-bottom:2px solid var(--line);gap:8px"><span>Component</span><span>Source tank</span><span style="text-align:right">Available</span><span style="text-align:right">Recipe</span><span style="text-align:right">Proposed</span><span style="text-align:right">Planned kL</span><span style="text-align:right">Source after</span><span>Check</span></div>
+                    <sc-for list="{{ compRows }}" as="c" hint-placeholder-count="2">
+                      <div style="display:grid;grid-template-columns:{{ compCols }};padding:8px 16px;border-top:1px solid var(--line2);gap:8px;align-items:center">
+                        <span style="display:flex;align-items:center;gap:7px;min-width:0"><span style="width:10px;height:10px;flex:none;background:{{ c.sw }};border:1px solid {{ c.swBd }}"></span><span style="min-width:0"><span style="display:block;font-weight:500">{{ c.label }}</span><span style="display:block;font-size:10.5px;color:var(--ink3)">{{ c.kind }}</span></span></span>
+                        <select value="{{ c.tank }}" onChange="{{ c.onTank }}" disabled="{{ noAct }}" style="height:30px;border:1px solid var(--line);border-radius:0;background:var(--surf);padding:0 6px;color:var(--ink)">
+                          <sc-for list="{{ c.tankOpts }}" as="o" hint-placeholder-count="2"><option value="{{ o.id }}">{{ o.label }}</option></sc-for>
+                        </select>
+                        <span style="text-align:right;font-family:var(--fnum);font-size:12px">{{ c.avail }}</span>
+                        <span style="text-align:right;font-family:var(--fnum);font-size:12px;color:var(--ink3)">{{ c.recipe }}</span>
+                        <span style="text-align:right;font-family:var(--fnum);font-size:12px;font-weight:600">{{ c.pct }}</span>
+                        <input type="number" step="10" min="0" value="{{ c.qty }}" onChange="{{ c.onQty }}" disabled="{{ noAct }}" aria-label="{{ c.aria }}" style="height:30px;border:1px solid var(--line);border-radius:0;background:var(--surf);padding:0 6px;text-align:right;font-family:var(--fnum);font-size:12.5px;color:var(--ink);width:100%">
+                        <span style="text-align:right;font-family:var(--fnum);font-size:12px;color:{{ c.afterFg }}">{{ c.after }}</span>
+                        <span style="display:flex;align-items:center;gap:5px;font-size:11.5px;color:{{ c.chkFg }}">{{ c.chkIcon }}{{ c.chk }}</span>
+                      </div>
+                    </sc-for>
+                    <div style="display:grid;grid-template-columns:{{ compCols }};padding:9px 16px;border-top:1px solid var(--line);gap:8px;background:var(--surf2);font-weight:600;align-items:center">
+                      <span>Batch total</span><span></span><span></span><span style="text-align:right;font-family:var(--fnum);font-size:12px;color:var(--ink3)">100 %</span><span style="text-align:right;font-family:var(--fnum);font-size:12px">100 %</span><span style="text-align:right;font-family:var(--fnum);font-size:12.5px">{{ pl.total }}</span><span></span>
+                      <span style="font-size:11.5px;font-weight:400;color:{{ pl.diffFg }}">{{ pl.diffText }}</span>
+                    </div>
+                  </div>
+                </div>
+                <sc-if value="{{ pl.showFix }}" hint-placeholder-val="{{ false }}">
+                  <div style="display:flex;gap:8px;padding:10px 16px;border-top:1px solid var(--line2);align-items:center;flex-wrap:wrap">
+                    <span style="font-size:12px;color:var(--ink2)">Batch total differs from target quantity.</span>
+                    <button onClick="{{ setTargetToTotal }}" style="height:28px;padding:0 10px;border:1px solid var(--line);border-radius:0;background:var(--surf);font-size:12px;white-space:nowrap">Set target to {{ pl.total }} kL</button>
+                    <button onClick="{{ scaleToTarget }}" style="height:28px;padding:0 10px;border:1px solid var(--line);border-radius:0;background:var(--surf);font-size:12px;white-space:nowrap">Scale components to {{ pl.targetText }} kL</button>
+                  </div>
+                </sc-if>
+              </section>
+
+              <section style="background:var(--surf);border:1px solid var(--pBd);overflow:hidden">
+                <div style="background:var(--bar);color:var(--barInk);--ink:var(--barInk);--ink2:var(--barInk2);--ink3:var(--barInk3);--acc:var(--barAcc);padding:9px 14px;display:flex;align-items:baseline;gap:8px;"><span style="font-family:var(--fnum);font-size:11px;color:var(--ink3)">05</span><span style="font-weight:600">Predicted properties and laboratory results</span><span style="font-size:11.5px;color:var(--ink3)">Kept separate. Predictions never replace laboratory results.</span></div>
+                <div style="display:grid;grid-template-columns:1.4fr 1.3fr 1.6fr 1fr;padding:7px 16px;background:var(--surf);font-size:12.5px;font-weight:600;color:var(--ink);border-bottom:2px solid var(--line);gap:10px"><span>Property</span><span>Planning value</span><span>Basis</span><span>Laboratory result</span></div>
+                <sc-for list="{{ propRows }}" as="r" hint-placeholder-count="4">
+                  <div style="display:grid;grid-template-columns:1.4fr 1.3fr 1.6fr 1fr;padding:8px 16px;border-top:1px solid var(--line2);gap:10px;align-items:baseline">
+                    <span>{{ r.prop }}</span>
+                    <span style="font-family:var(--fnum);font-size:12.5px;font-style:{{ r.fs }};color:{{ r.vf }}">{{ r.v }}</span>
+                    <span style="font-size:11.5px;color:var(--ink3);text-wrap:pretty">{{ r.basis }}</span>
+                    <span style="font-size:12px;color:var(--ink3);font-style:italic">Not sampled</span>
+                  </div>
+                </sc-for>
+                <div style="padding:9px 16px;border-top:1px solid var(--line2);font-size:11.5px;color:var(--ink2);text-wrap:pretty">{{ pl.note }}</div>
+              </section>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:40px;min-width:0">
+              <section style="background:var(--surf);border:1px solid var(--pBd);padding:12px 14px;display:flex;flex-direction:column;gap:2px">
+                <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:6px"><span style="font-family:var(--fnum);font-size:11px;color:var(--ink3)">04</span><span style="font-weight:600">Feasibility</span><div style="flex:1"></div><span style="font-size:12px;font-weight:600;color:{{ pl.feasFg }}">{{ pl.feasText }}</span></div>
+                <sc-for list="{{ checks }}" as="c" hint-placeholder-count="6">
+                  <div style="display:grid;grid-template-columns:16px 1fr;gap:9px;padding:7px 0;border-top:1px solid var(--line2)"><span style="margin-top:1px">{{ c.icon }}</span><span style="min-width:0"><span style="display:block;font-weight:500">{{ c.title }}</span><span style="display:block;font-size:11.5px;color:var(--ink3);text-wrap:pretty">{{ c.text }}</span></span></div>
+                </sc-for>
+              </section>
+              <section style="background:var(--surf);border:1px solid var(--pBd);padding:12px 14px;display:flex;flex-direction:column;gap:10px">
+                <div style="display:flex;align-items:baseline;gap:8px"><span style="font-family:var(--fnum);font-size:11px;color:var(--ink3)">05</span><span style="font-weight:600">Route, timing and schedule</span></div>
+                <div style="font-family:var(--fnum);font-size:11.5px;line-height:1.6;color:var(--ink2);padding:8px 10px;background:var(--surf2);border-radius:0">{{ pl.route }}</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                  <label style="display:flex;flex-direction:column;gap:4px;font-size:11.5px;color:var(--ink3)">Skid rate · kL/h
+                    <input type="number" step="10" min="50" value="{{ pl.rate }}" onChange="{{ onRate }}" disabled="{{ noAct }}" style="height:32px;border:1px solid var(--line);border-radius:0;background:var(--surf);padding:0 8px;font-family:var(--fnum);color:var(--ink)">
+                  </label>
+                  <label style="display:flex;flex-direction:column;gap:4px;font-size:11.5px;color:var(--ink3)">Planned start
+                    <select value="{{ pl.startKey }}" onChange="{{ onStart }}" disabled="{{ noAct }}" style="height:32px;border:1px solid var(--line);border-radius:0;background:var(--surf);padding:0 6px;color:var(--ink)">
+                      <sc-for list="{{ startOpts }}" as="o" hint-placeholder-count="3"><option value="{{ o.v }}">{{ o.label }}</option></sc-for>
+                    </select>
+                  </label>
+                </div>
+                <div style="display:grid;grid-template-columns:110px 1fr;gap:4px 10px;font-size:12.5px">
+                  <span style="color:var(--ink3)">Expected duration</span><span style="font-family:var(--fnum)">{{ pl.duration }}</span>
+                  <span style="color:var(--ink3)">Window</span><span style="font-family:var(--fnum)">{{ pl.window }}</span>
+                </div>
+              </section>
+              <section style="background:var(--surf);border:1px solid var(--pBd);padding:12px 14px;display:flex;flex-direction:column;gap:6px">
+                <div style="font-weight:600">Sampling and release requirements</div>
+                <sc-for list="{{ reqs }}" as="r" hint-placeholder-count="4"><div style="display:grid;grid-template-columns:16px 1fr;gap:8px;font-size:12px;padding:3px 0"><span>{{ r.icon }}</span><span style="text-wrap:pretty">{{ r.text }}</span></div></sc-for>
+              </section>
+              <div style="display:flex;gap:8px">
+                <button onClick="{{ saveDraft }}" disabled="{{ noAct }}" style="flex:1;height:36px;border:1px solid var(--line);border-radius:0;background:var(--surf);font-weight:500;opacity:{{ actOp }};white-space:nowrap">Save draft</button>
+                <button onClick="{{ schedule }}" disabled="{{ cantSchedule }}" title="{{ schedTitle }}" style="flex:1.4;height:36px;border:0;border-radius:0;background:var(--ink);color:var(--surf);font-weight:600;opacity:{{ schedOp }};white-space:nowrap">Schedule batch</button>
+              </div>
+              <sc-if value="{{ noAct }}" hint-placeholder-val="{{ false }}"><div style="display:flex;gap:6px;align-items:center;font-size:11.5px;color:var(--ink3)">{{ I.lock }}{{ actTitle }}</div></sc-if>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ view.scheduled }}" hint-placeholder-val="{{ false }}">
+          <section style="background:var(--surf);border:1px solid var(--pBd);padding:16px;display:flex;flex-direction:column;gap:12px;max-width:760px">
+            <div style="font-weight:600">Scheduled</div>
+            <div style="display:grid;grid-template-columns:150px 1fr;gap:6px 12px;font-size:12.5px">
+              <sc-for list="{{ schedRows }}" as="r" hint-placeholder-count="5"><span style="color:var(--ink3)">{{ r.k }}</span><span style="font-family:{{ r.ff }}">{{ r.v }}</span></sc-for>
+            </div>
+            <div style="display:flex;gap:8px">
+              <button onClick="{{ startSim }}" disabled="{{ noAct }}" style="height:34px;padding:0 14px;border:0;border-radius:0;background:var(--ink);color:var(--surf);font-weight:600;opacity:{{ actOp }};white-space:nowrap">Start blend</button>
+              <button onClick="{{ backToDraft }}" disabled="{{ noAct }}" style="height:34px;padding:0 14px;border:1px solid var(--line);border-radius:0;background:var(--surf);opacity:{{ actOp }};white-space:nowrap">Return to draft</button>
+            </div>
+            
+          </section>
+        </sc-if>
+
+        <sc-if value="{{ view.monitor }}" hint-placeholder-val="{{ false }}">
+          <div style="display:grid;grid-template-columns:{{ planCols }};gap:40px;align-items:start">
+            <div style="display:flex;flex-direction:column;gap:40px;min-width:0">
+              <section style="background:var(--surf);border:1px solid var(--pBd);padding:14px 16px;display:flex;flex-direction:column;gap:12px">
+                <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+                  <span style="font-weight:600">Batch progress</span>
+                  
+                  <div style="flex:1"></div>
+                  
+                  
+                </div>
+                <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px">
+                  <div style="display:flex;flex-direction:column"><span style="font-size:12.5px;color:var(--ink3)">Delivered</span><span style="font-size:22px;font-weight:600;font-family:var(--fnum)">{{ mo.done }}</span><span style="font-size:11px;color:var(--ink3)">of {{ mo.target }} kL · {{ mo.pct }}</span></div>
+                  <div style="display:flex;flex-direction:column"><span style="font-size:12.5px;color:var(--ink3)">Total flow</span><span style="font-size:22px;font-weight:600;font-family:var(--fnum)">{{ mo.flow }}</span><span style="font-size:11px;color:var(--ink3)">kL/h · skid BS-1</span></div>
+                  <div style="display:flex;flex-direction:column"><span style="font-size:12.5px;color:var(--ink3)">Elapsed</span><span style="font-size:22px;font-weight:600;font-family:var(--fnum)">{{ mo.elapsed }}</span><span style="font-size:11px;color:var(--ink3)">since {{ mo.start }}</span></div>
+                  <div style="display:flex;flex-direction:column"><span style="font-size:12.5px;color:var(--ink3)">Est. completion</span><span style="font-size:22px;font-weight:600;font-family:var(--fnum)">{{ mo.eta }}</span><span style="font-size:11px;color:var(--ink3)">at current total flow</span></div>
+                </div>
+                <div style="height:14px;background:var(--surf3);display:flex;border:1px solid var(--line)">
+                  <sc-for list="{{ mo.progSegs }}" as="g" hint-placeholder-count="2"><div style="width:{{ g.w }};background:{{ g.bg }}"></div></sc-for>
+                </div>
+              </section>
+              <section style="background:var(--surf);border:1px solid var(--pBd);overflow:hidden">
+                <div style="background:var(--bar);color:var(--barInk);--ink:var(--barInk);--ink2:var(--barInk2);--ink3:var(--barInk3);--acc:var(--barAcc);padding:9px 14px;display:flex;gap:8px;align-items:baseline"><span style="font-weight:600">Target vs actual ratio</span><span style="font-size:11.5px;color:var(--ink3)">%v/v · tolerance ±{{ mo.tol }} pp</span></div>
+                <div style="display:grid;grid-template-columns:1.3fr 0.7fr 0.8fr 0.8fr 0.8fr 0.9fr 0.9fr 1.8fr;padding:7px 16px;background:var(--surf);font-size:12.5px;font-weight:600;color:var(--ink);border-bottom:2px solid var(--line);gap:8px"><span>Component</span><span style="text-align:right">Target</span><span style="text-align:right">Cumulative</span><span style="text-align:right">Current</span><span style="text-align:right">Deviation</span><span style="text-align:right">Flow kL/h</span><span style="text-align:right">Delivered</span><span>Ratio · target band</span></div>
+                <sc-for list="{{ mo.rows }}" as="r" hint-placeholder-count="2">
+                  <div style="display:grid;grid-template-columns:1.3fr 0.7fr 0.8fr 0.8fr 0.8fr 0.9fr 0.9fr 1.8fr;padding:9px 16px;border-top:1px solid var(--line2);gap:8px;align-items:center">
+                    <span style="display:flex;align-items:center;gap:7px"><span style="width:10px;height:10px;background:{{ r.sw }};border:1px solid {{ r.swBd }}"></span><span><span style="display:block;font-weight:500">{{ r.label }}</span><span style="display:block;font-size:10.5px;color:var(--ink3)">from {{ r.tank }}</span></span></span>
+                    <span style="text-align:right;font-family:var(--fnum);font-size:12px">{{ r.target }}</span>
+                    <span style="text-align:right;font-family:var(--fnum);font-size:12px">{{ r.cum }}</span>
+                    <span style="text-align:right;font-family:var(--fnum);font-size:12px">{{ r.cur }}</span>
+                    <span style="text-align:right;font-family:var(--fnum);font-size:12px;font-weight:600;color:{{ r.devFg }}">{{ r.dev }}</span>
+                    <span style="text-align:right;font-family:var(--fnum);font-size:12px">{{ r.flow }}</span>
+                    <span style="text-align:right;font-family:var(--fnum);font-size:12px">{{ r.done }}</span>
+                    <span style="position:relative;height:16px;background:var(--surf3)">
+                      <span style="position:absolute;top:0;bottom:0;left:{{ r.bandL }};width:{{ r.bandW }};background:var(--okSoft);border-left:1px solid var(--ok);border-right:1px solid var(--ok)"></span>
+                      <span style="position:absolute;top:-3px;bottom:-3px;left:{{ r.tX }};width:1.5px;background:var(--ink)"></span>
+                      <span style="position:absolute;top:3px;left:{{ r.cX }};width:10px;height:10px;margin-left:-5px;border-radius:50%;background:{{ r.dotBg }};border:1.5px solid var(--surf)"></span>
+                    </span>
+                  </div>
+                </sc-for>
+              </section>
+              <section style="background:var(--surf);border:1px solid var(--pBd);padding:12px 16px">
+                <div style="display:flex;gap:8px;align-items:baseline;margin-bottom:6px"><span style="font-weight:600">{{ mo.trendTitle }}</span><span style="font-size:11.5px;color:var(--ink3)">current ratio vs target · hover for values</span></div>
+                <div>{{ mo.chart }}</div>
+              </section>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:40px;min-width:0">
+              <section style="background:var(--surf);border:1px solid var(--pBd);padding:12px 14px;display:flex;flex-direction:column;gap:8px">
+                <div style="font-weight:600">Relevant exceptions</div>
+                <sc-for list="{{ mo.ex }}" as="e" hint-placeholder-count="1"><div style="display:grid;grid-template-columns:16px 1fr;gap:8px;padding:6px 0;border-top:1px solid var(--line2)"><span>{{ e.icon }}</span><span><span style="display:block;font-weight:500">{{ e.title }}</span><span style="display:block;font-size:11.5px;color:var(--ink3)">{{ e.text }}</span></span></div></sc-for>
+              </section>
+              <section style="background:var(--surf);border:1px solid var(--pBd);padding:12px 14px;display:flex;flex-direction:column;gap:6px">
+                <div style="font-weight:600">After completion</div>
+                <div style="font-size:12px;color:var(--ink2);text-wrap:pretty">The batch moves to <b>Awaiting test results</b>. {{ mo.dst }} stays on hold until a quality officer records the laboratory results and releases the batch. Completing the blend does not release it.</div>
+                <div style="font-size:11.5px;color:var(--ink3)">In-process sample {{ mo.sample }}</div>
+              </section>
+              <section style="background:var(--surf);border:1px solid var(--pBd);padding:12px 14px;display:grid;grid-template-columns:110px 1fr;gap:5px 10px;font-size:12px">
+                <sc-for list="{{ mo.facts }}" as="r" hint-placeholder-count="4"><span style="color:var(--ink3)">{{ r.k }}</span><span style="font-family:{{ r.ff }}">{{ r.v }}</span></sc-for>
+              </section>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ view.release }}" hint-placeholder-val="{{ false }}">
+          <div style="display:grid;grid-template-columns:{{ planCols }};gap:40px;align-items:start">
+            <div style="display:flex;flex-direction:column;gap:40px;min-width:0">
+              <section style="background:var(--surf);border:1px solid var(--pBd);overflow:hidden">
+                <div style="background:var(--bar);color:var(--barInk);--ink:var(--barInk);--ink2:var(--barInk2);--ink3:var(--barInk3);--acc:var(--barAcc);padding:9px 14px;display:flex;gap:8px;align-items:baseline;flex-wrap:wrap"><span style="font-weight:600">Laboratory results</span><span style="font-size:11.5px;color:var(--ink3)">{{ rl.sampleText }}</span></div>
+                <div style="display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr 1fr;padding:7px 16px;background:var(--surf);font-size:12.5px;font-weight:600;color:var(--ink);border-bottom:2px solid var(--line);gap:8px"><span>Test</span><span>Method</span><span style="text-align:right">Result</span><span>Specification</span><span>Status</span></div>
+                <sc-for list="{{ rl.tests }}" as="r" hint-placeholder-count="4">
+                  <div style="display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr 1fr;padding:8px 16px;border-top:1px solid var(--line2);gap:8px;align-items:baseline">
+                    <span>{{ r.prop }}</span><span style="font-family:var(--fnum);font-size:11.5px;color:var(--ink3)">{{ r.method }}</span>
+                    <span style="text-align:right;font-family:var(--fnum);font-size:12.5px;font-style:{{ r.fs }};color:{{ r.vf }}">{{ r.result }}</span>
+                    <span style="font-family:var(--fnum);font-size:11.5px;color:var(--ink2)">{{ r.spec }}</span>
+                    <span style="display:flex;align-items:center;gap:5px;font-size:12px">{{ r.icon }}{{ r.status }}</span>
+                  </div>
+                </sc-for>
+              </section>
+              <sc-if value="{{ rl.hasCerts }}" hint-placeholder-val="{{ false }}">
+                <section style="background:var(--surf);border:1px solid var(--pBd);overflow:hidden">
+                  <div style="background:var(--bar);color:var(--barInk);--ink:var(--barInk);--ink2:var(--barInk2);--ink3:var(--barInk3);--acc:var(--barAcc);padding:9px 14px;"><div style="font-weight:600">Aviation component traceability</div><div style="font-size:11.5px;color:var(--ink3);margin-top:2px">{{ rl.pathway }}</div></div>
+                  <sc-for list="{{ rl.certs }}" as="c" hint-placeholder-count="4">
+                    <div style="display:grid;grid-template-columns:16px 1fr auto auto;gap:10px;padding:8px 16px;border-top:1px solid var(--line2);align-items:center"><span>{{ c.icon }}</span><span>{{ c.name }}</span><span style="font-family:var(--fnum);font-size:11px;color:var(--ink3)">{{ c.ref }}</span><span style="font-size:12px;font-weight:500">{{ c.state }}</span></div>
+                  </sc-for>
+                  <div style="padding:9px 16px;border-top:1px solid var(--line2);font-size:11.5px;color:var(--ink2)">Product label “{{ b.prod }}” is retained as configured. The synthetic component share alone does not produce a compliance or release status.</div>
+                </section>
+              </sc-if>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:40px;min-width:0">
+              <section style="background:var(--surf);border:1px solid var(--pBd);padding:14px;display:flex;flex-direction:column;gap:10px">
+                <div style="font-weight:600">Release decision</div>
+                <div style="display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600">{{ rl.decIcon }}{{ rl.decision }}</div>
+                <div style="font-size:12px;color:var(--ink2);text-wrap:pretty">{{ rl.decNote }}</div>
+                <sc-if value="{{ rl.canRelease }}" hint-placeholder-val="{{ false }}">
+                  <button onClick="{{ release }}" style="height:34px;border:0;border-radius:0;background:var(--ink);color:var(--surf);font-weight:600;white-space:nowrap">Release batch</button>
+                </sc-if>
+                <sc-if value="{{ rl.blocked }}" hint-placeholder-val="{{ false }}">
+                  <div style="display:flex;gap:6px;align-items:flex-start;font-size:11.5px;color:var(--ink3)">{{ I.lock }}<span>{{ rl.blockText }}</span></div>
+                </sc-if>
+                <button onClick="{{ openTrace }}" style="align-self:flex-start;border:0;background:transparent;color:var(--acc);padding:0;display:flex;gap:4px;align-items:center">Trace batch to components {{ I.arrowR }}</button>
+              </section>
+              <section style="background:var(--surf);border:1px solid var(--pBd);padding:12px 14px;display:grid;grid-template-columns:110px 1fr;gap:5px 10px;font-size:12px">
+                <sc-for list="{{ rl.facts }}" as="r" hint-placeholder-count="5"><span style="color:var(--ink3)">{{ r.k }}</span><span style="font-family:{{ r.ff }}">{{ r.v }}</span></sc-for>
+              </section>
+            </div>
+          </div>
+        </sc-if>
+      </div>
+    </div>
+  </sc-if>
+</sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  constructor(p) {
+    super(p);
+    this.state = { ...(p.d ? p.d.ui.load('bld', { sel: {} }) : {}), drafts: {}, sim: {}, playing: true, dev: false, hover: null };
+    this.barRef = React.createRef();
+  }
+  componentDidMount() {
+    this.applyFocus();
+    this.timer = setInterval(() => this.tick(), 1000);
+    this.onMove = e => this.drag(e); this.onUp = () => { this.dragI = null; };
+    window.addEventListener('pointermove', this.onMove); window.addEventListener('pointerup', this.onUp);
+  }
+  componentWillUnmount() { clearInterval(this.timer); window.removeEventListener('pointermove', this.onMove); window.removeEventListener('pointerup', this.onUp); }
+  componentDidUpdate() { this.applyFocus(); }
+  applyFocus() { const f = this.props.ctx && this.props.ctx.focus; if (!f || f.n === this.lf) return; this.lf = f.n; if (f.type === 'blend') this.upd({ sel: { ...this.state.sel, [this.props.ctx.terminalId]: f.id } }); }
+  upd(p) { this.setState(p, () => this.props.d.ui.save('bld', { sel: this.state.sel })); }
+  bump() { this.props.ctx.bump && this.props.ctx.bump(); }
+  tick() {
+    const D = this.props.d; if (!D || !this.state.playing) return;
+    const b = D.BLENDS.find(x => x.state === 'In progress' && x.term === this.props.ctx.terminalId); if (!b) return;
+    const sim = this.state.sim[b.id] || { min: 0 };
+    const total = b.comps.reduce((a, c) => a + (c.done || 0), 0);
+    const rem = b.target - total - sim.min / 60 * b.rate;
+    if (rem <= 0) { b.state = 'Awaiting test results'; b.end = D.NOW + sim.min; b.comps.forEach(c => c.done = c.qty); this.setState({ sim: { ...this.state.sim, [b.id]: { min: 0 } } }); this.props.toast && this.props.toast(`${b.id} complete. Batch is awaiting test results — not released.`); this.bump(); return; }
+    this.setState({ sim: { ...this.state.sim, [b.id]: { min: sim.min + 1 / 60 } } });
+  }
+  plan(b) {
+    const d = this.state.drafts[b.id];
+    if (d) return d;
+    return { code: b.code, mode: b.mode, target: b.target, dst: b.dst, comps: b.comps.map(c => ({ c: c.c, tank: c.tank, qty: c.qty })), rate: b.rate || 550, startKey: 'a' };
+  }
+  setPlan(b, patch) { this.setState({ drafts: { ...this.state.drafts, [b.id]: { ...this.plan(b), ...patch } } }); }
+  drag(e) {
+    if (this.dragI == null || !this.barRef.current || !this.dragB) return;
+    const rc = this.barRef.current.getBoundingClientRect(); const f = Math.max(0, Math.min(1, (e.clientX - rc.left) / rc.width));
+    const b = this.dragB, pl = this.plan(b); const total = pl.comps.reduce((a, c) => a + c.qty, 0); const i = this.dragI;
+    const before = pl.comps.slice(0, i).reduce((a, c) => a + c.qty, 0);
+    const pair = pl.comps[i].qty + pl.comps[i + 1].qty;
+    let q = Math.round(f * total - before); q = Math.max(0, Math.min(pair, q));
+    const comps = pl.comps.map((c, j) => j === i ? { ...c, qty: q } : j === i + 1 ? { ...c, qty: pair - q } : c);
+    this.setPlan(b, { comps });
+  }
+  renderVals() {
+    const D = this.props.d, ctx = this.props.ctx;
+    if (!D || !ctx) return { ready: false };
+    const I = ctx.I, s = this.state, h = React.createElement;
+    const t = D.term(ctx.terminalId), tz = t.tz;
+    if (!t.blend) {
+      return { ready: true, I, t, noBlend: true, hasBlend: false, blendTerms: D.TERMINALS.filter(x => x.blend).map(x => ({ name: x.name, sub: `${x.blend.mode} · ${x.blend.products.map(c => D.prod(c).label).join(', ')}`, onClick: () => this.props.go('blending', { terminalId: x.id }) })), view: {}, b: {}, steps: [] };
+    }
+    const list = D.BLENDS.filter(b => b.term === t.id);
+    const order = { 'In progress': 0, Scheduled: 1, Draft: 2, 'Awaiting test results': 3, 'On hold': 4, Released: 5 };
+    list.sort((a, b) => order[a.state] - order[b.state]);
+    let selId = s.sel[t.id]; if (!list.find(b => b.id === selId)) selId = list[0] && list[0].id;
+    const b = list.find(x => x.id === selId);
+    const canAct = ctx.perm.act;
+    const batches = list.map(x => { const p = D.prod(x.code), on = x.id === selId; return { id: x.id, state: x.state, icon: I.st[D.statKind(x.state === 'On hold' ? 'hold' : x.state)], color: p.color, sub: `${p.label} · ${D.fmt(x.target)} kL → ${x.dst}`, pressed: on ? 'true' : 'false', bd: on ? 'var(--acc)' : 'var(--line)', bg: on ? 'var(--accSoft)' : 'var(--surf)', sh: on ? 'inset 2px 0 0 var(--acc)' : 'none', onClick: () => this.upd({ sel: { ...s.sel, [t.id]: x.id } }) }; });
+    const base = { ready: true, I, t, noBlend: false, hasBlend: true, batches, blendCfg: `${t.blend.mode} blending · ${t.blend.products.map(c => D.prod(c).label).join(', ')}`, listW: ctx.tablet ? '220px' : '260px', planCols: ctx.tablet ? 'minmax(0,1fr)' : 'minmax(0,1fr) 340px',
+      noAct: !canAct, actOp: canAct ? 1 : 0.5, actTitle: canAct ? '' : `Planning requires an operator or supervisor role · current: ${ctx.roleLabel}`, newIcon: canAct ? I.plus : I.lock,
+      newBatch: () => { const n = 9 + D.BLENDS.filter(x => x.term === t.id).length; const code = t.blend.products[0]; const R = D.RECIPES[code]; const dst = t.tanks.find(k => k.code === code && k.status !== 'Out of service'); const comps = R.comps.map(([c, pct]) => { const src = t.tanks.find(k => k.code === c); return { c, tank: src ? src.id : '', qty: Math.round(4860 * pct / 100) }; }); const nb = { id: `BLD-${t.id}-2610-0${String(n).padStart(2, '0')}`, term: t.id, code, mode: t.blend.mode, state: 'Draft', target: 4860, dst: dst ? dst.id : '', comps, rate: 548, created: `${ctx.user} · ${D.tm(ctx.now, tz)}` }; D.BLENDS.push(nb); this.upd({ sel: { ...s.sel, [t.id]: nb.id } }); this.props.toast && this.props.toast(`${nb.id} created as Draft.`); } };
+    if (!b) return { ...base, b: {}, steps: [], view: {} };
+    const p = D.prod(b.code);
+    const stepIdx = { Draft: 3, Scheduled: 4, 'In progress': 5, 'Awaiting test results': 6, 'On hold': 6, Released: 7 }[b.state];
+    const labels = ['Create batch', 'Select components', 'Set target', 'Review feasibility', 'Schedule', 'Monitor', 'Quality release'];
+    const steps = labels.map((label, i) => { const done = i < stepIdx, cur = i === stepIdx || (b.state === 'Draft' && i <= 3 && i >= 1); const isCur = b.state === 'Draft' ? i >= 1 && i <= 3 : i === stepIdx; return { n: String(i + 1).padStart(2, '0'), label, check: done && !isCur ? I.check : null, cb: done && !isCur ? 'var(--ink)' : isCur ? 'var(--acc)' : 'var(--line)', cbg: done && !isCur ? 'var(--ink)' : 'transparent', nf: isCur ? 'var(--acc)' : 'var(--ink3)', fg: isCur || done ? 'var(--ink)' : 'var(--ink3)', fw: isCur ? 600 : 400, bg: isCur ? 'var(--accSoft)' : 'transparent', sh: isCur ? 'inset 0 -2px 0 var(--acc)' : 'none' }; });
+    const tone = b.state === 'On hold' ? ['var(--warnSoft)', 'var(--warn)'] : b.state === 'Released' ? ['var(--okSoft)', 'var(--ok)'] : ['var(--surf)', 'var(--line)'];
+    const bHead = { id: b.id, state: b.state, stIcon: I.st[D.statKind(b.state === 'On hold' ? 'hold' : b.state)], stBg: tone[0], stBd: tone[1], prod: p.label, color: p.color, mode: b.mode, dst: b.dst, meta: b.created ? 'Created ' + b.created : b.start != null ? `Started ${D.tm(b.start, tz, { date: true })}` : '' };
+    const view = { plan: b.state === 'Draft', scheduled: b.state === 'Scheduled', monitor: b.state === 'In progress', release: ['Awaiting test results', 'Released', 'On hold'].includes(b.state) };
+    const out = { ...base, b: bHead, steps, view };
+
+    // commitments of in-progress blends
+    const commit = {}; D.BLENDS.filter(x => x.term === t.id && x.state === 'In progress' && x.id !== b.id).forEach(x => x.comps.forEach(c => { commit[c.tank] = (commit[c.tank] || 0) + Math.max(0, c.qty - (c.done || 0)); }));
+
+    if (view.plan) {
+      const pl = this.plan(b); const R = D.RECIPES[pl.code];
+      const total = pl.comps.reduce((a, c) => a + (+c.qty || 0), 0);
+      const dstT = t.tanks.find(k => k.id === pl.dst); const dS = dstT ? D.stock(dstT) : null;
+      const segs = pl.comps.map((c, i) => { const P = D.prod(c.c); return { short: P.short, pct: total ? (c.qty / total * 100).toFixed(1) + '%' : '—', qty: D.fmt(c.qty), w: total ? (c.qty / total * 100) + '%' : (100 / pl.comps.length) + '%', bg: P.kind === 'component' ? `repeating-linear-gradient(135deg, ${P.color} 0 6px, color-mix(in oklch, ${P.color} 80%, white) 6px 12px)` : P.color, fg: '#15171a' }; });
+      let acc = 0; const handles = pl.comps.slice(0, -1).map((c, i) => { acc += c.qty; const x = total ? acc / total * 100 : 50; return { x: x + '%', now: x.toFixed(1), aria: `Divider between ${D.prod(c.c).short} and ${D.prod(pl.comps[i + 1].c).short}`, onDown: e => { if (!canAct) return; e.preventDefault(); this.dragI = i; this.dragB = b; }, onKey: e => { if (!canAct) return; const stepQ = Math.max(1, Math.round(total * 0.001)); if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') { e.preventDefault(); const dq = e.key === 'ArrowRight' ? stepQ : -stepQ; const pair = pl.comps[i].qty + pl.comps[i + 1].qty; const q = Math.max(0, Math.min(pair, pl.comps[i].qty + dq)); this.setPlan(b, { comps: pl.comps.map((cc, j) => j === i ? { ...cc, qty: q } : j === i + 1 ? { ...cc, qty: pair - q } : cc) }); } } }; });
+      let racc = 0; const recipeMarks = R.comps.slice(0, -1).map(([c, pct]) => { racc += pct; return { x: racc + '%' }; });
+      const checks = [];
+      const ck = (kind, title, text) => checks.push({ icon: I.st[kind], title, text, kind });
+      const compRows = pl.comps.map((c, i) => {
+        const P = D.prod(c.c); const opts = t.tanks.filter(k => k.code === c.c);
+        const src = t.tanks.find(k => k.id === c.tank); const sS = src ? D.stock(src) : null;
+        const avail = src ? Math.max(0, (src.q === 'Released' ? sS.avail : 0) - (commit[src.id] || 0)) : 0;
+        const after = avail - c.qty; const recipePct = (R.comps.find(x => x[0] === c.c) || [0, 0])[1];
+        const pct = total ? c.qty / total * 100 : 0; const dev = pct - recipePct;
+        let chk = 'OK', kind = 'ok';
+        if (!src) { chk = 'No source tank'; kind = 'critical'; }
+        else if (src.q !== 'Released') { chk = `Source ${src.q.toLowerCase()}`; kind = 'critical'; }
+        else if (after < 0) { chk = `Short by ${D.fmt(-after)} kL`; kind = 'critical'; }
+        else if (Math.abs(dev) > R.tol) { chk = `Off recipe ${D.sgn(dev, 1)} pp`; kind = 'attention'; }
+        return { label: P.label, kind: P.kind === 'component' ? 'Blend component' : 'Finished product used as blend stock', sw: P.sw, swBd: P.kind === 'component' ? P.color : 'transparent', tank: c.tank, tankOpts: opts.map(k => ({ id: k.id, label: `${k.id} · ${k.q === 'Released' ? 'released' : k.q.toLowerCase()}` })), avail: D.fmt(avail), recipe: recipePct + ' %', pct: pct.toFixed(1) + ' %', qty: c.qty, after: D.fmt(after), afterFg: after < 0 ? 'var(--critInk)' : 'var(--ink)', chk, chkIcon: I.st[kind], chkFg: kind === 'ok' ? 'var(--ink2)' : kind === 'critical' ? 'var(--critInk)' : 'var(--warnInk)', aria: `Planned quantity ${P.label}`, srcObj: src, kindC: kind, devPct: dev,
+          onTank: e => this.setPlan(b, { comps: pl.comps.map((x, j) => j === i ? { ...x, tank: e.target.value } : x) }),
+          onQty: e => { const v = Math.max(0, Math.round(+e.target.value || 0)); this.setPlan(b, { comps: pl.comps.map((x, j) => j === i ? { ...x, qty: v } : x) }); } };
+      });
+      compRows.forEach(c => { if (c.kindC === 'critical') ck('critical', `Source: ${c.label}`, c.chk + (c.srcObj && c.srcObj.q !== 'Released' ? ' — only released stock can be used as blend stock.' : '.')); });
+      const srcOk = compRows.every(c => c.kindC !== 'critical');
+      if (srcOk) ck('ok', 'Source availability and quality', `All sources released with sufficient usable stock after commitments to other active blends.`);
+      const ratioOk = compRows.every(c => Math.abs(c.devPct) <= R.tol);
+      ck(ratioOk ? 'ok' : 'attention', 'Proportions vs recipe', ratioOk ? `Within ±${R.tol} pp of recipe.` : `One or more components outside ±${R.tol} pp of recipe.`);
+      if (!dstT) ck('critical', 'Destination', 'Select a destination tank.');
+      else if (dstT.status === 'Out of service') ck('critical', `Destination ${dstT.id}`, 'Tank is out of service.');
+      else if (dstT.q === 'On hold') ck('critical', `Destination ${dstT.id}`, 'Tank is on quality hold.');
+      else if (total > dS.rx) ck('critical', `Destination capacity ${dstT.id}`, `Batch ${D.fmt(total)} kL exceeds receiving capacity ${D.fmt(dS.rx)} kL by ${D.fmt(total - dS.rx)} kL.`);
+      else ck(dstT.vol + total > dstT.hla ? 'attention' : 'ok', `Destination capacity ${dstT.id}`, `${D.fmt(dS.rx)} kL available · ${D.fmt(dS.rx - total)} kL headroom after blend${dstT.vol + total > dstT.hla ? ' · above high-level alarm' : ''}.`);
+      if (dstT && dstT.q !== 'Released' && dstT.q !== 'On hold') ck('attention', `Destination ${dstT.id} content`, `Tank contents ${dstT.q.toLowerCase()} — mixing will extend the hold to the new batch.`);
+      const starts = { a: D.NOW + 120, b: 2100, c: 2340 };
+      const start = starts[pl.startKey] || starts.a; const durMin = total / Math.max(1, pl.rate) * 60; const end = start + durMin;
+      const sch = D.scheduleFor(t.id);
+      const ovl = (lane, type) => sch.items.filter(i => i.lane === lane && (!type || i.type === type) && i.a < end && i.b > start && !i.id.includes('BLD') && !i.label.includes(b.id) && !i.label.includes('BLD-008'));
+      const eqC = ovl('BS-1', 'Maintenance'); const tankC = dstT ? ovl(dstT.id).filter(i => i.type !== 'Blending') : [];
+      const blendC = sch.items.filter(i => i.lane === 'BS-1' && i.type === 'Blending' && i.a < end && i.b > start && !i.label.includes(b.id) && !i.label.includes('008'));
+      ck(eqC.length || blendC.length ? 'attention' : 'ok', 'Equipment · blend skid BS-1', eqC.length ? `${eqC[0].label} ${D.tm(eqC[0].a, tz, { date: true })}–${D.tm(eqC[0].b, tz, { tz: false })} overlaps the blend window.` : blendC.length ? `Skid in use by ${blendC[0].label} until ${D.tm(blendC[0].b, tz)}.` : 'Available for the planned window.');
+      ck(tankC.length ? 'attention' : 'ok', 'Route and tank availability', tankC.length ? `${dstT.id}: ${tankC[0].label} ${D.tm(tankC[0].a, tz, { date: true })}–${D.tm(tankC[0].b, tz, { tz: false })} overlaps. A tank cannot dispatch and receive at once.` : 'Route and destination free in the planned window.');
+      const fails = checks.filter(c => c.kind === 'critical').length, warns = checks.filter(c => c.kind === 'attention').length;
+      const props = R.props.map(([prop, unit, kind]) => {
+        if (kind === 'calc') { const share = pl.comps.filter(c => ['FAME', 'HEFA'].includes(c.c)).reduce((a, c) => a + c.qty, 0); return { prop, v: total ? (share / total * 100).toFixed(1) + ' ' + unit : '—', basis: 'Calculated from recipe volumes — not a prediction', fs: 'normal', vf: 'var(--ink)' }; }
+        return { prop, v: 'Prediction unavailable', basis: pl.code.startsWith('R') && prop.includes('octane') ? 'No validated octane blending model configured. RON is not a weighted average.' : 'No validated prediction model configured', fs: 'italic', vf: 'var(--ink3)' };
+      });
+      const reqs = (p.fam === 'Aviation' ? ['Component certificate for each synthetic component batch', 'Conventional jet refinery certificate for base component', 'Upper / middle / lower tank samples after settling', 'Full specification test on blended batch at laboratory', 'Blend certificate of analysis and release certificate', 'Release by quality officer — not by recipe share'] : p.fam === 'Diesel' ? ['In-process line sample at 50 % of batch', 'Upper / middle / lower samples after 2 h settling', 'FAME content, density, water and oxidation stability tests', 'Release by quality officer after results are recorded'] : ['Upper / middle / lower samples after settling', 'RON, density, RVP and distillation tests at laboratory', 'Release by quality officer after results are recorded']).map(text => ({ icon: I.st.pending, text }));
+      const dstOpts = t.tanks.filter(k => k.code === pl.code).map(k => { const st = D.stock(k); return { id: k.id, label: `${k.id} · rx ${k.status === 'Out of service' ? 'OOS' : D.fmt(st.rx)} kL` }; });
+      const routeStr = `${pl.comps.map(c => c.tank).join(' + ')} → M-02 → P-04 → BS-1 (${pl.mode.toLowerCase()} ratio control) → transfer return → M-01 → ${pl.dst}`;
+      return { ...out, barRef: this.barRef, pl: { code: pl.code, mode: pl.mode, target: pl.target, targetText: D.fmt(pl.target), dst: pl.dst, dstRx: dS ? D.fmt(dS.rx) + ' kL' : '—', dstAfter: dS ? D.fmt(dS.rx - total) + ' kL headroom' : '—', dstAfterFg: dS && dS.rx - total < 0 ? 'var(--critInk)' : 'var(--ink)', recipeText: R.comps.map(([c, v]) => `${D.prod(c).short} ${v} %`).join(' / '), tol: R.tol, total: D.fmt(total), diffText: total === pl.target ? 'Matches target quantity' : `${D.sgn(total - pl.target)} kL vs target`, diffFg: total === pl.target ? 'var(--ink3)' : 'var(--warnInk)', showFix: total !== pl.target, note: R.note, feasText: fails ? `${fails} blocking · ${warns} to review` : warns ? `${warns} to review` : 'Feasible', feasFg: fails ? 'var(--critInk)' : warns ? 'var(--warnInk)' : 'var(--ink)', route: routeStr, rate: pl.rate, startKey: pl.startKey, duration: D.dur(durMin), window: `${D.tm(start, tz, { date: true })} → ${D.tm(end, tz, { date: true })}` },
+        prodOpts: t.blend.products.map(c => ({ code: c, label: D.prod(c).label })), modeOpts: [t.blend.mode], dstOpts, segs, handles, recipeMarks, compRows, checks, propRows: props, reqs,
+        compCols: 'minmax(0,1.5fr) 140px minmax(0,0.8fr) minmax(0,0.6fr) minmax(0,0.7fr) 110px minmax(0,0.8fr) minmax(0,1.2fr)',
+        startOpts: [{ v: 'a', label: `In 2 h · ${D.tm(starts.a, tz, { tz: false })}` }, { v: 'b', label: `06 Oct ${D.tm(starts.b, tz, { tz: false })}` }, { v: 'c', label: `06 Oct ${D.tm(starts.c, tz, { tz: false })}` }],
+        onProd: e => { const code = e.target.value; const R2 = D.RECIPES[code]; const comps = R2.comps.map(([c, pct]) => { const src = t.tanks.find(k => k.code === c && k.q === 'Released') || t.tanks.find(k => k.code === c); return { c, tank: src ? src.id : '', qty: Math.round(pl.target * pct / 100) }; }); const dst = t.tanks.find(k => k.code === code && k.status !== 'Out of service'); this.setPlan(b, { code, comps, dst: dst ? dst.id : '' }); b.code = code; },
+        onMode: e => this.setPlan(b, { mode: e.target.value }),
+        onTarget: e => { const v = Math.max(0, Math.round(+e.target.value || 0)); this.setPlan(b, { target: v }); },
+        onDst: e => this.setPlan(b, { dst: e.target.value }), onRate: e => this.setPlan(b, { rate: Math.max(50, +e.target.value || 50) }), onStart: e => this.setPlan(b, { startKey: e.target.value }),
+        setTargetToTotal: () => this.setPlan(b, { target: total }),
+        scaleToTarget: () => { const f = pl.target / (total || 1); const comps = pl.comps.map(c => ({ ...c, qty: Math.round(c.qty * f) })); const diff = pl.target - comps.reduce((a, c) => a + c.qty, 0); comps[0].qty += diff; this.setPlan(b, { comps }); },
+        saveDraft: () => { Object.assign(b, { code: pl.code, target: pl.target, dst: pl.dst, comps: pl.comps.map(c => ({ ...c })), rate: pl.rate }); this.props.toast && this.props.toast(`${b.id} draft saved.`); },
+        schedule: () => { Object.assign(b, { code: pl.code, target: total, dst: pl.dst, comps: pl.comps.map(c => ({ ...c })), rate: pl.rate, start, end, state: 'Scheduled' }); this.props.toast && this.props.toast(`${b.id} scheduled ${D.tm(start, tz, { date: true })}.`); this.bump(); this.forceUpdate(); },
+        cantSchedule: !canAct || fails > 0, schedOp: !canAct || fails > 0 ? 0.4 : 1, schedTitle: fails ? 'Resolve blocking feasibility checks first' : (warns ? 'Warnings will be recorded with the schedule' : 'Schedule batch'),
+      };
+    }
+    if (view.scheduled) {
+      return { ...out, schedRows: [{ k: 'Target quantity', v: D.fmt(b.target) + ' kL', ff: 'var(--fnum)' }, { k: 'Components', v: b.comps.map(c => `${D.prod(c.c).short} ${D.fmt(c.qty)} kL from ${c.tank}`).join(' · '), ff: 'var(--fsans)' }, { k: 'Destination', v: b.dst, ff: 'var(--fnum)' }, { k: 'Window', v: `${D.tm(b.start, tz, { date: true })} → ${D.tm(b.end || b.start + b.target / (b.rate || 500) * 60, tz, { date: true })}`, ff: 'var(--fnum)' }, { k: 'Skid rate', v: D.fmt(b.rate) + ' kL/h', ff: 'var(--fnum)' }],
+        startSim: () => { const other = D.BLENDS.find(x => x.term === t.id && x.state === 'In progress'); if (other) { this.props.toast && this.props.toast(`Blend skid busy with ${other.id}. Start the next batch after it completes.`); return; } b.state = 'In progress'; b.start = D.NOW; b.comps.forEach(c => { c.done = 0; c.flow = Math.round(b.rate * c.qty / b.target); }); this.bump(); this.forceUpdate(); },
+        backToDraft: () => { b.state = 'Draft'; this.bump(); this.forceUpdate(); } };
+    }
+    if (view.monitor) {
+      const sim = s.sim[b.id] || { min: 0 };
+      const R = D.RECIPES[b.code];
+      const doneBase = b.comps.reduce((a, c) => a + (c.done || 0), 0);
+      const flows = b.comps.map((c, i) => { let f = c.flow || Math.round(b.rate * c.qty / b.target); if (s.dev && i === b.comps.length - 1) f = Math.round(f * 1.025); if (s.dev && i === 0) f = Math.round(f * 0.985); return f; });
+      const fsum = flows.reduce((a, v) => a + v, 0);
+      const dones = b.comps.map((c, i) => (c.done || 0) + flows[i] * sim.min / 60);
+      const done = dones.reduce((a, v) => a + v, 0);
+      const elapsed = D.NOW + sim.min - b.start;
+      const eta = D.NOW + sim.min + (b.target - done) / fsum * 60;
+      const rows = b.comps.map((c, i) => { const P = D.prod(c.c); const target = c.qty / b.target * 100; const cum = dones[i] / done * 100; const cur = flows[i] / fsum * 100; const dev = cur - target; const out = Math.abs(dev) > R.tol; const lo = Math.max(0, target - 6), hi = Math.min(100, target + 6); const sc = v => ((v - lo) / (hi - lo) * 100).toFixed(1) + '%';
+        return { label: P.label, tank: c.tank, sw: P.sw, swBd: P.kind === 'component' ? P.color : 'transparent', target: target.toFixed(1) + ' %', cum: cum.toFixed(2) + ' %', cur: cur.toFixed(2) + ' %', dev: D.sgn(dev, 2) + ' pp', devFg: out ? 'var(--critInk)' : 'var(--ink)', flow: D.fmt(flows[i]), done: D.fmt(dones[i]), bandL: sc(target - R.tol), bandW: `calc(${sc(target + R.tol)} - ${sc(target - R.tol)})`, tX: sc(target), cX: sc(Math.max(lo, Math.min(hi, cur))), dotBg: out ? 'var(--crit)' : 'var(--ink)', outOf: out, devv: dev }; });
+      const last = b.comps.length - 1; const tgt = b.comps[last].qty / b.target * 100;
+      const pts = []; let seed = 7; for (let x = b.start; x <= D.NOW + sim.min; x += 10) { seed = (seed * 9301 + 49297) % 233280; const ramp = Math.min(1, (x - b.start) / 20); const v = tgt + (seed / 233280 - 0.5) * 0.35 + (s.dev && x > D.NOW + sim.min - 30 ? (rows[last].devv) * Math.min(1, (x - (D.NOW + sim.min - 30)) / 20) : 0); pts.push({ t: x, v: ramp < 1 ? tgt - (1 - ramp) * 1.5 : v }); }
+      const xt = []; for (let x = Math.ceil(b.start / 120) * 120; x <= D.NOW + sim.min; x += 120) xt.push({ t: x, label: D.tm(x, tz, { tz: false }) });
+      const chart = D.lineChart(h, { w: 720, h: 170, ydp: 1, series: [{ pts, color: 'var(--ink)', label: D.prod(b.comps[last].c).short + ' ratio', unit: '%v/v', dp: 2 }], y0: tgt - 2, y1: tgt + 2, refs: [{ v: tgt + R.tol, label: '+' + R.tol + ' pp', color: 'var(--ok)' }, { v: tgt - R.tol, label: '−' + R.tol + ' pp', color: 'var(--ok)' }, { v: tgt, label: 'Target ' + tgt.toFixed(1) + ' %', color: 'var(--ink3)' }], xTicks: xt, hover: s.hover, onHover: v => this.setState({ hover: v }), tz, aria: 'Ratio trend' });
+      const anyOut = rows.some(r => r.outOf);
+      const ex = [];
+      if (anyOut) ex.push({ icon: I.st.attention, title: 'Ratio outside tolerance', text: `Current ${rows[last].label} ratio ${rows[last].cur} vs target ${rows[last].target}. Controller correcting; operator to verify component meter.` });
+      const tankEx = D.EXCEPTIONS.filter(e => e.term === t.id && e.status !== 'Resolved' && b.comps.concat([{ tank: b.dst }]).some(c => e.asset.includes(c.tank)));
+      tankEx.forEach(e => ex.push({ icon: I.st[e.sev], title: e.what, text: `${e.asset} · ${e.status}` }));
+      if (!ex.length) ex.push({ icon: I.st.ok, title: 'No exceptions on this batch', text: 'Sources, skid and destination are reporting normally.' });
+      return { ...out, mo: { speed: '4 min per second', playIcon: s.playing ? I.pause : I.play, playLabel: s.playing ? 'Pause playback' : 'Resume playback', devLabel: s.dev ? 'Clear simulated deviation' : 'Simulate FAME flow deviation', done: D.fmt(done), target: D.fmt(b.target), pct: (done / b.target * 100).toFixed(1) + ' %', flow: D.fmt(fsum), elapsed: D.dur(elapsed), start: D.tm(b.start, tz), eta: D.tm(eta, tz), tol: R.tol,
+        progSegs: [...b.comps.map((c, i) => ({ w: (dones[i] / b.target * 100) + '%', bg: D.prod(c.c).kind === 'component' ? `repeating-linear-gradient(135deg, ${D.prod(c.c).color} 0 5px, color-mix(in oklch, ${D.prod(c.c).color} 75%, white) 5px 10px)` : D.prod(c.c).color }))],
+        rows, chart, trendTitle: `${D.prod(b.comps[last].c).label} ratio`, ex, dst: b.dst, sample: b.sample || 'to be taken at 50 %',
+        facts: [{ k: 'Mode', v: `${b.mode} · ratio control`, ff: 'var(--fsans)' }, { k: 'Route', v: `${b.comps.map(c => c.tank).join(' + ')} → P-04 → BS-1 → ${b.dst}`, ff: 'var(--fnum)' }, { k: 'Batch state', v: 'In progress', ff: 'var(--fsans)' }, { k: 'Inventory', v: 'Tank figures show the 14:20 snapshot; playback does not change them', ff: 'var(--fsans)' }] },
+        togglePlay: () => this.setState({ playing: !s.playing }), toggleDev: () => this.setState({ dev: !s.dev }) };
+    }
+    // release view
+    const smp = D.SAMPLES.find(x => x.id === b.sample) || D.SAMPLES.find(x => x.batch === b.id);
+    const tests = smp ? smp.tests.map(x => ({ prop: x.prop, method: x.method, result: x.result == null ? (x.status === 'Missing result' ? 'Missing' : 'Pending') : `${x.result} ${x.unit}`, fs: x.result == null ? 'italic' : 'normal', vf: x.result == null ? 'var(--ink3)' : 'var(--ink)', spec: x.spec, status: x.status, icon: I.st[x.status === 'Passed' ? 'ok' : x.status === 'Failed' ? 'critical' : x.status === 'Missing result' ? 'attention' : 'pending'] })) : [];
+    const allPass = smp && smp.tests.every(x => x.status === 'Passed');
+    const certs = b.certs ? b.certs.map(([name, state, ref]) => ({ name, state, ref: ref || '—', icon: I.st[state === 'Received' ? 'ok' : state === 'Pending' ? 'pending' : 'idle'] })) : [];
+    const certOk = !b.certs || b.certs.every(c => c[1] === 'Received');
+    let decision = b.state === 'Released' ? 'Released' : b.state === 'On hold' ? 'On hold' : 'Not released';
+    const decNote = b.state === 'Released' ? `Released by ${smp && smp.by ? smp.by.who + ' · ' + D.tm(smp.by.at, tz, { date: true }) : 'quality officer'}.` : b.state === 'On hold' ? 'Laboratory result outside specification. Batch held pending investigation and re-blend decision.' : 'Blend completed. Awaiting laboratory results and documents. Blend completion does not imply release.';
+    const blockers = []; if (!allPass) blockers.push('all required tests must be Passed'); if (!certOk) blockers.push('all certificates must be received');
+    const canRel = b.state === 'Awaiting test results' && ctx.perm.release && allPass && certOk;
+    const blockText = b.state !== 'Awaiting test results' ? '' : !ctx.perm.release ? `Release requires the Quality officer role · current: ${ctx.roleLabel}` : blockers.length ? 'Release blocked: ' + blockers.join('; ') + '.' : '';
+    return { ...out, rl: { sampleText: smp ? `${smp.id} · ${smp.loc} · ${smp.lab}` : 'No sample linked', tests, hasCerts: !!b.certs, certs, pathway: b.pathway || '', decision, decIcon: I.st[b.state === 'Released' ? 'ok' : b.state === 'On hold' ? 'hold' : 'pending'], decNote, canRelease: canRel, blocked: !!blockText, blockText,
+      facts: [{ k: 'Quantity', v: D.fmt(b.target) + ' kL @ 15 °C', ff: 'var(--fnum)' }, { k: 'Components', v: b.comps.map(c => `${D.prod(c.c).short} ${D.fmt(c.qty)} kL (${c.tank})`).join(' · '), ff: 'var(--fsans)' }, { k: 'Destination', v: b.dst, ff: 'var(--fnum)' }, { k: 'Blend window', v: b.start != null ? `${D.tm(b.start, tz, { date: true })} → ${b.end != null ? D.tm(b.end, tz, { date: true }) : '—'}` : '—', ff: 'var(--fnum)' }, { k: 'Mode', v: b.mode, ff: 'var(--fsans)' }] },
+      release: () => { b.state = 'Released'; const k = t.tanks.find(x => x.id === b.dst); if (k && k.batch === b.id) k.q = 'Released'; if (smp) { smp.decision = 'Released'; smp.by = { who: `${ctx.user} · Quality officer`, at: ctx.now }; } this.props.toast && this.props.toast(`${b.id} released by ${ctx.user}.`); this.bump(); this.forceUpdate(); },
+      openTrace: () => this.props.go('quality', { terminalId: t.id, focus: { type: 'batch', id: b.id } }) };
+  }
+}
+</script>
+</body>
+</html>

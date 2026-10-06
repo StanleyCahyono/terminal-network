@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<div style="position:absolute;inset:0;overflow:auto;background:var(--bg)">
+<sc-if value="{{ ready }}" hint-placeholder-val="{{ true }}">
+<div style="padding:32px 40px 56px;display:flex;flex-direction:column;gap:40px">
+  <div style="display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap">
+    <div>
+      <div style="display:flex;align-items:center;gap:10px"><h1 style="margin:0;font-size:30px;font-weight:500;letter-spacing:-.015em;line-height:1.1">Scheduling board</h1></div>
+      <div style="font-size:12px;color:var(--ink3);margin-top:3px">{{ sub }}</div>
+    </div>
+    <div style="flex:1"></div>
+    <div style="display:flex;gap:4px;flex-wrap:wrap">
+      <sc-for list="{{ typeChips }}" as="c" hint-placeholder-count="6">
+        <button onClick="{{ c.onClick }}" aria-pressed="{{ c.on }}" style="height:30px;padding:0 10px;border:1px solid {{ c.bd }};border-radius:0;background:var(--surf);display:flex;align-items:center;gap:7px;font-size:12px;opacity:{{ c.op }};white-space:nowrap"><span style="width:14px;height:10px;background:{{ c.sw }};border:{{ c.swBd }}"></span>{{ c.label }}</button>
+      </sc-for>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:{{ cols2 }};gap:40px;align-items:start">
+    <section aria-label="Board" style="background:var(--surf);border:1px solid var(--pBd);overflow:hidden;min-width:0">
+      <div style="overflow-x:auto">
+        <div style="min-width:900px;padding:8px 14px 12px">
+          <div style="display:grid;grid-template-columns:120px 1fr;height:26px">
+            <span style="font-size:12.5px;color:var(--ink3);align-self:end;padding-bottom:4px">Resource</span>
+            <div style="position:relative">
+              <sc-for list="{{ ticks }}" as="k" hint-placeholder-count="9"><span style="position:absolute;left:{{ k.x }};bottom:4px;transform:translateX(-50%);font-family:var(--fnum);font-size:10.5px;color:{{ k.fg }};white-space:nowrap;font-weight:{{ k.fw }}">{{ k.label }}</span></sc-for>
+            </div>
+          </div>
+          <sc-for list="{{ lanes }}" as="ln" hint-placeholder-count="8">
+            <div style="display:grid;grid-template-columns:120px 1fr;height:40px;border-top:1px solid var(--line2)">
+              <span style="align-self:center;display:flex;flex-direction:column;line-height:1.15"><span style="font-weight:500;font-family:{{ ln.ff }};font-size:12px">{{ ln.name }}</span><span style="font-size:10.5px;color:var(--ink3)">{{ ln.kind }}</span></span>
+              <div style="position:relative;background:repeating-linear-gradient(90deg,transparent 0,transparent calc(100%/8 - 1px),var(--line2) calc(100%/8 - 1px),var(--line2) calc(100%/8))">
+                <sc-for list="{{ ln.items }}" as="b" hint-placeholder-count="2">
+                  <button onClick="{{ b.onClick }}" title="{{ b.title }}" style="position:absolute;top:{{ b.top }};height:{{ b.h }};left:{{ b.x }};width:{{ b.w }};border:{{ b.bd }};background:{{ b.bg }};color:{{ b.fg }};border-radius:0;padding:0 6px;font-size:11px;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:5px;box-shadow:{{ b.sh }};z-index:{{ b.z }}">{{ b.icon }}<span style="overflow:hidden;text-overflow:ellipsis">{{ b.label }}</span></button>
+                </sc-for>
+                <div style="position:absolute;top:-2px;bottom:-2px;left:{{ nowX }};width:1.5px;background:var(--acc);z-index:3"></div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+      <div style="padding:8px 14px;border-top:1px solid var(--line2);font-size:11px;color:var(--ink3);display:flex;gap:14px;flex-wrap:wrap">
+        <span style="display:flex;align-items:center;gap:5px"><span style="width:12px;height:2px;background:var(--acc)"></span>Now · {{ nowLabel }}</span>
+        <span style="display:flex;align-items:center;gap:5px">{{ I.st.critical }}Conflict — outlined in red</span>
+        <span>Select an activity or conflict for details.</span>
+      </div>
+    </section>
+
+    <div style="display:flex;flex-direction:column;gap:40px;min-width:0">
+      <section aria-label="Conflicts" style="background:var(--surf);border:1px solid var(--pBd);overflow:hidden">
+        <div style="background:var(--bar);color:var(--barInk);--ink:var(--barInk);--ink2:var(--barInk2);--ink3:var(--barInk3);--acc:var(--barAcc);padding:9px 14px;display:flex;align-items:baseline;gap:8px"><span style="font-weight:600">Conflicts</span><span style="font-size:12px;color:var(--ink3)">{{ conflictCount }}</span></div>
+        <sc-if value="{{ noConflicts }}" hint-placeholder-val="{{ false }}"><div style="padding:14px;color:var(--ink3);display:flex;gap:8px;align-items:center">{{ I.st.ok }}No tank, route or equipment conflicts in the next 48 h.</div></sc-if>
+        <sc-for list="{{ conflicts }}" as="c" hint-placeholder-count="3">
+          <button onClick="{{ c.onClick }}" style="width:100%;display:grid;grid-template-columns:16px 1fr;gap:9px;padding:10px 14px;border:0;border-bottom:1px solid var(--line2);background:{{ c.bg }};text-align:left" style-hover="background:var(--surf2)">
+            <span style="margin-top:1px">{{ c.icon }}</span>
+            <span style="display:flex;flex-direction:column;gap:3px"><span style="font-size:12.5px;color:var(--critInk)">{{ c.kind }}</span><span style="font-weight:500;text-wrap:pretty">{{ c.text }}</span><span style="font-size:11.5px;color:var(--ink3)">Suggested: {{ c.fix }}</span></span>
+          </button>
+        </sc-for>
+      </section>
+      <section aria-label="Activity detail" style="background:var(--surf);border:1px solid var(--pBd);padding:12px 14px;display:flex;flex-direction:column;gap:8px">
+        <div style="font-weight:600">{{ det.title }}</div>
+        <div style="display:grid;grid-template-columns:90px 1fr;gap:4px 10px;font-size:12px">
+          <sc-for list="{{ det.rows }}" as="r" hint-placeholder-count="4"><span style="color:var(--ink3)">{{ r.k }}</span><span style="font-family:{{ r.ff }}">{{ r.v }}</span></sc-for>
+        </div>
+        <sc-if value="{{ det.link }}" hint-placeholder-val="{{ false }}"><button onClick="{{ det.onLink }}" style="align-self:flex-start;border:0;background:transparent;color:var(--acc);padding:0;display:flex;gap:4px;align-items:center">{{ det.link }} {{ I.arrowR }}</button></sc-if>
+      </section>
+    </div>
+  </div>
+</div>
+</sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = p.d ? p.d.ui.load('sch', { off: [], sel: null, cf: null }) : {}; }
+  upd(p) { this.setState(p, () => this.props.d.ui.save('sch', this.state)); }
+  renderVals() {
+    const D = this.props.d, ctx = this.props.ctx;
+    if (!D || !ctx) return { ready: false };
+    const I = ctx.I, s = this.state;
+    const t = D.term(ctx.terminalId), tz = t.tz;
+    const sch = D.scheduleFor(t.id);
+    const X0 = 0, X1 = 2880;
+    const pos = v => (Math.max(0, Math.min(1, (v - X0) / (X1 - X0))) * 100).toFixed(3) + '%';
+    const types = { Receipt: ['var(--ink)', 'none', 'var(--surf)'], Dispatch: ['var(--surf3)', '1px solid var(--ink3)', 'var(--ink)'], Transfer: ['var(--ink3)', 'none', 'var(--surf)'], Blending: ['var(--accSoft)', '1px solid var(--acc)', 'var(--ink)'], Maintenance: ['repeating-linear-gradient(135deg, var(--surf3) 0 4px, var(--surf) 4px 8px)', '1px solid var(--ink4)', 'var(--ink)'], Quality: ['var(--surf)', '1px dashed var(--ink3)', 'var(--ink)'] };
+    const inConf = new Set(); const confOf = {}; sch.conflicts.forEach(c => c.items.forEach(i => { inConf.add(i); confOf[i] = c.id; }));
+    const hiItems = s.cf ? (sch.conflicts.find(c => c.id === s.cf) || { items: [] }).items : [];
+    const typeChips = Object.entries(types).map(([k, v]) => { const on = !s.off.includes(k); return { label: k, sw: v[0], swBd: v[1] === 'none' ? '0' : v[1], on: on ? 'true' : 'false', op: on ? 1 : 0.45, bd: on ? 'var(--ink3)' : 'var(--line)', onClick: () => this.upd({ off: on ? [...s.off, k] : s.off.filter(x => x !== k) }) }; });
+    const laneKind = n => /^T-/.test(n) ? 'Tank' : /^P-/.test(n) ? 'Pump' : /BS-/.test(n) ? 'Blend skid' : /line/.test(n) ? 'Route' : /Jetty|Berth/.test(n) ? 'Berth' : /Gantry/.test(n) ? 'Truck loading' : n;
+    const lanes = sch.lanes.map(name => {
+      const its = sch.items.filter(i => i.lane === name && i.b > X0 && i.a < X1 && !s.off.includes(i.type));
+      const ov = new Map(); its.forEach((i, ix) => { const o = its.filter((j, jx) => jx < ix && j.a < i.b && j.b > i.a).length; ov.set(i.id, o); });
+      return { name, kind: laneKind(name), ff: /^[TP]-|BS-/.test(name) ? 'var(--fnum)' : 'var(--fsans)', items: its.map(i => { const ty = types[i.type] || types.Transfer; const c = inConf.has(i.id); const hi = hiItems.includes(i.id) || s.sel === i.id; const o = ov.get(i.id); return { label: i.label, title: `${i.type} · ${i.label} · ${D.tm(i.a, tz, { date: true })} → ${D.tm(i.b, tz, { date: true })}${c ? ' · CONFLICT' : ''}`, x: pos(i.a), w: `calc(${pos(i.b)} - ${pos(i.a)})`, top: o ? '20px' : '5px', h: o ? '15px' : (its.some((j) => j !== i && j.a < i.b && j.b > i.a) ? '14px' : '29px'), bg: ty[0], bd: c ? '1.5px solid var(--crit)' : ty[1], fg: ty[2], sh: hi ? '0 0 0 3px oklch(0.6 0.15 258 / .35)' : 'none', z: hi ? 2 : 1, icon: c ? I.st.critical : null, onClick: () => this.upd({ sel: i.id, cf: confOf[i.id] || null }) }; }) };
+    });
+    const ticks = []; for (let v = 0; v <= 2880; v += 360) ticks.push({ x: pos(v), label: D.tm(v, tz, { tz: false, date: v % 1440 === 0 }), fg: 'var(--ink3)', fw: 400 });
+    const conflicts = sch.conflicts.map(c => ({ kind: c.kind, text: c.text, fix: c.fix, icon: I.st.critical, bg: s.cf === c.id ? 'var(--critSoft)' : 'transparent', onClick: () => this.upd({ cf: s.cf === c.id ? null : c.id, sel: c.items[0] }) }));
+    const it = sch.items.find(i => i.id === s.sel);
+    let det = { title: 'No activity selected', rows: [{ k: 'Horizon', v: `${D.tm(X0, tz, { date: true })} → ${D.tm(X1, tz, { date: true })}`, ff: 'var(--fnum)' }, { k: 'Activities', v: String(sch.items.filter(i => i.b > X0 && i.a < X1).length), ff: 'var(--fnum)' }, { k: 'Conflicts', v: String(sch.conflicts.length), ff: 'var(--fnum)' }], link: null };
+    if (it) {
+      const tr = D.TRANSFERS.find(x => x.id === it.ref || x.id === it.id); const bl = D.BLENDS.find(b => it.label.includes(b.id) || it.label.includes(b.id.slice(-3)) && it.type === 'Blending');
+      det = { title: it.label, rows: [{ k: 'Type', v: it.type, ff: 'var(--fsans)' }, { k: 'Resource', v: it.lane, ff: 'var(--fnum)' }, { k: 'Start', v: D.tm(it.a, tz, { date: true }), ff: 'var(--fnum)' }, { k: 'End', v: D.tm(it.b, tz, { date: true }), ff: 'var(--fnum)' }, { k: 'Duration', v: D.dur(it.b - it.a), ff: 'var(--fnum)' }, { k: 'Conflict', v: confOf[it.id] ? sch.conflicts.find(c => c.id === confOf[it.id]).kind : 'None', ff: 'var(--fsans)' }],
+        link: tr ? (tr.marine ? 'Open transfer' : 'Open in terminal workspace') : bl ? 'Open blend batch' : /^T-/.test(it.lane) ? 'Open tank' : null,
+        onLink: () => tr ? this.props.go(tr.marine ? 'transfers' : 'terminal', { terminalId: t.id, focus: { type: 'transfer', id: tr.id } }) : bl ? this.props.go('blending', { terminalId: t.id, focus: { type: 'blend', id: bl.id } }) : this.props.go('terminal', { terminalId: t.id, focus: { type: 'tank', id: it.lane } }) };
+    }
+    return { ready: true, I, sub: `${t.name} · receipts, dispatches, transfers, blending, quality and maintenance · ${D.tm(X0, tz, { date: true })} → ${D.tm(X1, tz, { date: true })}`, typeChips, lanes, ticks, nowX: pos(D.NOW), nowLabel: D.tm(D.NOW, tz), conflicts, noConflicts: !conflicts.length, conflictCount: conflicts.length ? `${conflicts.length} need a decision` : 'None', det, cols2: ctx.tablet ? 'minmax(0,1fr)' : 'minmax(0,1fr) 340px' };
+  }
+}
+</script>
+</body>
+</html>

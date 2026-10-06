@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<div style="position:absolute;inset:0;display:flex;flex-direction:column;background:var(--bg);overflow:hidden">
+<sc-if value="{{ ready }}" hint-placeholder-val="{{ true }}">
+  <div style="flex:none;padding:14px 20px 12px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;border-bottom:1px solid var(--line);background:var(--surf)">
+    <div style="display:flex;flex-direction:column;gap:2px;min-width:0">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <h1 style="margin:0;font-size:30px;font-weight:500;letter-spacing:-.015em;line-height:1.1">{{ t.name }}</h1>
+        <span style="display:flex;align-items:center;gap:5px;font-size:12px">{{ tStatusIcon }}{{ t.status }}</span>
+        
+      </div>
+      <div style="font-size:12px;color:var(--ink3);display:flex;gap:10px;flex-wrap:wrap"><span>{{ t.area }} · {{ t.kind }}</span><span style="font-family:var(--fnum)">Local {{ localTime }}</span><span>{{ capsText }}</span></div>
+    </div>
+    <div style="flex:1"></div>
+    <div style="display:flex;gap:0;border:1px solid var(--line);border-radius:0;overflow:hidden">
+      <sc-for list="{{ stockStrip }}" as="x" hint-placeholder-count="6">
+        <div title="{{ x.title }}" style="padding:6px 12px;border-right:1px solid var(--line2);display:flex;flex-direction:column;gap:1px;min-width:92px;background:var(--surf)">
+          <span style="font-size:12.5px;color:var(--ink3);white-space:nowrap;display:flex;align-items:center;gap:5px"><span style="width:8px;height:8px;background:{{ x.sw }};border:{{ x.swBd }}"></span>{{ x.label }}</span>
+          <span style="font-family:var(--fnum);font-size:13px;font-weight:500">{{ x.v }}</span>
+        </div>
+      </sc-for>
+    </div>
+    <sc-if value="{{ showViewToggle }}" hint-placeholder-val="{{ true }}">
+      <div role="group" aria-label="View" style="display:flex;border:1px solid var(--line);border-radius:0;overflow:hidden">
+        <button onClick="{{ setSplit }}" title="Schematic and table" style="height:32px;padding:0 10px;border:0;display:flex;align-items:center;gap:6px;background:{{ splitBg }};color:{{ splitFg }};white-space:nowrap">{{ I.schematic }}Schematic</button>
+        <button onClick="{{ setTable }}" title="Table only" style="height:32px;padding:0 10px;border:0;border-left:1px solid var(--line);display:flex;align-items:center;gap:6px;background:{{ tableBg }};color:{{ tableFg }};white-space:nowrap">{{ I.rows }}Table</button>
+      </div>
+    </sc-if>
+  </div>
+
+  <div style="flex:1;min-height:0;display:flex;position:relative">
+    <div style="flex:1;min-width:0;overflow:auto;padding:14px 16px 24px;display:flex;flex-direction:column;gap:14px">
+      <sc-if value="{{ showSchematic }}" hint-placeholder-val="{{ true }}">
+        <section aria-label="Terminal schematic" style="flex:none;background:var(--surf);border:1px solid var(--pBd);overflow:hidden;color:var(--ink)">
+          <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--line);flex-wrap:wrap;background:var(--surf)">
+            <span style="font-size:12.5px;color:var(--ink3);margin-right:4px">Movements</span>
+            <sc-if value="{{ noTransfers }}" hint-placeholder-val="{{ false }}"><span style="font-size:12px;color:var(--ink3)">No active transfers at this terminal.</span></sc-if>
+            <sc-for list="{{ trChips }}" as="c" hint-placeholder-count="3">
+              <button onClick="{{ c.onClick }}" aria-pressed="{{ c.pressed }}" style="height:28px;display:flex;align-items:center;gap:7px;padding:0 9px;border:1px solid {{ c.bd }};border-radius:0;background:{{ c.bg }};color:var(--ink);font-size:11.5px;white-space:nowrap">
+                <span style="width:8px;height:8px;background:{{ c.color }}"></span>
+                <span style="font-family:var(--fnum);font-size:11px;white-space:nowrap">{{ c.short }}</span>
+                <span style="color:var(--ink3);white-space:nowrap">{{ c.route }}</span>
+                <span style="color:{{ c.stFg }};white-space:nowrap">{{ c.state }}</span>
+              </button>
+            </sc-for>
+            <div style="flex:1"></div>
+            <button onClick="{{ toggleSummary }}" style="height:26px;padding:0 10px;border:1px solid var(--line);border-radius:0;background:{{ sumBg }};color:var(--ink);font-size:12px;white-space:nowrap">Terminal summary</button>
+            <sc-if value="{{ hasSel }}" hint-placeholder-val="{{ false }}">
+              <button onClick="{{ clearSel }}" style="height:26px;padding:0 9px;border:1px solid var(--line);border-radius:0;background:transparent;color:var(--ink);font-size:11.5px;white-space:nowrap">Clear selection</button>
+            </sc-if>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;padding:7px 12px;border-bottom:1px solid var(--line);background:var(--surf);flex-wrap:wrap">
+            <span style="font-size:12.5px;color:var(--ink3)">Show on tags</span>
+            <div role="group" aria-label="Tag content" style="display:flex;border:1px solid var(--line)">
+              <sc-for list="{{ modes }}" as="m" hint-placeholder-count="3">
+                <button onClick="{{ m.onClick }}" aria-pressed="{{ m.on }}" style="height:28px;padding:0 12px;border:0;border-right:1px solid var(--line);background:{{ m.bg }};color:{{ m.fg }};font-size:12.5px;white-space:nowrap">{{ m.label }}</button>
+              </sc-for>
+            </div>
+            <div style="flex:1"></div>
+            <span style="font-size:12px;color:var(--ink3)">{{ zoomHint }}</span>
+            <div role="group" aria-label="Zoom" style="display:flex;border:1px solid var(--line)">
+              <button onClick="{{ zoomOut }}" aria-label="Zoom out" title="Zoom out" style="width:30px;height:28px;border:0;border-right:1px solid var(--line);background:transparent;color:var(--ink);display:grid;place-items:center">{{ I.minus }}</button>
+              <button onClick="{{ zoomFit }}" title="Fit to view" style="height:28px;padding:0 10px;border:0;border-right:1px solid var(--line);background:transparent;color:var(--ink);font-size:12px;white-space:nowrap">{{ zoomPct }}</button>
+              <button onClick="{{ zoomIn }}" aria-label="Zoom in" title="Zoom in" style="width:30px;height:28px;border:0;border-right:1px solid var(--line);background:transparent;color:var(--ink);display:grid;place-items:center">{{ I.plus }}</button>
+              <button onClick="{{ zoomSel }}" disabled="{{ noSelZoom }}" title="Zoom to selected tank" style="height:28px;padding:0 10px;border:0;background:transparent;color:var(--ink);font-size:12px;white-space:nowrap;opacity:{{ selZoomOp }}">Zoom to tank</button>
+            </div>
+          </div>
+          <div ref="{{ wrapRef }}" style="position:relative;overflow:hidden;width:100%;background:var(--surf2);cursor:{{ cursor }};touch-action:pan-y;user-select:none">
+            {{ svg }}
+            
+          </div>
+          <div style="display:flex;gap:18px;flex-wrap:wrap;align-items:center;padding:9px 14px;border-top:1px solid var(--line);background:var(--surf);font-size:12px;color:var(--ink2)">
+            <span style="display:flex;align-items:center;gap:7px"><span style="width:22px;height:4px;background:var(--acc)"></span>Selected route</span>
+            <span style="display:flex;align-items:center;gap:7px"><span style="width:22px;height:3px;background:var(--ink)"></span>Active movement</span>
+            <span style="display:flex;align-items:center;gap:7px"><span style="width:22px;border-top:3px dashed var(--warn)"></span>Paused</span>
+            <span style="display:flex;align-items:center;gap:7px"><span style="width:22px;height:2px;background:var(--ink4)"></span>Idle line</span>
+            <span style="display:flex;align-items:center;gap:7px"><span style="width:12px;height:14px;border:1px solid var(--ink2);background:repeating-linear-gradient(135deg,rgba(0,0,0,.3) 0 2px,transparent 2px 5px)"></span>Hatched liquid = awaiting release or on hold</span>
+            <span style="display:flex;align-items:center;gap:7px"><span style="width:0;height:0;border-top:4px solid transparent;border-bottom:4px solid transparent;border-right:6px solid var(--ink3)"></span>High-level alarm</span>
+            
+          </div>
+        </section>
+      </sc-if>
+
+      <sc-if value="{{ showMobileList }}" hint-placeholder-val="{{ false }}">
+        <section style="flex:none;display:flex;flex-direction:column;gap:8px">
+          <sc-for list="{{ mobileEx }}" as="e" hint-placeholder-count="0">
+            <div style="display:flex;gap:8px;padding:10px 12px;background:var(--surf);border:1px solid var(--line);border-radius:0">{{ e.icon }}<div><div style="font-weight:600">{{ e.what }}</div><div style="font-size:11.5px;color:var(--ink3)">{{ e.sub }}</div></div></div>
+          </sc-for>
+        </section>
+      </sc-if>
+
+      <section aria-label="Tank table" style="flex:none;background:var(--surf);border:1px solid var(--pBd);overflow:hidden">
+        <div style="background:var(--bar);color:var(--barInk);--ink:var(--barInk);--ink2:var(--barInk2);--ink3:var(--barInk3);--acc:var(--barAcc);display:flex;align-items:center;gap:10px;padding:9px 14px;">
+          <span style="font-weight:600">Tanks</span>
+          <span style="font-size:12px;color:var(--ink3)">{{ tankCount }}</span>
+          <div style="flex:1"></div>
+          
+        </div>
+        <div style="overflow-x:auto">
+          <div style="min-width:1120px">
+            <div style="display:grid;grid-template-columns:{{ cols }};padding:0 10px;background:var(--surf);border-bottom:2px solid var(--line)">
+              <sc-for list="{{ heads }}" as="hd" hint-placeholder-count="13">
+                <button onClick="{{ hd.onClick }}" aria-sort="{{ hd.aria }}" style="display:flex;align-items:center;gap:3px;justify-content:{{ hd.jc }};padding:8px 5px;border:0;background:transparent;font-size:12.5px;color:{{ hd.fg }};font-weight:500;white-space:nowrap">{{ hd.label }}<span style="opacity:{{ hd.op }}">{{ hd.icon }}</span></button>
+              </sc-for>
+            </div>
+            <sc-if value="{{ tableEmpty }}" hint-placeholder-val="{{ false }}">
+              <div style="padding:22px 16px;color:var(--ink3)">No tanks at this terminal store the selected products. Clear the product filter in the top bar to see all tanks.</div>
+            </sc-if>
+            <sc-for list="{{ rows }}" as="r" hint-placeholder-count="12">
+              <div role="row" tabindex="0" onClick="{{ r.onClick }}" onKeyDown="{{ r.onKey }}" style="display:grid;grid-template-columns:{{ cols }};padding:0 10px;min-height:38px;align-items:center;border-bottom:1px solid var(--line2);cursor:pointer;background:{{ r.bg }};box-shadow:{{ r.sh }}" style-hover="background:var(--surf2)">
+                <span style="padding:4px 5px;font-family:var(--fid);white-space:nowrap;letter-spacing:-.02em;font-weight:600;font-size:12px">{{ r.id }}</span>
+                <span style="padding:4px 5px;display:flex;align-items:center;gap:6px;white-space:nowrap;overflow:hidden"><span style="width:9px;height:9px;flex:none;background:{{ r.sw }};border:1px solid {{ r.swBd }}"></span><span style="overflow:hidden;text-overflow:ellipsis">{{ r.prod }}</span></span>
+                <span style="padding:4px 5px;display:flex;align-items:center;gap:5px;white-space:nowrap;overflow:hidden">{{ r.stIcon }}<span style="overflow:hidden;text-overflow:ellipsis">{{ r.status }}</span></span>
+                <span style="padding:4px 5px;display:flex;align-items:center;gap:6px"><span style="flex:1;height:5px;background:var(--surf3);position:relative"><span style="position:absolute;left:0;top:0;bottom:0;width:{{ r.fillW }};background:{{ r.color }}"></span><span style="position:absolute;top:-2px;bottom:-2px;left:{{ r.mocW }};width:1px;background:var(--ink)"></span></span><span style="font-family:var(--fnum);font-size:11.5px;width:34px;text-align:right">{{ r.fill }}</span></span>
+                <span style="padding:4px 5px;text-align:right;font-family:var(--fnum);font-size:12px">{{ r.vol }}</span>
+                <span style="padding:4px 5px;text-align:right;font-family:var(--fnum);font-size:12px">{{ r.usable }}</span>
+                <span style="padding:4px 5px;text-align:right;font-family:var(--fnum);font-size:12px;color:var(--ink2)">{{ r.reserved }}</span>
+                <span style="padding:4px 5px;text-align:right;font-family:var(--fnum);font-size:12px;color:{{ r.heldFg }}">{{ r.held }}</span>
+                <span style="padding:4px 5px;text-align:right;font-family:var(--fnum);font-size:12px;font-weight:500">{{ r.avail }}</span>
+                <span style="padding:4px 5px;text-align:right;font-family:var(--fnum);font-size:12px">{{ r.rx }}</span>
+                <span style="padding:4px 5px;text-align:right;font-family:var(--fnum);font-size:12px">{{ r.level }}</span>
+                <span style="padding:4px 5px;text-align:right;font-family:var(--fnum);font-size:12px;color:{{ r.tempFg }}">{{ r.temp }}</span>
+                <span style="padding:4px 5px;font-size:11.5px;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.activity }}</span>
+              </div>
+            </sc-for>
+            <div style="display:grid;grid-template-columns:{{ cols }};padding:0 10px;min-height:36px;align-items:center;background:var(--surf2);font-weight:600">
+              <span style="padding:4px 5px">Total</span><span></span><span></span><span></span>
+              <span style="padding:4px 5px;text-align:right;font-family:var(--fnum);font-size:12px">{{ tot.vol }}</span>
+              <span style="padding:4px 5px;text-align:right;font-family:var(--fnum);font-size:12px">{{ tot.usable }}</span>
+              <span style="padding:4px 5px;text-align:right;font-family:var(--fnum);font-size:12px">{{ tot.reserved }}</span>
+              <span style="padding:4px 5px;text-align:right;font-family:var(--fnum);font-size:12px">{{ tot.held }}</span>
+              <span style="padding:4px 5px;text-align:right;font-family:var(--fnum);font-size:12px">{{ tot.avail }}</span>
+              <span style="padding:4px 5px;text-align:right;font-family:var(--fnum);font-size:12px">{{ tot.rx }}</span>
+              <span></span><span></span><span style="padding:4px 5px;font-size:11px;color:var(--ink3);font-weight:400">Products only; components listed separately</span>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <sc-if value="{{ showInspector }}" hint-placeholder-val="{{ true }}">
+      <aside aria-label="Inspector" style="overflow-x:hidden;width:{{ inspW }};flex:none;border-left:1px solid var(--line);background:var(--surf);display:flex;flex-direction:column;min-height:0;position:{{ inspPos }};right:0;top:0;bottom:0;z-index:5;box-shadow:{{ inspSh }}">
+
+        <sc-if value="{{ mode.summary }}" hint-placeholder-val="{{ true }}">
+          <div style="padding:14px 16px;border-bottom:1px solid var(--line2)">
+            <div style="font-size:12.5px;color:var(--ink3)">Terminal summary</div>
+            <div style="display:flex;align-items:center;gap:8px;margin-top:2px"><div style="font-weight:600;font-size:14px;flex:1">Select a tank, pump, manifold or transfer</div><button onClick="{{ clearSel }}" aria-label="Close summary" style="width:30px;height:30px;border:0;background:transparent;display:grid;place-items:center;color:var(--ink2)">{{ I.close }}</button></div>
+          </div>
+          <div style="flex:1;overflow:auto;padding:14px 16px;display:flex;flex-direction:column;gap:18px">
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <div style="font-size:12.5px;color:var(--ink3)">Active transfers</div>
+              <sc-if value="{{ noTransfers }}" hint-placeholder-val="{{ false }}"><div style="color:var(--ink3)">None.</div></sc-if>
+              <sc-for list="{{ trChips }}" as="c" hint-placeholder-count="3">
+                <button onClick="{{ c.onClick }}" style="display:flex;flex-direction:column;gap:5px;padding:9px 10px;border:1px solid var(--line);border-radius:0;background:var(--surf);text-align:left" style-hover="border-color:var(--ink4)">
+                  <div style="display:flex;align-items:center;gap:7px;width:100%"><span style="width:9px;height:9px;background:{{ c.color }}"></span><span style="font-family:var(--fid);white-space:nowrap;letter-spacing:-.02em;font-size:11.5px;font-weight:600">{{ c.id }}</span><div style="flex:1"></div><span style="display:flex;align-items:center;gap:5px;font-size:11.5px">{{ c.icon }}{{ c.state }}</span></div>
+                  <div style="font-size:12px;color:var(--ink2)">{{ c.type }} · {{ c.route }}</div>
+                  <div style="display:flex;align-items:center;gap:8px;width:100%"><span style="flex:1;height:4px;background:var(--surf3)"><span style="display:block;height:4px;width:{{ c.pct }};background:var(--ink2)"></span></span><span style="font-family:var(--fnum);font-size:11px">{{ c.prog }}</span></div>
+                </button>
+              </sc-for>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <div style="font-size:12.5px;color:var(--ink3)">Open exceptions</div>
+              <sc-if value="{{ noEx }}" hint-placeholder-val="{{ false }}"><div style="color:var(--ink3)">No open exceptions.</div></sc-if>
+              <sc-for list="{{ exList }}" as="e" hint-placeholder-count="2">
+                <div style="display:flex;gap:8px;align-items:flex-start;padding:8px 0;border-bottom:1px solid var(--line2)"><span style="margin-top:1px">{{ e.icon }}</span><div style="min-width:0"><div style="font-weight:500;text-wrap:pretty">{{ e.what }}</div><div style="font-size:11.5px;color:var(--ink3)">{{ e.sub }}</div></div></div>
+              </sc-for>
+              <button onClick="{{ openAlarmsTerm }}" style="align-self:flex-start;border:0;background:transparent;color:var(--acc);padding:2px 0;display:flex;gap:4px;align-items:center">Alarm centre {{ I.arrowR }}</button>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <div style="font-size:12.5px;color:var(--ink3)">Stock by product · kL</div>
+              <sc-for list="{{ byProd }}" as="p" hint-placeholder-count="5">
+                <div style="display:flex;flex-direction:column;gap:3px">
+                  <div style="display:flex;align-items:center;gap:6px;font-size:12px"><span style="width:9px;height:9px;background:{{ p.sw }};border:1px solid {{ p.swBd }}"></span><span>{{ p.label }}</span><div style="flex:1"></div><span style="font-family:var(--fnum);font-size:11.5px">{{ p.total }}</span></div>
+                  <div style="display:flex;height:6px;background:var(--surf3)"><div style="width:{{ p.wAvail }};background:{{ p.color }}"></div><div style="width:{{ p.wRes }};background:var(--ink3)"></div><div style="width:{{ p.wHeld }};background:repeating-linear-gradient(135deg, var(--holdA) 0 2px, var(--holdB) 2px 4px)"></div></div>
+                  <div style="font-size:10.5px;color:var(--ink3);font-family:var(--fnum)">avail {{ p.avail }} · reserved {{ p.res }} · hold {{ p.held }}</div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ mode.tank }}" hint-placeholder-val="{{ false }}">
+          <div style="background:var(--bar);color:var(--barInk);--ink:var(--barInk);--ink2:var(--barInk2);--ink3:var(--barInk3);--acc:var(--barAcc);padding:9px 14px;display:flex;align-items:flex-start;gap:10px">
+            <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:4px">
+              <div style="display:flex;align-items:center;gap:8px"><span style="font-family:var(--fid);white-space:nowrap;letter-spacing:-.02em;font-size:17px;font-weight:600">{{ tk.id }}</span><span style="display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:500"><span style="width:10px;height:10px;background:{{ tk.sw }};border:1px solid {{ tk.swBd }}"></span>{{ tk.prod }}</span></div>
+              <div style="display:flex;gap:10px;font-size:12px;color:var(--ink2);flex-wrap:wrap"><span style="display:flex;align-items:center;gap:5px">{{ tk.stIcon }}{{ tk.status }}</span><span style="color:var(--ink3)">Bund {{ tk.bund }} · {{ tk.kindLabel }}</span></div>
+            </div>
+            <button onClick="{{ clearSel }}" aria-label="Close tank details" style="width:30px;height:30px;border:0;background:transparent;display:grid;place-items:center;color:var(--ink2);white-space:nowrap">{{ I.close }}</button>
+          </div>
+          <div style="flex:1;overflow:auto;padding:14px 16px 20px;display:flex;flex-direction:column;gap:18px">
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <div style="font-size:12.5px;color:var(--ink3)">Capacity and stock</div>
+              <div style="display:flex;height:14px;border:1px solid var(--line)">
+                <sc-for list="{{ tk.bar }}" as="b" hint-placeholder-count="5"><div title="{{ b.title }}" style="width:{{ b.w }};background:{{ b.bg }}"></div></sc-for>
+              </div>
+              <div style="display:flex;flex-wrap:wrap;gap:3px 10px;font-size:10.5px;color:var(--ink2)">
+                <sc-for list="{{ tk.bar }}" as="b" hint-placeholder-count="5"><span style="display:flex;align-items:center;gap:4px"><span style="width:8px;height:8px;background:{{ b.bg }};border:1px solid var(--line)"></span>{{ b.label }}</span></sc-for>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr auto;gap:5px 10px;font-size:12.5px;align-items:baseline">
+                <sc-for list="{{ tk.cap }}" as="c" hint-placeholder-count="9">
+                  <span style="color:{{ c.lf }};padding-left:{{ c.ind }}">{{ c.label }}</span>
+                  <span style="font-family:var(--fnum);font-size:12px;text-align:right;font-weight:{{ c.fw }}">{{ c.v }}</span>
+                  
+                </sc-for>
+              </div>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-size:12.5px;color:var(--ink3)">Measurements</span><span style="font-size:10.5px;color:var(--ink3)">{{ tk.measAt }}</span></div>
+              <sc-for list="{{ tk.meas }}" as="m" hint-placeholder-count="6">
+                <div style="display:grid;grid-template-columns:1fr auto;gap:2px 10px;padding:6px 0;border-bottom:1px solid var(--line2);align-items:baseline">
+                  <span>{{ m.label }}</span>
+                  <span style="text-align:right;white-space:nowrap"><span style="font-family:var(--fnum);font-size:12.5px;font-weight:500;font-style:{{ m.fs }};color:{{ m.vf }}">{{ m.v }}</span> <span style="font-size:11px;color:var(--ink3)">{{ m.u }}</span></span>
+                  
+                  <span style="grid-column:1 / -1;font-size:11px;color:var(--ink3);text-wrap:pretty">{{ m.note }}</span>
+                </div>
+              </sc-for>
+              <div style="display:flex;gap:10px;flex-wrap:wrap;font-size:10.5px;color:var(--ink3)"></div>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <div style="font-size:12.5px;color:var(--ink3)">Batch and quality release</div>
+              <div style="display:grid;grid-template-columns:110px 1fr;gap:5px 10px;font-size:12.5px">
+                <span style="color:var(--ink3)">Batch</span><span style="font-family:var(--fid);white-space:nowrap;letter-spacing:-.02em;font-size:12px">{{ tk.batch }}</span>
+                <span style="color:var(--ink3)">Release status</span><span style="display:flex;align-items:center;gap:6px;font-weight:500">{{ tk.qIcon }}{{ tk.q }}</span>
+                <span style="color:var(--ink3)">Sample</span><span style="font-family:var(--fnum);font-size:12px">{{ tk.sample }}</span>
+              </div>
+              <button onClick="{{ tk.openQuality }}" style="align-self:flex-start;border:0;background:transparent;color:var(--acc);padding:0;display:flex;gap:4px;align-items:center">Open in Quality {{ I.arrowR }}</button>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <div style="font-size:12.5px;color:var(--ink3)">Current activity</div>
+              <div style="padding:9px 10px;border:1px solid var(--line);border-radius:0;display:flex;flex-direction:column;gap:3px">
+                <div style="font-weight:500">{{ tk.actTitle }}</div>
+                <div style="font-size:11.5px;color:var(--ink3)">{{ tk.actSub }}</div>
+              </div>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <div style="font-size:12.5px;color:var(--ink3)">Level · last 24 h · mm</div>
+              <div>{{ tk.chartL }}</div>
+              <div style="font-size:12.5px;color:var(--ink3);margin-top:6px">Average temperature · last 24 h · °C</div>
+              <div>{{ tk.chartT }}</div>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:4px">
+              <div style="font-size:12.5px;color:var(--ink3)">Equipment and sensors</div>
+              <sc-for list="{{ tk.sensors }}" as="x" hint-placeholder-count="6">
+                <div style="display:grid;grid-template-columns:16px 1fr auto;gap:8px;align-items:center;padding:5px 0;border-bottom:1px solid var(--line2);font-size:12px">
+                  <span>{{ x.icon }}</span><span>{{ x.name }} <span style="font-family:var(--fnum);font-size:11px;color:var(--ink3)">{{ x.tag }}</span></span><span style="color:{{ x.fg }}">{{ x.state }}</span>
+                </div>
+              </sc-for>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:4px">
+              <div style="font-size:12.5px;color:var(--ink3)">Configuration</div>
+              <div style="display:grid;grid-template-columns:120px 1fr;gap:4px 10px;font-size:12px">
+                <sc-for list="{{ tk.config }}" as="c" hint-placeholder-count="5"><span style="color:var(--ink3)">{{ c.k }}</span><span>{{ c.v }}</span></sc-for>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ mode.eq }}" hint-placeholder-val="{{ false }}">
+          <div style="padding:12px 16px;border-bottom:1px solid var(--line);display:flex;align-items:flex-start;gap:10px">
+            <div style="flex:1;min-width:0">
+              <div style="font-size:12.5px;color:var(--ink3)">{{ eq.type }}</div>
+              <div style="display:flex;align-items:center;gap:8px;margin-top:2px"><span style="font-family:var(--fid);white-space:nowrap;letter-spacing:-.02em;font-size:17px;font-weight:600">{{ eq.id }}</span><span style="font-weight:500">{{ eq.name }}</span></div>
+              <div style="display:flex;align-items:center;gap:6px;font-size:12px;margin-top:4px">{{ eq.stIcon }}{{ eq.status }}</div>
+            </div>
+            <button onClick="{{ clearSel }}" aria-label="Close equipment details" style="width:30px;height:30px;border:0;background:transparent;display:grid;place-items:center;color:var(--ink2);white-space:nowrap">{{ I.close }}</button>
+          </div>
+          <div style="flex:1;overflow:auto;padding:14px 16px;display:flex;flex-direction:column;gap:16px">
+            <div style="display:flex;flex-direction:column">
+              <sc-for list="{{ eq.readings }}" as="m" hint-placeholder-count="3">
+                <div style="display:grid;grid-template-columns:1fr auto;gap:10px;padding:7px 0;border-bottom:1px solid var(--line2);align-items:baseline">
+                  <span>{{ m.k }}</span>
+                  <span style="text-align:right"><span style="font-family:var(--fnum);font-size:12.5px;font-weight:500;font-style:{{ m.fs }};color:{{ m.vf }}">{{ m.v }}</span> <span style="font-size:11px;color:var(--ink3)">{{ m.u }}</span></span>
+                  
+                </div>
+              </sc-for>
+            </div>
+            <div style="display:grid;grid-template-columns:110px 1fr;gap:5px 10px;font-size:12px">
+              <span style="color:var(--ink3)">Current duty</span><span>{{ eq.duty }}</span>
+              <span style="color:var(--ink3)">Construction</span><span>{{ eq.material }}</span>
+              <span style="color:var(--ink3)">Note</span><span>{{ eq.note }}</span>
+            </div>
+            
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ mode.tr }}" hint-placeholder-val="{{ false }}">
+          <div style="padding:12px 16px;border-bottom:1px solid var(--line);display:flex;align-items:flex-start;gap:10px">
+            <div style="flex:1;min-width:0">
+              <div style="font-size:12.5px;color:var(--ink3)">{{ trd.type }}</div>
+              <div style="font-family:var(--fid);white-space:nowrap;letter-spacing:-.02em;font-size:15px;font-weight:600;margin-top:2px">{{ trd.id }}</div>
+              <div style="display:flex;align-items:center;gap:6px;font-size:12px;margin-top:4px">{{ trd.icon }}{{ trd.state }}<span style="color:var(--ink3)">· {{ trd.prod }}</span></div>
+            </div>
+            <button onClick="{{ clearSel }}" aria-label="Close transfer details" style="width:30px;height:30px;border:0;background:transparent;display:grid;place-items:center;color:var(--ink2);white-space:nowrap">{{ I.close }}</button>
+          </div>
+          <div style="flex:1;overflow:auto;padding:14px 16px;display:flex;flex-direction:column;gap:14px">
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <div style="display:flex;justify-content:space-between;font-size:12px"><span>{{ trd.recvLabel }}</span><span style="font-family:var(--fnum)">{{ trd.prog }}</span></div>
+              <div style="height:8px;background:var(--surf3)"><div style="height:8px;width:{{ trd.pct }};background:var(--ink)"></div></div>
+            </div>
+            <div style="display:grid;grid-template-columns:120px 1fr;gap:6px 10px;font-size:12.5px">
+              <sc-for list="{{ trd.rows }}" as="x" hint-placeholder-count="6"><span style="color:var(--ink3)">{{ x.k }}</span><span style="font-family:{{ x.ff }}">{{ x.v }}</span></sc-for>
+            </div>
+            <div style="font-size:11.5px;color:var(--ink3)">Source and destination are highlighted on the schematic. Completing the transfer does not release the product.</div>
+            <sc-if value="{{ trd.marine }}" hint-placeholder-val="{{ false }}">
+              <button onClick="{{ trd.open }}" style="height:34px;border:0;border-radius:0;background:var(--ink);color:var(--surf);font-weight:500;display:flex;align-items:center;justify-content:center;gap:8px;white-space:nowrap">Open ship-to-shore workspace {{ I.arrowR }}</button>
+            </sc-if>
+            <sc-if value="{{ trd.blend }}" hint-placeholder-val="{{ false }}">
+              <button onClick="{{ trd.open }}" style="height:34px;border:0;border-radius:0;background:var(--ink);color:var(--surf);font-weight:500;display:flex;align-items:center;justify-content:center;gap:8px;white-space:nowrap">Open blend monitor {{ I.arrowR }}</button>
+            </sc-if>
+          </div>
+        </sc-if>
+      </aside>
+    </sc-if>
+  </div>
+</sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  constructor(p) {
+    super(p);
+    const D = p.d;
+    this.state = { ...(D ? D.ui.load('tw', { view: 'split', sort: 'id', dir: 1, sel: {} }) : {}), hl: null, ht: null, scale: 1, zv: null, hov: null, mode: 'level', sumOpen: false, panning: false };
+    this.wrapRef = React.createRef();
+  }
+  componentDidMount() { import(new URL('./schematic.js', document.baseURI).href).then(m => { this.S = m; this.forceUpdate(); }); this.applyFocus(); }
+  componentDidUpdate(pp) { this.bindCanvas(); const f = this.props.ctx && this.props.ctx.focus; if (f && f.n !== this.lastFocus) this.applyFocus(); }
+  componentWillUnmount() { window.removeEventListener('pointermove', this.onPM); window.removeEventListener('pointerup', this.onPU); cancelAnimationFrame(this.raf); }
+  applyFocus() { const f = this.props.ctx && this.props.ctx.focus; if (!f || f.n === this.lastFocus) return; this.lastFocus = f.n; if (f.type === 'tank') this.select({ tank: f.id, tr: null, eq: null }); if (f.type === 'transfer') this.select({ tr: f.id, tank: null, eq: null }); }
+  cur() { return (this.state.sel || {})[this.props.ctx.terminalId] || {}; }
+  select(patch) { const tid = this.props.ctx.terminalId; if (patch.tank) setTimeout(() => this.revealTank(patch.tank), 0); this.upd({ sel: { ...(this.state.sel || {}), [tid]: { ...this.cur(), ...patch } } }); }
+  upd(p) { this.setState(p, () => { const { hl, ht, scale, zv, hov, panning, ...rest } = this.state; this.props.d.ui.save('tw', rest); }); }
+
+  view() { return this.state.zv || { x: 0, y: 0, w: 1400 }; }
+  setView(v) { const S = this.S; if (!S) return; const w = Math.max(320, Math.min(S.W, v.w)); const h = w * S.H / S.W; const x = Math.max(-260, Math.min(S.W - w + 420, v.x)); const y = Math.max(-80, Math.min(S.H - h + 80, v.y)); this.setState({ zv: w >= S.W - 1 && Math.abs(x) < 1 && Math.abs(y) < 1 ? null : { x, y, w } }); }
+  animView(to) { const from = this.view(); const t0 = performance.now(); const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches; if (reduce) return this.setView(to); const step = n => { const f = Math.min(1, (n - t0) / 260); const e = 1 - Math.pow(1 - f, 3); this.setView({ x: from.x + (to.x - from.x) * e, y: from.y + (to.y - from.y) * e, w: from.w + (to.w - from.w) * e }); if (f < 1) this.raf = requestAnimationFrame(step); }; cancelAnimationFrame(this.raf); this.raf = requestAnimationFrame(step); }
+  zoomBy(f, fx = 0.5, fy = 0.5) { const S = this.S; const v = this.view(); const vh = v.w * S.H / S.W; const nw = Math.max(320, Math.min(S.W, v.w * f)); const nh = nw * S.H / S.W; this.setView({ x: v.x + fx * (v.w - nw), y: v.y + fy * (vh - nh), w: nw }); }
+  revealTank(id) { const el = this.wrapRef.current, L = this.L, S = this.S; if (!el || !L || !S || !L.tanks[id]) return; const a = L.tanks[id]; const v = this.view(); const pxW = el.clientWidth; const cover = this.props.ctx.mobile ? 0 : 410; const frac = Math.max(0.3, (pxW - cover) / pxW); const sx = (a.cx - v.x) / v.w; if (sx > frac - 0.06 || sx < 0.04) this.animView({ x: a.cx - v.w * frac * 0.5, y: v.y, w: v.w }); }
+  bindCanvas() {
+    const el = this.wrapRef.current; if (!el || el === this.bound) return; this.bound = el;
+    el.addEventListener('wheel', e => { if (!(e.ctrlKey || e.metaKey) || !this.S) return; e.preventDefault(); const r = el.getBoundingClientRect(); this.zoomBy(e.deltaY > 0 ? 1.12 : 1 / 1.12, (e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height); }, { passive: false });
+    el.addEventListener('pointerdown', e => { if (e.button !== 0 || e.target.closest('button')) return; this.drag = { x: e.clientX, y: e.clientY, v: this.view(), moved: false }; });
+    window.addEventListener('pointermove', this.onPM = e => { const d = this.drag; if (!d || !this.S) return; const dx = e.clientX - d.x, dy = e.clientY - d.y; if (!d.moved && Math.hypot(dx, dy) < 5) return; d.moved = true; this.dragged = true; if (!this.state.panning) this.setState({ panning: true }); const s = d.v.w / el.clientWidth; this.setView({ x: d.v.x - dx * s, y: d.v.y - dy * s, w: d.v.w }); });
+    window.addEventListener('pointerup', this.onPU = () => { if (this.drag && this.drag.moved) setTimeout(() => { this.dragged = false; }, 0); this.drag = null; if (this.state.panning) this.setState({ panning: false }); });
+  }
+  badge(src) {
+    if (src === 'M') return { src: 'measured', bBd: 'var(--ink2)', bBg: 'var(--ink2)', bFg: 'var(--surf)', bStyle: 'solid' };
+    if (src === 'C') return { src: 'calculated', bBd: 'var(--ink3)', bBg: 'transparent', bFg: 'var(--ink2)', bStyle: 'solid' };
+    if (src === 'L') return { src: 'lab', bBd: 'var(--acc)', bBg: 'transparent', bFg: 'var(--acc)', bStyle: 'solid' };
+    if (src === 'K') return { src: 'configured', bBd: 'var(--line)', bBg: 'var(--surf2)', bFg: 'var(--ink3)', bStyle: 'solid' };
+    if (src === 'X') return { src: 'manual', bBd: 'var(--warn)', bBg: 'transparent', bFg: 'var(--warnInk)', bStyle: 'solid' };
+    return { src: 'unavailable', bBd: 'var(--ink4)', bBg: 'transparent', bFg: 'var(--ink3)', bStyle: 'dashed' };
+  }
+  val(v, src, u, note, label) { const miss = v == null; return { label, v: miss ? 'Unavailable' : v, u: miss ? '' : u, note, fs: miss ? 'italic' : 'normal', vf: miss ? 'var(--ink3)' : 'var(--ink)', ...this.badge(miss ? 'U' : src) }; }
+
+  renderVals() {
+    const D = this.props.d, ctx = this.props.ctx;
+    if (!D || !ctx) return { ready: false };
+    const I = ctx.I, s = this.state, h = React.createElement;
+    const t = D.term(ctx.terminalId), prods = ctx.products, has = c => !prods.length || prods.includes(c);
+    const S = this.S;
+    const L = S ? S.layout(D, t) : { tanks: {}, eqs: D.equipment(t), bunds: [] }; this.L = L;
+    const cur = this.cur();
+    const selTank = cur.tank && t.tanks.find(k => k.id === cur.tank) ? cur.tank : null;
+    const selEq = cur.eq || null, selTr = cur.tr || null;
+    const active = D.TRANSFERS.filter(tr => tr.term === t.id && tr.active);
+    const tankObj = selTank ? t.tanks.find(k => k.id === selTank) : null;
+    const selIds = selTr ? [selTr] : tankObj && tankObj.activity ? [tankObj.activity.ref] : [];
+    const selTrObj = D.TRANSFERS.find(x => x.id === (selTr || selIds[0]));
+    const related = new Set(); if (selTrObj) { related.add(selTrObj.dst); (selTrObj.srcs || [[selTrObj.src]]).forEach(([x]) => related.add(x)); }
+
+    const tz = t.tz;
+    // transfer chips
+    const trChips = active.map(tr => {
+      const p = D.prod(tr.code), sel = selIds.includes(tr.id);
+      return { id: tr.id, short: tr.id.replace(/^(TRF|BLD)-[A-Z]+-/, ''), type: tr.type, route: `${tr.marine ? tr.berth : tr.src} → ${tr.dst}`, state: tr.state, icon: I.st[D.statKind(tr.state)], stFg: tr.state === 'Paused' ? 'var(--warnInk)' : 'var(--ink3)', color: p.color, pct: Math.round(tr.recv / tr.planned * 100) + '%', prog: tr.truck ? `${tr.trucksDone} / ${tr.truckN} trucks` : `${D.fmt(tr.recv)} / ${D.fmt(tr.planned)} kL`, pressed: sel ? 'true' : 'false', bd: sel ? 'var(--acc)' : 'var(--line)', bg: sel ? 'var(--accSoft)' : 'transparent', onClick: () => this.select({ tr: sel ? null : tr.id, tank: null, eq: null }) };
+    });
+    // stock strip
+    const sm = D.tsum(t, prods);
+    const usable = t.tanks.filter(k => k.kind === 'product' && has(k.code)).reduce((a, k) => a + D.stock(k).usable, 0);
+    const stockStrip = [
+      { label: 'Total stock', v: D.fmt(sm.inv), sw: 'var(--ink)', swBd: '0', title: 'All finished-product stock, including unpumpable heel' },
+      { label: 'Usable', v: D.fmt(usable), sw: 'var(--ink2)', swBd: '0', title: 'Total minus heel, excluding out-of-service tanks' },
+      { label: 'Reserved', v: D.fmt(sm.rsv), sw: 'var(--ink3)', swBd: '0', title: 'Usable stock allocated to scheduled dispatches' },
+      { label: 'Quality hold', v: D.fmt(sm.held), sw: 'repeating-linear-gradient(135deg, var(--holdA) 0 2px, var(--holdB) 2px 4px)', swBd: '1px solid var(--line)', title: 'Usable stock on hold or awaiting release' },
+      { label: 'Available', v: D.fmt(sm.avail), sw: 'var(--ok)', swBd: '0', title: 'Usable − reserved − quality hold' },
+      { label: 'Receiving cap.', v: D.fmt(sm.rx), sw: 'var(--surf3)', swBd: '1px solid var(--line)', title: 'Up to max operating capacity, in-service tanks not on hold' },
+    ];
+    // table
+    const keyf = { id: k => k.id, prod: k => k.code, status: k => k.status, fill: k => D.stock(k).fill, vol: k => k.vol, usable: k => D.stock(k).usable, reserved: k => D.stock(k).reserved, held: k => D.stock(k).held, avail: k => D.stock(k).avail, rx: k => D.stock(k).rx, level: k => D.stock(k).level, temp: k => k.tempSrc === 'unavailable' ? -1 : k.temp, activity: k => k.activity ? k.activity.ref : '' };
+    const kf = keyf[s.sort] || keyf.id;
+    const list = t.tanks.filter(k => has(k.code) || k.kind === 'component').slice().sort((a, b) => { const A = kf(a), B = kf(b); return (A > B ? 1 : A < B ? -1 : 0) * s.dir; });
+    const rows = list.map(k => {
+      const st = D.stock(k), p = D.prod(k.code), sel = k.id === selTank, rel = related.has(k.id);
+      const act = k.activity ? `${k.activity.kind === 'receipt' ? 'Receiving ←' : 'Dispatching →'} ${k.activity.ref}` : (k.note || '—');
+      return { id: k.id, prod: p.label + (k.kind === 'component' ? ' (component)' : ''), sw: p.sw, swBd: k.kind === 'component' ? p.color : 'transparent', color: p.color, status: k.q !== 'Released' ? `${k.status} · ${k.q}` : k.status, stIcon: I.st[D.statKind(k.q === 'On hold' ? 'hold' : k.alarm ? k.alarm.sev : k.status)],
+        fill: Math.round(st.fill * 100) + '%', fillW: (st.fill * 100).toFixed(1) + '%', mocW: (k.moc / k.nominal * 100).toFixed(1) + '%', vol: D.fmt(k.vol), usable: D.fmt(st.usable), reserved: st.reserved ? D.fmt(st.reserved) : '—', held: st.held ? D.fmt(st.held) : '—', heldFg: st.held ? 'var(--ink)' : 'var(--ink4)', avail: D.fmt(st.avail), rx: k.status === 'Out of service' ? 'Out of service' : D.fmt(st.rx), level: D.fmt(st.level), temp: k.tempSrc === 'unavailable' ? 'Unavailable' : D.fmt(k.temp, 1), tempFg: k.tempSrc === 'unavailable' ? 'var(--warnInk)' : 'var(--ink)', activity: act,
+        bg: sel ? 'var(--accSoft)' : rel ? 'var(--surf2)' : 'transparent', sh: sel ? 'inset 2px 0 0 var(--acc)' : 'none',
+        onClick: () => this.select({ tank: sel ? null : k.id, eq: null, tr: null }), onKey: e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); this.select({ tank: k.id, eq: null, tr: null }); } } };
+    });
+    const tsumRow = { vol: 0, usable: 0, reserved: 0, held: 0, avail: 0, rx: 0 };
+    list.filter(k => k.kind === 'product').forEach(k => { const st = D.stock(k); tsumRow.vol += k.vol; tsumRow.usable += st.usable; tsumRow.reserved += st.reserved; tsumRow.held += st.held; tsumRow.avail += st.avail; tsumRow.rx += st.rx; });
+    const heads = [['id', 'Tank', 'flex-start'], ['prod', 'Product', 'flex-start'], ['status', 'Status', 'flex-start'], ['fill', 'Fill · MOC mark', 'flex-start'], ['vol', 'Total', 'flex-end'], ['usable', 'Usable', 'flex-end'], ['reserved', 'Reserved', 'flex-end'], ['held', 'Hold', 'flex-end'], ['avail', 'Available', 'flex-end'], ['rx', 'Rx capacity', 'flex-end'], ['level', 'Level mm', 'flex-end'], ['temp', 'Temp °C', 'flex-end'], ['activity', 'Activity', 'flex-start']].map(([k, label, jc]) => ({ label, jc, onClick: () => this.upd({ sort: k, dir: s.sort === k ? -s.dir : 1 }), icon: s.sort === k && s.dir < 0 ? I.chevD : I.chevU, op: s.sort === k ? 1 : 0, fg: 'var(--ink)', aria: s.sort === k ? (s.dir > 0 ? 'ascending' : 'descending') : 'none' }));
+
+    // inspector modes
+    const mode = { summary: !selTank && !selEq && !selTr, tank: !!selTank, eq: !!selEq && !selTank, tr: !!selTr && !selTank && !selEq };
+    let tk = {}, eq = {}, trd = {};
+    if (tankObj) {
+      const k = tankObj, st = D.stock(k), p = D.prod(k.code), n = k.id.slice(2);
+      const tempOk = k.tempSrc !== 'unavailable';
+      const tUse = tempOk ? k.temp : k.manualTemp;
+      const gov = tUse != null ? k.vol / D.vcf(k.code, tUse) : null;
+      const W = v => (v / k.nominal * 100).toFixed(2) + '%';
+      const free = Math.max(0, k.moc - k.vol);
+      const bar = [
+        { label: 'Heel / unusable', w: W(st.unp), bg: '#8b9097', title: `Unusable ${D.fmt(st.unp)} kL` },
+        { label: 'Quality hold', w: W(st.held), bg: 'repeating-linear-gradient(135deg, var(--holdA) 0 2px, var(--holdB) 2px 4px)', title: `On hold ${D.fmt(st.held)} kL` },
+        { label: 'Reserved', w: W(st.reserved), bg: 'var(--ink3)', title: `Reserved ${D.fmt(st.reserved)} kL` },
+        { label: 'Available', w: W(st.avail), bg: p.color, title: `Available ${D.fmt(st.avail)} kL` },
+        { label: 'Receiving capacity', w: W(free), bg: 'var(--surf)', title: `To MOC ${D.fmt(free)} kL` },
+        { label: 'Above MOC', w: W(k.nominal - Math.max(k.moc, k.vol)), bg: 'var(--critSoft)', title: `MOC to nominal ${D.fmt(k.nominal - k.moc)} kL` },
+      ].filter(b => parseFloat(b.w) > 0.05);
+      const capRow = (label, v, src, o = {}) => ({ label, v, ...this.badge(src), lf: o.sub ? 'var(--ink2)' : 'var(--ink)', ind: o.sub ? '10px' : '0', fw: o.b ? 600 : 400 });
+      const rxv = k.status === 'Out of service' ? 'Out of service' : k.q === 'On hold' ? 'Blocked · hold' : D.fmt(st.rx) + ' kL';
+      const cap = [
+        capRow('Nominal capacity', D.fmt(k.nominal) + ' kL', 'K'), capRow('Max operating capacity', D.fmt(k.moc) + ' kL', 'K'), capRow('High-level alarm', D.fmt(k.hla) + ' kL', 'K'),
+        capRow('Current volume (GSV @ 15 °C)', D.fmt(k.vol) + ' kL', 'C', { b: 1 }), capRow('Available receiving capacity', rxv, 'C', { b: 1 }),
+        capRow('Usable stock', D.fmt(st.usable) + ' kL', 'C', { sub: 1 }), capRow('Reserved', D.fmt(st.reserved) + ' kL', 'C', { sub: 1 }), capRow('On quality hold', D.fmt(st.held) + ' kL', 'C', { sub: 1 }), capRow('Available for dispatch', D.fmt(st.avail) + ' kL', 'C', { sub: 1, b: 1 }),
+      ];
+      const meas = [
+        this.val(D.fmt(st.level), 'M', 'mm', `Radar gauge LT-1${n}`, 'Liquid level'),
+        tempOk ? this.val(D.fmt(k.temp, 1), 'M', '°C', `Multi-point average TT-1${n}`, 'Temperature') : { ...this.val(null, 'U', '°C', `Probe TT-1${n} fault since 03:10 ${tz}. Manual dip ${k.manualTemp} °C at ${D.tm(k.manualAt, tz)} is used for volume correction.`, 'Temperature'), },
+        this.val(D.fmt(k.dens15, 1), 'L', 'kg/m³', `Reference basis 15 °C · laboratory result for batch ${k.batch || '—'}`, 'Density @ 15 °C'),
+        this.val(k.water != null ? D.fmt(k.water) : null, 'M', 'mm', k.water != null ? `Water interface probe WI-1${n}` : 'No water-bottom reading available for this tank', 'Water bottom'),
+        { ...this.val(gov != null ? D.fmt(gov) : null, tempOk ? 'C' : 'X', `kL @ ${tUse} °C`, tempOk ? 'At tank temperature · VCF Table 54B' : 'Based on manual dip temperature', 'Observed volume (GOV)') },
+        this.val(D.fmt(k.vol * k.dens15 / 1000), 'C', 't', 'GSV × density @ 15 °C (in vacuum)', 'Mass'),
+      ];
+      const hist = D.tankHistory(k, 24, 30);
+      const xt = [0, 6, 12, 18, 24].map(hh => ({ t: D.NOW - 24 * 60 + hh * 60, label: D.tm(D.NOW - 24 * 60 + hh * 60, tz, { tz: false }) }));
+      const chartL = D.lineChart(h, { w: 340, h: 140, l: 44, series: [{ pts: hist.map(p => ({ t: p.t, v: p.lvl })), color: p.color === '#888' ? 'var(--ink)' : 'var(--ink)', label: 'Level', unit: 'mm', area: true }], refs: [{ v: st.hlaLevel, label: 'High-level alarm', color: 'var(--critInk)' }], y0: 0, y1: Math.max(st.hlaLevel * 1.08, ...hist.map(p => p.lvl)), xTicks: xt, hover: s.hl, onHover: v => this.setState({ hl: v }), tz, aria: 'Level history' });
+      const temps = hist.filter(p => p.temp != null).map(p => p.temp);
+      const chartT = D.lineChart(h, { w: 340, h: 120, l: 44, ydp: 1, series: [{ pts: hist.map(p => ({ t: p.t, v: p.temp })), color: 'var(--ink2)', label: 'Temperature', unit: '°C', dp: 1 }], y0: Math.min(...temps) - 0.6, y1: Math.max(...temps) + 0.6, xTicks: xt, gaps: tempOk ? [] : [{ a: 190, b: D.NOW, label: 'No data · probe fault' }], hover: s.ht, onHover: v => this.setState({ ht: v }), tz, aria: 'Temperature history' });
+      const act = k.activity ? D.TRANSFERS.find(x => x.id === k.activity.ref) : null;
+      const sample = D.SAMPLES.find(x => x.term === t.id && x.batch === k.batch);
+      const recv = act && act.dst === k.id, disp = act && act.dst !== k.id;
+      const sen = (name, tag, state) => ({ name, tag, state, icon: I.st[state === 'OK' || state === 'Open' || state === 'Closed' ? (state === 'Open' ? 'active' : 'ok') : state === 'Fault' ? 'attention' : 'idle'], fg: state === 'Fault' ? 'var(--warnInk)' : 'var(--ink2)' });
+      tk = {
+        id: k.id, prod: p.label, sw: p.sw, swBd: p.kind === 'component' ? p.color : 'transparent', status: k.status, stIcon: I.st[D.statKind(k.status)], bund: k.bund, kindLabel: k.kind === 'component' ? 'Blend component' : 'Finished product',
+        bar, cap, meas, measAt: `Updated ${D.tm(D.NOW, tz)}`,
+        batch: k.batch || '—', q: k.q, qIcon: I.st[k.q === 'Released' ? 'ok' : k.q === 'On hold' ? 'hold' : 'pending'], sample: sample ? `${sample.id} · ${sample.status}` : 'No open sample',
+        openQuality: () => this.props.go('quality', { terminalId: t.id, focus: sample ? { type: 'sample', id: sample.id } : { type: 'batch', id: k.batch } }),
+        actTitle: act ? `${recv ? 'Receiving' : 'Dispatching'} · ${act.id}` : (k.status === 'Out of service' ? 'Out of service' : k.status === 'Settling' ? 'Settling after receipt' : 'No active movement'),
+        actSub: act ? `${act.type} · ${act.state} · ${act.flow ? (act.truck ? D.flowText(act) : D.fmt(recv ? act.flow : act.flow * (act.srcs ? act.srcs.find(x => x[0] === k.id)[1] : 1)) + ' kL/h') : 'flow unavailable'} · ${recv ? 'from ' + (act.marine ? act.vessel + ' / ' + act.berth : act.src) : 'to ' + act.dst}` : (k.note || (k.status === 'Settling' ? 'Receipt TRF-PLM-26-0412 completed 02:40. Awaiting laboratory results before release.' : 'Inlet and outlet valves closed.')),
+        chartL, chartT,
+        sensors: [sen('Radar level gauge', 'LT-1' + n, 'OK'), sen('Multi-point temperature', 'TT-1' + n, tempOk ? 'OK' : 'Fault'), sen('Independent high-level switch', 'LSHH-1' + n, 'OK'), sen('Water interface probe', 'WI-1' + n, k.water != null ? 'OK' : 'Not fitted'), sen('Inlet valve', 'MOV-1' + n, recv ? 'Open' : 'Closed'), sen('Outlet valve', 'MOV-2' + n, disp ? 'Open' : 'Closed')],
+        config: [{ k: 'Roof type', v: k.roof }, { k: 'Shell', v: k.material }, { k: 'Lining', v: k.coating }, { k: 'Dimensions', v: `Ø ${k.diam} m × ${k.height} m` }, { k: 'Product assignment', v: p.label }],
+      };
+    }
+    if (selEq && !selTank) {
+      const e = L.eqs.find(x => x.id === selEq) || { id: selEq, type: 'Equipment', name: selEq, status: 'In service', readings: [] };
+      eq = { id: e.id, type: e.type, name: e.name, status: e.status, stIcon: I.st[D.statKind(e.status)], duty: e.duty || 'None', material: e.material || 'Configured per terminal', note: e.note || '—', readings: e.readings.map(r => ({ k: r.k, ...this.val(r.v == null ? null : (typeof r.v === 'number' ? D.fmt(r.v, r.v % 1 ? (r.v < 2 ? 4 : 1) : 0) : r.v), r.src, r.u, '', r.k) })) };
+    }
+    if (selTr && !selTank && !selEq && selTrObj) {
+      const tr = selTrObj, p = D.prod(tr.code);
+      trd = { id: tr.id, type: tr.type, state: tr.state, icon: I.st[D.statKind(tr.state)], prod: p.label, recvLabel: tr.type.includes('dispatch') ? 'Dispatched' : 'Received', prog: `${D.fmt(tr.recv)} / ${D.fmt(tr.planned)} kL`, pct: (tr.recv / tr.planned * 100).toFixed(1) + '%', marine: tr.marine, blend: tr.type.includes('blend'),
+        rows: [{ k: 'Source', v: tr.marine ? `${tr.vessel} · ${tr.comp}` : tr.src, ff: 'var(--fsans)' }, { k: 'Destination', v: tr.dst, ff: 'var(--fsans)' }, { k: tr.truck ? 'Gantry throughput' : 'Flow rate', v: tr.flow ? D.flowText(tr) : (tr.state === 'Paused' ? 'Paused' : 'Unavailable'), ff: 'var(--fnum)' }, ...(tr.truck ? [{ k: 'Trucks loaded', v: `${tr.trucksDone} of ${tr.truckN} · ${tr.truck} kL tankers`, ff: 'var(--fnum)' }] : []), { k: 'Started', v: D.tm(tr.start, tz), ff: 'var(--fnum)' }, { k: 'Remaining', v: D.fmt(tr.remaining) + ' kL', ff: 'var(--fnum)' }, { k: 'Est. completion', v: tr.etaMin ? D.tm(tr.etaMin, tz) : 'Unavailable', ff: 'var(--fnum)' }],
+        open: () => this.props.go(tr.marine ? 'transfers' : 'blending', { terminalId: t.id, focus: { type: tr.marine ? 'transfer' : 'blend', id: tr.id } }) };
+    }
+    const exOpen = D.EXCEPTIONS.filter(e => e.term === t.id && e.status !== 'Resolved').sort((a, b) => D.SEV[a.sev].rank - D.SEV[b.sev].rank);
+    const exList = exOpen.map(e => ({ what: e.what, icon: I.st[e.sev], sub: `${e.asset} · since ${D.tm(e.since, tz)} · ${e.status}` }));
+    const byProd = [...D.PRODUCTS, ...D.COMPONENTS].map(p => { const ks = t.tanks.filter(k => k.code === p.code && (has(k.code) || k.kind === 'component')); if (!ks.length) return null; let tot = 0, av = 0, rs = 0, hd = 0; ks.forEach(k => { const st = D.stock(k); tot += st.total; av += st.avail; rs += st.reserved; hd += st.held; }); const P = D.prod(p.code); return { label: P.label + (P.kind === 'component' ? ' · component' : ''), sw: P.sw, swBd: P.kind === 'component' ? P.color : 'transparent', color: P.color, total: D.fmt(tot), avail: D.fmt(av), res: D.fmt(rs), held: D.fmt(hd), wAvail: (av / tot * 100) + '%', wRes: (rs / tot * 100) + '%', wHeld: (hd / tot * 100) + '%' }; }).filter(Boolean);
+
+    const tablet = ctx.tablet, mobile = ctx.mobile;
+    const showSchematic = s.view !== 'table' && !mobile;
+    const hasSel = !!(selTank || selEq || selTr);
+    return {
+      ready: true, I, t, tStatusIcon: I.st[t.status === 'Operating' ? 'ok' : 'attention'], localTime: D.tm(ctx.now, tz), capsText: D.caps(t).join(' · '),
+      stockStrip, showViewToggle: !mobile, setSplit: () => this.upd({ view: 'split' }), setTable: () => this.upd({ view: 'table' }),
+      splitBg: s.view !== 'table' ? 'var(--ink)' : 'var(--surf)', splitFg: s.view !== 'table' ? 'var(--surf)' : 'var(--ink)', tableBg: s.view === 'table' ? 'var(--ink)' : 'var(--surf)', tableFg: s.view === 'table' ? 'var(--surf)' : 'var(--ink)',
+      showSchematic, wrapRef: this.wrapRef, cursor: s.panning ? 'grabbing' : 'grab',
+      svg: showSchematic && S ? S.render(React.createElement, D, t, L, { theme: ctx.theme, active, selIds, selTank, selEq, related, focus: new Set([...(selTank ? [selTank] : []), ...related]), has, mode: s.mode, hover: s.hov, view: this.view(), onTank: id => { if (this.dragged) return; this.select({ tank: id === selTank ? null : id, eq: null, tr: null }); }, onEq: id => { if (this.dragged) return; this.select({ eq: selEq === id ? null : id, tank: null, tr: null }); }, onHover: id => { if (this.state.hov !== id) this.setState({ hov: id }); }, onBg: () => {} }) : null,
+      modes: [['level', 'Level'], ['temp', 'Temperature'], ['status', 'Status']].map(([id, label]) => ({ label, on: s.mode === id ? 'true' : 'false', onClick: () => this.upd({ mode: id }), bg: s.mode === id ? 'var(--ink)' : 'transparent', fg: s.mode === id ? 'var(--surf)' : 'var(--ink)' })),
+      zoomIn: () => this.zoomBy(1 / 1.3), zoomOut: () => this.zoomBy(1.3), zoomFit: () => this.animView({ x: 0, y: 0, w: 1400 }),
+      zoomSel: () => { const a2 = selTank && L.tanks[selTank]; if (a2) this.animView({ x: a2.cx - 300, y: a2.top - 170, w: 640 }); }, noSelZoom: !selTank, selZoomOp: selTank ? 1 : 0.35,
+      zoomHint: 'Drag to pan · Ctrl + scroll to zoom', zoomPct: s.zv ? Math.round(1400 / s.zv.w * 100) + ' %' : 'Fit',
+      toggleSummary: () => this.upd({ sumOpen: !s.sumOpen }), sumBg: s.sumOpen ? 'var(--surf2)' : 'transparent',
+      trChips, noTransfers: !active.length, hasSel, clearSel: () => { this.select({ tank: null, eq: null, tr: null }); this.upd({ sumOpen: false }); },
+      showMobileList: mobile, mobileEx: exList.map((e, i) => ({ ...e, icon: e.icon })),
+      cols: '62px minmax(0,1.25fr) minmax(0,1.5fr) minmax(0,1.15fr) minmax(0,0.8fr) minmax(0,0.8fr) minmax(0,0.75fr) minmax(0,0.75fr) minmax(0,0.8fr) minmax(0,0.85fr) minmax(0,0.7fr) minmax(0,0.75fr) minmax(0,1.5fr)', heads, rows, tableEmpty: !rows.length, tankCount: `${rows.length} of ${t.tanks.length}`,
+      tot: { vol: D.fmt(tsumRow.vol), usable: D.fmt(tsumRow.usable), reserved: D.fmt(tsumRow.reserved), held: D.fmt(tsumRow.held), avail: D.fmt(tsumRow.avail), rx: D.fmt(tsumRow.rx) },
+      showInspector: hasSel || s.sumOpen, inspW: mobile ? '100%' : '400px', inspPos: 'absolute', inspSh: 'var(--shadow)',
+      mode, tk, eq, trd, exList, noEx: !exList.length, byProd, openAlarmsTerm: () => this.props.openAlarms && this.props.openAlarms('terminal'),
+    };
+  }
+}
+</script>
+</body>
+</html>

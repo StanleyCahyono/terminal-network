@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<title>Terminal Network Operations</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Semi+Condensed:wght@500;600&family=Overpass+Mono:wght@400;600&display=swap">
+<style>
+[data-theme="light"]{--bg:#e9ebee;--surf:#ffffff;--surf2:#f3f4f6;--surf3:#e2e5e9;--line:#d3d8de;--line2:#eceef1;--pBd:#dde1e6;--ink:#1e2226;--ink2:#444b53;--ink3:#69717b;--ink4:#a1a8b0;--bar:#2f343a;--barInk:#ffffff;--barInk2:#d9dde1;--barInk3:#a9b0b8;--barAcc:#9cc2ff;--rail:#2b3036;--acc:#2f6fc0;--accSoft:#e7effa;--accLine:#9dbbe6;--crit:#d23b2e;--critSoft:#fbeceb;--critInk:#b0291e;--warn:#ef9a1a;--warnSoft:#fdf3e2;--warnInk:#9a5c00;--ok:#4f9a3c;--okSoft:#ecf5e9;--info:#6b737c;--canvas:#1e2226;--canvas2:#262b30;--cLine:#353b42;--cInk:#dfe2e5;--cInk2:#9aa1a8;--holdA:rgba(40,46,54,.55);--holdB:rgba(40,46,54,.12);--shadow:0 2px 4px rgba(16,24,32,.10),0 10px 28px rgba(16,24,32,.14);--mapGrid:#e3e6ea;--mapLand:#d6dade;--mapNear:#eceef1;--mapEdge:#aab1b9;--fsans:'Barlow',sans-serif;--fnum:'Barlow',sans-serif;--fid:'Overpass Mono',monospace;color-scheme:light}
+[data-theme="dark"]{--bg:#16191c;--surf:#1f2327;--surf2:#262a2f;--surf3:#30353b;--line:#363c43;--line2:#2a2f34;--pBd:#2c3136;--ink:#e9ebed;--ink2:#bcc2c8;--ink3:#8d959e;--ink4:#5f666e;--bar:#2c3238;--barInk:#ffffff;--barInk2:#d2d7dc;--barInk3:#9aa2ab;--barAcc:#9cc2ff;--rail:#121417;--acc:#6ea6f0;--accSoft:#22324a;--accLine:#3e5f8c;--crit:#e5544a;--critSoft:#3a2321;--critInk:#ff8f86;--warn:#f2a531;--warnSoft:#3a2f1c;--warnInk:#ffc56b;--ok:#6cb85a;--okSoft:#22301f;--info:#848c95;--canvas:#121417;--canvas2:#181b1f;--cLine:#2a2f35;--cInk:#dfe2e5;--cInk2:#8e959c;--holdA:rgba(230,233,236,.42);--holdB:rgba(230,233,236,.08);--shadow:0 2px 4px rgba(0,0,0,.4),0 10px 28px rgba(0,0,0,.45);--mapGrid:#22262b;--mapLand:#323840;--mapNear:#1f2327;--mapEdge:#4f565e;--fsans:'Barlow',sans-serif;--fnum:'Barlow',sans-serif;--fid:'Overpass Mono',monospace;color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:#e9ebee}
+body{font-family:'Barlow',system-ui,sans-serif;font-size:14px;line-height:1.4;-webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+a{color:var(--acc);text-decoration:none}
+a:hover{text-decoration:underline}
+:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+::-webkit-scrollbar{width:10px;height:10px}::-webkit-scrollbar-thumb{background:var(--line);border-radius:0;border:2px solid transparent;background-clip:padding-box}
+@keyframes tnflow{to{stroke-dashoffset:-24}}
+@keyframes tndash{to{background-position:24px 0}}
+@keyframes tnpulse{0%,100%{opacity:1}50%{opacity:.45}}
+@keyframes tnshimmer{0%{background-position:-400px 0}100%{background-position:400px 0}}
+@keyframes tnin{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+@keyframes tnslide{from{transform:translateX(24px);opacity:0}to{transform:none;opacity:1}}
+[data-motion="off"] *{animation:none!important;transition:none!important}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+</style>
+</helmet>
+<div data-theme="{{ theme }}" data-motion="{{ motion }}" style="height:100vh;display:flex;background:var(--bg);color:var(--ink);overflow:hidden">
+  <sc-if value="{{ showRail }}" hint-placeholder-val="{{ true }}">
+    <nav aria-label="Primary" style="width:{{ railW }};flex:none;background:var(--rail);color:#c3c8ce;display:flex;flex-direction:column;transition:width .18s ease">
+      <div style="height:52px;display:flex;align-items:center;gap:10px;padding:0 18px;border-bottom:1px solid #3a4047">
+        <img src="assets/logo.png" alt="" style="width:30px;height:auto;flex:none;display:block">
+        <sc-if value="{{ railOpen }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;line-height:1.1;min-width:0">
+            <span style="color:#efeee9;font-weight:600;font-size:12.5px;letter-spacing:.02em;white-space:nowrap">Terminal Network</span>
+            <span style="font-family:var(--fnum);font-size:10px;color:#80858c;white-space:nowrap">Operations console</span>
+          </div>
+        </sc-if>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px;padding:12px 8px;flex:1;overflow-y:auto;overflow-x:hidden;scrollbar-width:none">
+        <sc-for list="{{ navItems }}" as="n" hint-placeholder-count="7">
+          <button onClick="{{ n.onClick }}" title="{{ n.label }}" aria-current="{{ n.aria }}" style="position:relative;display:flex;align-items:center;gap:{{ n.gap }};padding:{{ n.pad }};min-height:44px;border:0;border-radius:0;background:{{ n.bg }};color:{{ n.fg }};text-align:left;flex-direction:{{ n.dir }};justify-content:center;white-space:nowrap" style-hover="background:#353b42;color:#f1f0ec">
+            <span style="position:absolute;left:-8px;top:8px;bottom:8px;width:2px;background:{{ n.bar }}"></span>
+            <span style="display:block;flex:none">{{ n.icon }}</span>
+            <span style="font-size:{{ n.fs }};font-weight:500;white-space:nowrap;flex:{{ n.flex }};letter-spacing:.01em">{{ n.text }}</span>
+          </button>
+        </sc-for>
+        <div style="height:1px;background:#3a4047;margin:10px 6px"></div>
+        <sc-if value="{{ railOpen }}" hint-placeholder-val="{{ false }}">
+          <div style="font-size:12.5px;color:#6c7178;padding:2px 12px 4px">Support</div>
+        </sc-if>
+        <sc-for list="{{ navSecondary }}" as="n" hint-placeholder-count="4">
+          <button onClick="{{ n.onClick }}" title="{{ n.label }}" style="position:relative;display:flex;align-items:center;gap:11px;padding:{{ n.pad }};min-height:34px;border:0;border-radius:0;background:{{ n.bg }};color:{{ n.fg }};text-align:left;justify-content:center;white-space:nowrap" style-hover="background:#353b42;color:#f1f0ec">
+            <span style="display:block;flex:none;opacity:.85">{{ n.icon }}</span>
+            <sc-if value="{{ railOpen }}" hint-placeholder-val="{{ false }}"><span style="font-size:12px;white-space:nowrap;flex:1">{{ n.label }}</span></sc-if>
+          </button>
+        </sc-for>
+      </div>
+      <button onClick="{{ toggleRail }}" title="{{ railToggleLabel }}" style="height:40px;border:0;border-top:1px solid #3a4047;background:transparent;color:#80858c;display:flex;align-items:center;justify-content:center;gap:8px;white-space:nowrap" style-hover="color:#f1f0ec">{{ railToggleIcon }}</button>
+    </nav>
+  </sc-if>
+
+  <div style="flex:1;min-width:0;display:flex;flex-direction:column">
+    <header style="height:52px;flex:none;display:flex;align-items:center;gap:10px;padding:0 14px;background:var(--surf);border-bottom:1px solid var(--line);position:relative;z-index:30">
+      <div style="position:relative">
+        <button onClick="{{ toggleScope }}" aria-haspopup="listbox" style="height:34px;display:flex;align-items:center;gap:9px;padding:0 10px 0 11px;border:1px solid var(--line);border-radius:0;background:var(--surf);min-width:0;max-width:{{ scopeMaxW }};white-space:nowrap" style-hover="border-color:var(--ink4)">
+          <span style="font-size:10.5px;color:var(--ink3);letter-spacing:.07em">{{ scopeKicker }}</span>
+          <span style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ scopeLabel }}</span>
+          <span style="font-family:var(--fnum);font-size:11px;color:var(--ink3);border:1px solid var(--line);padding:0 4px;border-radius:0">{{ scopeTz }}</span>
+          <span style="color:var(--ink3)">{{ I.chevD }}</span>
+        </button>
+        <sc-if value="{{ scopeOpen }}" hint-placeholder-val="{{ false }}">
+          <div role="listbox" style="position:absolute;top:40px;left:0;width:380px;max-height:520px;overflow:auto;background:var(--surf);border:1px solid var(--pBd);box-shadow:var(--shadow);padding:6px;animation:tnin .12s ease">
+            <button onClick="{{ pickNetwork }}" style="width:100%;display:flex;align-items:center;gap:10px;padding:9px 10px;border:0;border-radius:0;background:{{ netOptBg }};text-align:left" style-hover="background:var(--surf2)">
+              <span style="color:var(--ink2)">{{ I.network }}</span>
+              <span style="flex:1;font-weight:600">Network · all 14 terminals</span>
+              <span style="font-size:11px;color:var(--ink3)">Network views</span>
+            </button>
+            <div style="height:1px;background:var(--line2);margin:6px 4px"></div>
+            <sc-for list="{{ scopeOptions }}" as="o" hint-placeholder-count="14">
+              <button onClick="{{ o.onClick }}" role="option" style="width:100%;display:grid;grid-template-columns:16px 1fr auto auto;align-items:center;gap:10px;padding:7px 10px;border:0;border-radius:0;background:{{ o.bg }};text-align:left" style-hover="background:var(--surf2)">
+                <span>{{ o.icon }}</span>
+                <span style="min-width:0"><span style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:{{ o.fw }}">{{ o.name }}</span><span style="display:block;font-size:11px;color:var(--ink3)">{{ o.sub }}</span></span>
+                <span style="font-size:11px;color:var(--ink3)">{{ o.status }}</span>
+                <span style="font-family:var(--fnum);font-size:10.5px;color:var(--ink3);border:1px solid var(--line);padding:0 4px;border-radius:0">{{ o.tz }}</span>
+              </button>
+            </sc-for>
+          </div>
+        </sc-if>
+      </div>
+
+      <sc-if value="{{ showSearch }}" hint-placeholder-val="{{ true }}">
+        <div style="position:relative;flex:1;max-width:440px;min-width:180px">
+          <div style="height:34px;display:flex;align-items:center;gap:8px;padding:0 10px;border:1px solid var(--line);border-radius:0;background:var(--surf2)">
+            <span style="color:var(--ink3)">{{ I.search }}</span>
+            <input ref="{{ searchRef }}" value="{{ q }}" onInput="{{ onSearch }}" onFocus="{{ onSearchFocus }}" onKeyDown="{{ onSearchKey }}" placeholder="Search terminals, tanks, vessels, transfers, batches" aria-label="Global search" style="flex:1;min-width:0;border:0;outline:0;background:transparent;font-size:12.5px">
+            <span style="font-family:var(--fnum);font-size:10.5px;color:var(--ink3);border:1px solid var(--line);border-radius:0;padding:0 5px">/</span>
+          </div>
+          <sc-if value="{{ searchOpen }}" hint-placeholder-val="{{ false }}">
+            <div style="position:absolute;top:40px;left:0;right:0;background:var(--surf);border:1px solid var(--pBd);box-shadow:var(--shadow);padding:6px;max-height:440px;overflow:auto;animation:tnin .12s ease">
+              <sc-if value="{{ noResults }}" hint-placeholder-val="{{ false }}">
+                <div style="padding:14px 10px;color:var(--ink3)">No terminals, tanks, vessels, transfers or batches match “{{ q }}”.</div>
+              </sc-if>
+              <sc-for list="{{ results }}" as="r" hint-placeholder-count="0">
+                <button onClick="{{ r.onClick }}" onMouseEnter="{{ r.onHover }}" style="width:100%;display:grid;grid-template-columns:72px 1fr;gap:10px;align-items:center;padding:7px 10px;border:0;border-radius:0;background:{{ r.bg }};text-align:left">
+                  <span style="font-size:12.5px;color:var(--ink3)">{{ r.type }}</span>
+                  <span style="min-width:0"><span style="display:block;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.label }}</span><span style="display:block;font-size:11px;color:var(--ink3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.sub }}</span></span>
+                </button>
+              </sc-for>
+            </div>
+          </sc-if>
+        </div>
+      </sc-if>
+      <div style="flex:1"></div>
+
+      <sc-if value="{{ showRange }}" hint-placeholder-val="{{ true }}">
+        <div style="position:relative">
+          <button onClick="{{ toggleRange }}" style="height:34px;display:flex;align-items:center;gap:8px;padding:0 10px;border:1px solid var(--line);border-radius:0;background:var(--surf);white-space:nowrap" style-hover="border-color:var(--ink4)">
+            <span style="color:var(--ink3)">{{ I.clock }}</span>
+            <span style="font-weight:500;white-space:nowrap">{{ rangeLabel }}</span>
+            <span style="font-family:var(--fnum);font-size:11px;color:var(--ink3);white-space:nowrap">{{ rangeSub }}</span>
+            <span style="color:var(--ink3)">{{ I.chevD }}</span>
+          </button>
+          <sc-if value="{{ rangeOpen }}" hint-placeholder-val="{{ false }}">
+            <div style="position:absolute;top:40px;right:0;width:300px;background:var(--surf);border:1px solid var(--pBd);box-shadow:var(--shadow);padding:10px;display:flex;flex-direction:column;gap:10px;animation:tnin .12s ease">
+              <div style="font-size:12.5px;color:var(--ink3)">Time range</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px">
+                <sc-for list="{{ rangeOptions }}" as="o" hint-placeholder-count="4">
+                  <button onClick="{{ o.onClick }}" style="padding:7px 8px;border:1px solid {{ o.bd }};border-radius:0;background:{{ o.bg }};color:{{ o.fg }};text-align:left;font-weight:500">{{ o.label }}</button>
+                </sc-for>
+              </div>
+              <div style="font-size:12.5px;color:var(--ink3)">Shift · terminal local time</div>
+              <div style="display:flex;flex-direction:column;gap:4px">
+                <sc-for list="{{ shiftOptions }}" as="o" hint-placeholder-count="3">
+                  <button onClick="{{ o.onClick }}" style="display:flex;justify-content:space-between;padding:7px 8px;border:1px solid {{ o.bd }};border-radius:0;background:{{ o.bg }};color:{{ o.fg }};text-align:left"><span style="font-weight:500">{{ o.label }}</span><span style="font-family:var(--fnum);font-size:11px">{{ o.sub }}</span></button>
+                </sc-for>
+              </div>
+            </div>
+          </sc-if>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ showProdFilter }}" hint-placeholder-val="{{ true }}">
+        <div style="position:relative">
+          <button onClick="{{ toggleProd }}" style="height:34px;display:flex;align-items:center;gap:8px;padding:0 10px;border:1px solid {{ prodBd }};border-radius:0;background:{{ prodBg }};white-space:nowrap" style-hover="border-color:var(--ink4)">
+            <span style="color:var(--ink3)">{{ I.filter }}</span>
+            <span style="font-weight:500;white-space:nowrap">{{ prodLabel }}</span>
+            <span style="color:var(--ink3)">{{ I.chevD }}</span>
+          </button>
+          <sc-if value="{{ prodOpen }}" hint-placeholder-val="{{ false }}">
+            <div style="position:absolute;top:40px;right:0;width:280px;background:var(--surf);border:1px solid var(--pBd);box-shadow:var(--shadow);padding:8px;animation:tnin .12s ease">
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:2px 6px 8px">
+                <span style="font-size:12.5px;color:var(--ink3)">Finished products</span>
+                <button onClick="{{ clearProd }}" style="border:0;background:transparent;color:var(--acc);font-size:12px;padding:2px 4px">Show all</button>
+              </div>
+              <sc-for list="{{ prodOptions }}" as="o" hint-placeholder-count="8">
+                <button onClick="{{ o.onClick }}" role="checkbox" aria-checked="{{ o.on }}" style="width:100%;display:grid;grid-template-columns:16px 12px 1fr auto;gap:9px;align-items:center;padding:7px 6px;border:0;border-radius:0;background:transparent;text-align:left" style-hover="background:var(--surf2)">
+                  <span style="width:14px;height:14px;border:1px solid {{ o.cbBd }};border-radius:0;background:{{ o.cbBg }};display:grid;place-items:center;color:#fff">{{ o.check }}</span>
+                  <span style="width:10px;height:10px;background:{{ o.color }}"></span>
+                  <span>{{ o.label }}</span>
+                  <span style="font-family:var(--fnum);font-size:11px;color:var(--ink3)">{{ o.short }}</span>
+                </button>
+              </sc-for>
+            </div>
+          </sc-if>
+        </div>
+      </sc-if>
+
+      <div title="{{ freshTitle }}" style="height:34px;display:flex;align-items:center;gap:8px;padding:0 10px;border:1px solid {{ freshBd }};border-radius:0;background:{{ freshBg }};white-space:nowrap">
+        <span style="color:{{ freshFg }}">{{ freshIcon }}</span>
+        <span style="display:flex;flex-direction:column;line-height:1.15">
+          <span style="font-size:11.5px;font-weight:600;color:{{ freshFg }}">{{ freshLabel }}</span>
+          <span style="font-family:var(--fnum);font-size:10.5px;color:var(--ink3)">{{ freshSub }}</span>
+        </span>
+      </div>
+
+      <button onClick="{{ toggleAlarms }}" aria-label="Alarm centre" style="height:34px;display:flex;align-items:center;gap:7px;padding:0 10px;border:1px solid var(--line);border-radius:0;background:{{ alarmBtnBg }};white-space:nowrap" style-hover="border-color:var(--ink4)">
+        <span>{{ I.bell }}</span>
+        <sc-if value="{{ hasCrit }}" hint-placeholder-val="{{ false }}"><span style="display:flex;align-items:center;gap:4px;font-family:var(--fnum);font-size:11.5px;font-weight:600">{{ I.st.critical }}{{ critN }}</span></sc-if>
+        <span style="display:flex;align-items:center;gap:4px;font-family:var(--fnum);font-size:11.5px;font-weight:600">{{ I.st.attention }}{{ warnN }}</span>
+      </button>
+
+      <div style="position:relative">
+        <button onClick="{{ toggleUser }}" style="height:34px;display:flex;align-items:center;gap:8px;padding:0 8px 0 4px;border:1px solid var(--line);border-radius:0;background:var(--surf);white-space:nowrap" style-hover="border-color:var(--ink4)">
+          <span style="width:26px;height:26px;border-radius:0;background:var(--ink);color:var(--surf);display:grid;place-items:center;font-size:11px;font-weight:600">{{ userInitials }}</span>
+          <sc-if value="{{ showUserText }}" hint-placeholder-val="{{ true }}">
+            <span style="display:flex;flex-direction:column;line-height:1.1;text-align:left"><span style="font-weight:600;font-size:12px">{{ userName }}</span><span style="font-size:10.5px;color:var(--ink3)">{{ roleLabel }}</span></span>
+          </sc-if>
+          <span style="color:var(--ink3)">{{ I.chevD }}</span>
+        </button>
+        <sc-if value="{{ userOpen }}" hint-placeholder-val="{{ false }}">
+          <div style="position:absolute;top:40px;right:0;width:300px;background:var(--surf);border:1px solid var(--pBd);box-shadow:var(--shadow);padding:10px;display:flex;flex-direction:column;gap:10px;animation:tnin .12s ease">
+            <div style="font-size:12.5px;color:var(--ink3)">Role</div>
+            <div style="display:flex;flex-direction:column;gap:3px">
+              <sc-for list="{{ roleOptions }}" as="o" hint-placeholder-count="5">
+                <button onClick="{{ o.onClick }}" style="display:flex;flex-direction:column;align-items:flex-start;padding:7px 9px;border:1px solid {{ o.bd }};border-radius:0;background:{{ o.bg }};text-align:left"><span style="font-weight:600">{{ o.label }}</span><span style="font-size:11px;color:var(--ink3)">{{ o.sub }}</span></button>
+              </sc-for>
+            </div>
+            <button onClick="{{ toggleMotion }}" style="display:flex;justify-content:space-between;padding:7px 9px;border:1px solid var(--line);border-radius:0;background:transparent"><span>Reduced motion</span><span style="font-family:var(--fnum);font-size:11px;color:var(--ink3)">{{ motionLabel }}</span></button>
+            </div>
+        </sc-if>
+      </div>
+    </header>
+
+    <sc-if value="{{ banner }}" hint-placeholder-val="{{ false }}">
+      <div role="status" style="flex:none;display:flex;align-items:center;gap:10px;padding:8px 16px;background:{{ bannerBg }};border-bottom:1px solid {{ bannerBd }};color:{{ bannerFg }}">
+        <span>{{ bannerIcon }}</span>
+        <span style="font-weight:600">{{ bannerTitle }}</span>
+        <span style="color:var(--ink2)">{{ bannerText }}</span>
+        <div style="flex:1"></div>
+        <button onClick="{{ clearDemo }}" style="border:1px solid currentColor;background:transparent;border-radius:0;padding:3px 9px;font-size:12px;color:inherit">Dismiss</button>
+      </div>
+    </sc-if>
+    <sc-if value="{{ showMobileNav }}" hint-placeholder-val="{{ false }}">
+      <div style="flex:none;display:flex;gap:4px;overflow-x:auto;padding:6px 8px;background:var(--rail)">
+        <sc-for list="{{ navItems }}" as="n" hint-placeholder-count="7">
+          <button onClick="{{ n.onClick }}" style="flex:none;display:flex;align-items:center;gap:6px;min-height:44px;padding:0 12px;border:0;border-radius:0;background:{{ n.bg }};color:{{ n.fg }};white-space:nowrap">{{ n.icon }}<span style="font-size:12px">{{ n.short }}</span></button>
+        </sc-for>
+      </div>
+    </sc-if>
+
+    <main style="flex:1;min-height:0;position:relative;overflow:hidden">
+      <sc-if value="{{ showSkeleton }}" hint-placeholder-val="{{ true }}">
+        <div aria-busy="true" style="position:absolute;inset:0;padding:20px 24px;display:flex;flex-direction:column;gap:14px">
+          <div style="display:flex;align-items:center;gap:10px;color:var(--ink3);font-size:12px"><span style="animation:tnpulse 1.2s infinite">{{ I.signal }}</span>{{ loadingText }}</div>
+          <div style="height:28px;width:320px;border-radius:0;background:linear-gradient(90deg,var(--surf2) 0,var(--surf3) 40%,var(--surf2) 80%);background-size:800px 100%;animation:tnshimmer 1.4s linear infinite"></div>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border:1px solid var(--line)">
+            <div style="height:78px;background:var(--surf)"></div><div style="height:78px;background:var(--surf)"></div><div style="height:78px;background:var(--surf)"></div><div style="height:78px;background:var(--surf)"></div>
+          </div>
+          <div style="flex:1;border-radius:0;background:linear-gradient(90deg,var(--surf2) 0,var(--surf3) 40%,var(--surf2) 80%);background-size:800px 100%;animation:tnshimmer 1.4s linear infinite"></div>
+        </div>
+      </sc-if>
+      <sc-if value="{{ show.network }}" hint-placeholder-val="{{ false }}"><dc-import name="Network" d="{{ D }}" ctx="{{ ctx }}" go="{{ go }}" set-ctx="{{ setCtx }}" toast="{{ toast }}" open-alarms="{{ openAlarms }}" style="position:absolute;inset:0" hint-size="100%,100%"></dc-import></sc-if>
+      <sc-if value="{{ show.terminal }}" hint-placeholder-val="{{ false }}"><dc-import name="Terminal Workspace" d="{{ D }}" ctx="{{ ctx }}" go="{{ go }}" set-ctx="{{ setCtx }}" toast="{{ toast }}" open-alarms="{{ openAlarms }}" style="position:absolute;inset:0" hint-size="100%,100%"></dc-import></sc-if>
+      <sc-if value="{{ show.transfers }}" hint-placeholder-val="{{ false }}"><dc-import name="Transfers" d="{{ D }}" ctx="{{ ctx }}" go="{{ go }}" set-ctx="{{ setCtx }}" toast="{{ toast }}" style="position:absolute;inset:0" hint-size="100%,100%"></dc-import></sc-if>
+      <sc-if value="{{ show.blending }}" hint-placeholder-val="{{ false }}"><dc-import name="Blending" d="{{ D }}" ctx="{{ ctx }}" go="{{ go }}" set-ctx="{{ setCtx }}" toast="{{ toast }}" style="position:absolute;inset:0" hint-size="100%,100%"></dc-import></sc-if>
+      <sc-if value="{{ show.quality }}" hint-placeholder-val="{{ false }}"><dc-import name="Quality" d="{{ D }}" ctx="{{ ctx }}" go="{{ go }}" set-ctx="{{ setCtx }}" toast="{{ toast }}" style="position:absolute;inset:0" hint-size="100%,100%"></dc-import></sc-if>
+      <sc-if value="{{ show.schedule }}" hint-placeholder-val="{{ false }}"><dc-import name="Scheduling" d="{{ D }}" ctx="{{ ctx }}" go="{{ go }}" set-ctx="{{ setCtx }}" toast="{{ toast }}" style="position:absolute;inset:0" hint-size="100%,100%"></dc-import></sc-if>
+      <sc-if value="{{ show.inventory }}" hint-placeholder-val="{{ false }}"><dc-import name="Inventory" d="{{ D }}" ctx="{{ ctx }}" go="{{ go }}" set-ctx="{{ setCtx }}" toast="{{ toast }}" style="position:absolute;inset:0" hint-size="100%,100%"></dc-import></sc-if>
+      <sc-if value="{{ show.config }}" hint-placeholder-val="{{ false }}"><dc-import name="Configuration" d="{{ D }}" ctx="{{ ctx }}" go="{{ go }}" set-ctx="{{ setCtx }}" toast="{{ toast }}" style="position:absolute;inset:0" hint-size="100%,100%"></dc-import></sc-if>
+      <sc-if value="{{ show.placeholder }}" hint-placeholder-val="{{ false }}">
+        <div style="position:absolute;inset:0;display:grid;place-items:center;padding:24px">
+          <div style="max-width:440px;display:flex;flex-direction:column;gap:10px;align-items:flex-start">
+            <span style="color:var(--ink3)">{{ phIcon }}</span>
+            <div style="font-size:30px;font-weight:500;letter-spacing:-.015em;line-height:1.1">{{ phTitle }}</div>
+            <div style="color:var(--ink2);text-wrap:pretty">{{ phText }}</div>
+            <button onClick="{{ goNetwork }}" style="margin-top:6px;height:34px;padding:0 14px;border:1px solid var(--line);border-radius:0;background:var(--surf);white-space:nowrap">Back to Network</button>
+          </div>
+        </div>
+      </sc-if>
+    </main>
+  </div>
+
+  <sc-if value="{{ anyMenu }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeMenus }}" style="position:fixed;inset:52px 0 0 0;z-index:20"></div>
+  </sc-if>
+
+  <sc-if value="{{ alarmsOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ toggleAlarms }}" style="position:fixed;inset:0;background:rgba(15,16,18,.18);z-index:40"></div>
+    <aside aria-label="Alarm centre" style="position:fixed;top:0;right:0;bottom:0;width:{{ drawerW }};background:var(--surf);border-left:1px solid var(--line);box-shadow:var(--shadow);z-index:41;display:flex;flex-direction:column;animation:tnslide .16s ease">
+      <div style="height:52px;flex:none;display:flex;align-items:center;gap:10px;padding:0 16px;border-bottom:1px solid var(--line)">
+        <span>{{ I.bell }}</span>
+        <span style="font-weight:600;font-size:14px">Alarm centre</span>
+        <span style="font-family:var(--fnum);font-size:11px;color:var(--ink3)">Demo data</span>
+        <div style="flex:1"></div>
+        <button onClick="{{ toggleAlarms }}" aria-label="Close" style="width:32px;height:32px;border:0;background:transparent;display:grid;place-items:center;color:var(--ink2);white-space:nowrap">{{ I.close }}</button>
+      </div>
+      <div style="flex:none;display:flex;gap:6px;padding:10px 16px;border-bottom:1px solid var(--line2);flex-wrap:wrap">
+        <sc-for list="{{ alarmTabs }}" as="o" hint-placeholder-count="3">
+          <button onClick="{{ o.onClick }}" style="height:28px;padding:0 10px;border:1px solid {{ o.bd }};border-radius:0;background:{{ o.bg }};color:{{ o.fg }};font-size:12px;font-weight:500;white-space:nowrap">{{ o.label }}</button>
+        </sc-for>
+        <div style="flex:1"></div>
+        <button onClick="{{ toggleAlarmScope }}" style="height:28px;padding:0 10px;border:1px solid var(--line);border-radius:0;background:transparent;font-size:12px;white-space:nowrap">{{ alarmScopeLabel }}</button>
+      </div>
+      <div style="padding:8px 16px;font-size:11.5px;color:var(--ink3);border-bottom:1px solid var(--line2)">Acknowledging records that someone is responding. Resolving records that the condition is cleared. They are separate actions.</div>
+      <div style="flex:1;overflow:auto">
+        <sc-if value="{{ alarmEmpty }}" hint-placeholder-val="{{ false }}">
+          <div style="padding:28px 16px;color:var(--ink3)">No exceptions in this view.</div>
+        </sc-if>
+        <sc-for list="{{ alarmList }}" as="e" hint-placeholder-count="4">
+          <div style="padding:14px 16px;border-bottom:1px solid var(--line2);display:flex;flex-direction:column;gap:9px;background:{{ e.bg }}">
+            <div style="display:flex;align-items:center;gap:8px">
+              <span>{{ e.icon }}</span>
+              <span style="font-weight:600;color:{{ e.sevFg }}">{{ e.sevLabel }}</span>
+              <span style="font-family:var(--fid);white-space:nowrap;letter-spacing:-.02em;font-size:11px;color:var(--ink3)">{{ e.id }}</span>
+              <div style="flex:1"></div>
+              <span style="font-size:11px;padding:1px 7px;border:1px solid var(--line);border-radius:0;color:var(--ink2)">{{ e.status }}</span>
+            </div>
+            <div style="font-weight:600;font-size:13.5px;text-wrap:pretty">{{ e.what }}</div>
+            <div style="display:grid;grid-template-columns:92px 1fr;gap:3px 10px;font-size:12px">
+              <span style="color:var(--ink3)">Where</span><span>{{ e.where }}</span>
+              <span style="color:var(--ink3)">Since</span><span style="font-family:var(--fnum);font-size:11.5px">{{ e.since }}</span>
+              <span style="color:var(--ink3)">Affects</span><span>{{ e.op }}</span>
+              <span style="color:var(--ink3)">Responsible</span><span>{{ e.owner }}</span>
+              <span style="color:var(--ink3)">Acknowledged</span><span style="color:{{ e.ackFg }}">{{ e.ackText }}</span>
+              <span style="color:var(--ink3)">Resolution</span><span style="color:{{ e.resFg }}">{{ e.resText }}</span>
+            </div>
+            <sc-if value="{{ e.resolving }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;flex-direction:column;gap:6px">
+                <textarea value="{{ resNote }}" onInput="{{ onResNote }}" rows="2" placeholder="Resolution note (required)" style="border:1px solid var(--line);border-radius:0;padding:7px 8px;background:var(--surf);resize:vertical"></textarea>
+                <div style="display:flex;gap:6px">
+                  <button onClick="{{ e.confirmResolve }}" disabled="{{ resDisabled }}" style="height:30px;padding:0 12px;border:0;border-radius:0;background:var(--ink);color:var(--surf);font-weight:500;opacity:{{ resOpacity }};white-space:nowrap">Confirm resolution</button>
+                  <button onClick="{{ cancelResolve }}" style="height:30px;padding:0 12px;border:1px solid var(--line);border-radius:0;background:transparent;white-space:nowrap">Cancel</button>
+                </div>
+              </div>
+            </sc-if>
+            <div style="display:flex;gap:6px;flex-wrap:wrap">
+              <sc-if value="{{ e.canAck }}" hint-placeholder-val="{{ false }}">
+                <button onClick="{{ e.onAck }}" style="height:30px;padding:0 12px;border:1px solid var(--ink);border-radius:0;background:var(--surf);font-weight:500;white-space:nowrap">Acknowledge</button>
+              </sc-if>
+              <sc-if value="{{ e.canResolve }}" hint-placeholder-val="{{ false }}">
+                <button onClick="{{ e.onResolve }}" style="height:30px;padding:0 12px;border:1px solid var(--line);border-radius:0;background:var(--surf);white-space:nowrap">Resolve…</button>
+              </sc-if>
+              <sc-if value="{{ e.locked }}" hint-placeholder-val="{{ false }}">
+                <span style="display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--ink3)">{{ I.lock }}{{ e.lockText }}</span>
+              </sc-if>
+              <div style="flex:1"></div>
+              <button onClick="{{ e.onOpen }}" style="height:30px;padding:0 10px;border:0;background:transparent;color:var(--acc);display:flex;align-items:center;gap:5px;white-space:nowrap">Open {{ e.termShort }} {{ I.arrowR }}</button>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </aside>
+  </sc-if>
+
+  <sc-if value="{{ toastMsg }}" hint-placeholder-val="{{ false }}">
+    <div role="status" style="position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:60;background:var(--ink);color:var(--surf);padding:10px 14px;border-radius:0;box-shadow:var(--shadow);display:flex;gap:10px;align-items:center;animation:tnin .14s ease;max-width:560px">
+      
+      <span>{{ toastMsg }}</span>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;demoState&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;normal&quot;,&quot;loading&quot;,&quot;stale&quot;,&quot;disconnected&quot;],&quot;default&quot;:&quot;normal&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;role&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;operator&quot;,&quot;supervisor&quot;,&quot;quality&quot;,&quot;admin&quot;,&quot;viewer&quot;],&quot;default&quot;:&quot;supervisor&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+class Component extends DCLogic {
+  constructor(p) {
+    super(p);
+    let s = {};
+    try { s = JSON.parse(localStorage.getItem('tnops:shell')) || {}; } catch (e) {}
+    this.state = {
+      ready: false, screen: s.screen || 'network', terminalId: s.terminalId || 'PLM', scope: s.scope || 'network',
+      products: s.products || [], range: s.range || 'Today', shift: s.shift || 'B', role: s.role || p.role || 'supervisor',
+      theme: 'light', motion: s.motion || 'on', demo: p.demoState || 'normal', railOpen: s.railOpen ?? false,
+      scopeOpen: false, rangeOpen: false, prodOpen: false, userOpen: false, alarmsOpen: false, searchOpen: false, q: '', hi: 0,
+      alarmTab: 'active', alarmScope: 'network', resolving: null, resNote: '', focus: null, toastMsg: null, rev: 0, vw: window.innerWidth, switching: false, t0: Date.now(), tick: 0,
+    };
+    this.searchRef = React.createRef();
+  }
+  componentDidMount() {
+    import(new URL('./data.js', document.baseURI).href).then(m => { this.D = m; this.I = m.icons(React.createElement); this.idx = m.searchIndex(); this.setState({ ready: true }); });
+    this.onResize = () => this.setState({ vw: window.innerWidth });
+    window.addEventListener('resize', this.onResize);
+    this.timer = setInterval(() => this.setState(s => ({ tick: s.tick + 1 })), 5000);
+    this.onKey = e => {
+      if (e.key === '/' && !/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) { e.preventDefault(); this.searchRef.current && this.searchRef.current.focus(); }
+      if (e.key === 'Escape') this.closeMenus();
+    };
+    window.addEventListener('keydown', this.onKey);
+  }
+  componentWillUnmount() { clearInterval(this.timer); window.removeEventListener('resize', this.onResize); window.removeEventListener('keydown', this.onKey); }
+  componentDidUpdate(pp) {
+    
+    if (pp.demoState !== this.props.demoState && this.props.demoState) this.setState({ demo: this.props.demoState });
+    if (pp.role !== this.props.role && this.props.role) this.setState({ role: this.props.role });
+  }
+  persist(patch) {
+    const s = { ...this.state, ...patch };
+    try { localStorage.setItem('tnops:shell', JSON.stringify({ v: 2, screen: s.screen, terminalId: s.terminalId, scope: s.scope, products: s.products, range: s.range, shift: s.shift, role: s.role, theme: s.theme, motion: s.motion, railOpen: s.railOpen })); } catch (e) {}
+  }
+  set(patch) { this.persist(patch); this.setState(patch); }
+  closeMenus = () => this.setState({ scopeOpen: false, rangeOpen: false, prodOpen: false, userOpen: false, searchOpen: false });
+  go = (screen, patch = {}) => {
+    const p = { ...patch };
+    if (p.focus) p.focus = { ...p.focus, n: Date.now() };
+    const termChange = p.terminalId && p.terminalId !== this.state.terminalId;
+    if (['terminal', 'transfers', 'blending', 'schedule'].includes(screen)) p.scope = 'terminal';
+    this.set({ screen, ...p, scopeOpen: false, searchOpen: false, alarmsOpen: false, q: '' });
+    if (termChange || screen !== this.state.screen) { this.setState({ switching: true }); clearTimeout(this.sw); this.sw = setTimeout(() => this.setState({ switching: false }), 380); }
+  };
+  setCtx = patch => this.set(patch);
+  toast = msg => { this.setState({ toastMsg: msg }); clearTimeout(this.tt); this.tt = setTimeout(() => this.setState({ toastMsg: null }), 3600); };
+  openAlarms = (scope) => this.setState({ alarmsOpen: true, alarmScope: scope || 'network', alarmTab: 'active' });
+  bump = () => this.setState(s => ({ rev: s.rev + 1 }));
+
+  renderVals() {
+    const s = this.state, D = this.D, I = this.I || { st: {} };
+    if (!s.ready) return { theme: s.theme, motion: s.motion, I: { st: { attention: '', critical: '' }, chevD: '', bell: '', signal: '', search: '', clock: '', filter: '' }, railToggleIcon: '', scopeKicker: '', scopeLabel: '', scopeTz: '', freshIcon: '', freshLabel: '', freshSub: '', warnN: '', userInitials: '', show: {}, showSkeleton: true, loadingText: 'Connecting…', navItems: [], navSecondary: [], scopeOptions: [], showRail: s.vw >= 760, railW: '72px' };
+    const t = D.term(s.terminalId);
+    const mobile = s.vw < 760, tablet = s.vw < 1200;
+    const railOpen = s.railOpen && !tablet;
+    const roles = {
+      operator: { label: 'Terminal operator', name: 'A. Nugroho', sub: 'Operate transfers and acknowledge alarms', perm: { act: true, ack: true, resolve: false, release: false, config: false } },
+      supervisor: { label: 'Shift supervisor', name: 'R. Hakim', sub: 'Operate, acknowledge and resolve exceptions', perm: { act: true, ack: true, resolve: true, release: false, config: false } },
+      quality: { label: 'Quality officer', name: 'S. Wulandari', sub: 'Record results and release batches', perm: { act: false, ack: true, resolve: false, release: true, config: false } },
+      admin: { label: 'Configuration admin', name: 'T. Prasetyo', sub: 'Edit terminal configuration', perm: { act: false, ack: false, resolve: false, release: false, config: true } },
+      viewer: { label: 'Viewer · read only', name: 'Head office', sub: 'View only — actions are disabled', perm: { act: false, ack: false, resolve: false, release: false, config: false } },
+    };
+    const role = roles[s.role] || roles.supervisor;
+    const disc = s.demo === 'disconnected';
+    const perm = disc ? { act: false, ack: role.perm.ack, resolve: false, release: false, config: false } : role.perm;
+    const elapsed = (Date.now() - s.t0) / 60000;
+    const upd = (s.scope === 'network' && s.screen === 'network') ? 0.4 : t.upd;
+    const stale = s.demo === 'stale' || (upd > 10 && s.scope === 'terminal');
+    const ctx = { screen: s.screen, terminalId: s.terminalId, scope: s.scope, products: s.products, range: s.range, shift: s.shift, role: s.role, roleLabel: role.label, user: role.name, perm, demo: s.demo, stale, focus: s.focus, vw: s.vw, mobile, tablet, theme: s.theme, rev: s.rev, bump: this.bump, I, now: D.NOW + elapsed };
+
+    const prim = [['network', 'Network', 'Network', I.network], ['terminal', 'Terminals & Tanks', 'Terminals', I.tank], ['transfers', 'Transfers', 'Transfers', I.transfer], ['blending', 'Blending', 'Blending', I.blend], ['quality', 'Quality', 'Quality', I.quality], ['schedule', 'Scheduling', 'Schedule', I.schedule], ['inventory', 'Inventory & Reconciliation', 'Inventory', I.inventory]];
+    const navItems = prim.map(([id, label, short, icon]) => {
+      const on = s.screen === id;
+      return { label, short, icon, text: railOpen ? label : short, onClick: () => this.go(id), aria: on ? 'page' : undefined, bg: on ? '#3a4048' : 'transparent', fg: on ? '#f4f3ef' : '#c3c8ce', bar: on ? 'var(--acc)' : 'transparent', gap: railOpen ? '11px' : '4px', pad: railOpen ? '0 12px' : '8px 2px 7px', dir: railOpen ? 'row' : 'column', fs: railOpen ? '12.5px' : '10px', flex: railOpen ? '1' : 'none' };
+    });
+    const sec = [['maint', 'Maintenance', I.maint], ['docs', 'Documents', I.docs], ['admin', 'Administration', I.admin], ['config', 'Configuration', I.config]];
+    const navSecondary = sec.map(([id, label, icon]) => { const on = s.screen === id; return { label, icon, onClick: () => this.go(id), bg: on ? '#3a4048' : 'transparent', fg: on ? '#f4f3ef' : '#8d9198', pad: railOpen ? '0 12px' : '0' }; });
+
+    const net = s.scope === 'network';
+    const scopeOptions = D.TERMINALS.map(x => { const sm = D.tsum(x); const sev = sm.top ? sm.top.sev : null; return { name: x.name, sub: `${x.kind} · ${x.tanks.length} tanks`, tz: x.tz, status: x.status, icon: sev ? I.st[sev] : I.st.ok, fw: !net && x.id === s.terminalId ? 600 : 400, bg: !net && x.id === s.terminalId ? 'var(--accSoft)' : 'transparent', onClick: () => { this.go(s.screen === 'network' ? 'terminal' : s.screen, { terminalId: x.id, scope: 'terminal' }); } }; });
+
+    // search
+    const q = s.q.trim().toLowerCase();
+    let results = [];
+    if (q.length) { results = this.idx.filter(r => (r.label + ' ' + r.sub + ' ' + r.type).toLowerCase().includes(q)).slice(0, 10); }
+    results = results.map((r, i) => ({ ...r, bg: i === s.hi ? 'var(--surf2)' : 'transparent', onClick: () => this.go(r.go[0], r.go[1]), onHover: () => this.setState({ hi: i }) }));
+    this.results = results;
+
+    const ranges = { 'Current shift': 'Shift ' + s.shift, Today: '00:00 → now', 'Last 24 h': '24 h → now', 'Last 7 days': '7 d → now' };
+    const shifts = [['A', '06:00 – 14:00'], ['B', '14:00 – 22:00 · current'], ['C', '22:00 – 06:00']];
+    const sel = (on) => ({ bd: on ? 'var(--ink)' : 'var(--line)', bg: on ? 'var(--ink)' : 'transparent', fg: on ? 'var(--surf)' : 'var(--ink)' });
+
+    const prodOptions = D.PRODUCTS.map(p => { const on = s.products.includes(p.code); return { label: p.label, short: p.short, color: p.color, on: on ? 'true' : 'false', check: on ? I.check : null, cbBd: on ? 'var(--ink)' : 'var(--line)', cbBg: on ? 'var(--ink)' : 'transparent', onClick: () => { const list = on ? s.products.filter(c => c !== p.code) : [...s.products, p.code]; this.set({ products: list }); } }; });
+    const prodLabel = !s.products.length ? 'All products' : s.products.length === 1 ? D.prod(s.products[0]).label : `${s.products.length} products`;
+
+    // freshness
+    const tz = net ? 'WIB' : t.tz;
+    const localNow = D.tm(D.NOW + elapsed, tz);
+    let freshLabel = 'Online · synced', freshSub = `Last sync ${D.tm(D.NOW + elapsed, tz)}`, freshFg = 'var(--ink)', freshBg = 'var(--surf)', freshBd = 'var(--line)', freshIcon = I.st.ok;
+    if (stale) { const m = s.demo === 'stale' ? 22 : t.upd; freshLabel = 'Online · sync delayed'; freshSub = `Last sync ${D.tm(D.NOW - m, tz)} · ${Math.round(m + elapsed)} min ago`; freshFg = 'var(--warnInk)'; freshBg = 'var(--warnSoft)'; freshBd = 'var(--warn)'; freshIcon = I.st.attention; }
+    if (disc) { freshLabel = 'Disconnected'; freshSub = `Last received ${D.tm(D.NOW - 22, tz)}`; freshFg = 'var(--critInk)'; freshBg = 'var(--critSoft)'; freshBd = 'var(--crit)'; freshIcon = I.unplug; }
+
+    // alarms
+    const exAll = D.EXCEPTIONS;
+    const open = exAll.filter(e => e.status !== 'Resolved');
+    const critN = open.filter(e => e.sev === 'critical').length, warnN = open.filter(e => e.sev === 'attention').length;
+    let list = exAll.filter(e => s.alarmTab === 'active' ? e.status !== 'Resolved' && !e.ack : s.alarmTab === 'ack' ? e.status !== 'Resolved' && e.ack : e.status === 'Resolved');
+    if (s.alarmScope === 'terminal') list = list.filter(e => e.term === s.terminalId);
+    list = list.slice().sort((a, b) => D.SEV[a.sev].rank - D.SEV[b.sev].rank || b.since - a.since);
+    const alarmList = list.map(e => {
+      const et = D.term(e.term);
+      const lockText = !perm.ack && !e.ack ? 'Acknowledge requires Operator role' : (!perm.resolve && !e.res ? 'Resolve requires Shift supervisor' : '');
+      return {
+        ...e, icon: I.st[e.sev], sevLabel: D.SEV[e.sev].label, sevFg: e.sev === 'critical' ? 'var(--critInk)' : e.sev === 'attention' ? 'var(--warnInk)' : 'var(--ink2)',
+        bg: e.sev === 'critical' && !e.ack ? 'var(--critSoft)' : 'transparent',
+        where: `${et.name} · ${e.asset}`, since: `${D.tm(e.since, et.tz, { date: true })} · ${D.dur(D.NOW - e.since)}`,
+        ackText: e.ack ? `${e.ack.by} · ${D.tm(e.ack.at, et.tz)}` : 'Not acknowledged', ackFg: e.ack ? 'var(--ink)' : 'var(--critInk)',
+        resText: e.res ? `${e.res.by} · ${D.tm(e.res.at, et.tz)} — ${e.res.note}` : 'Open', resFg: e.res ? 'var(--ink)' : 'var(--ink3)',
+        canAck: perm.ack && !e.ack && !e.res, canResolve: perm.resolve && !e.res && s.resolving !== e.id, locked: !!lockText && !e.res, lockText,
+        resolving: s.resolving === e.id, termShort: et.id,
+        onAck: () => { D.ackEx(e.id, role.name, D.NOW + elapsed); this.toast(`${e.id} acknowledged by ${role.name}. Condition remains open until resolved.`); this.bump(); },
+        onResolve: () => this.setState({ resolving: e.id, resNote: '' }),
+        confirmResolve: () => { D.resolveEx(e.id, role.name, D.NOW + elapsed, s.resNote); this.setState({ resolving: null }); this.toast(`${e.id} marked resolved.`); this.bump(); },
+        onOpen: () => this.go('terminal', { terminalId: e.term, focus: e.asset.startsWith('T-') ? { type: 'tank', id: e.asset.slice(0, 4) } : null }),
+      };
+    });
+    const tabs = [['active', 'Needs acknowledgement'], ['ack', 'Acknowledged'], ['resolved', 'Resolved']].map(([id, label]) => { const n = exAll.filter(e => id === 'active' ? e.status !== 'Resolved' && !e.ack : id === 'ack' ? e.status !== 'Resolved' && e.ack : e.status === 'Resolved').length; return { label: `${label} · ${n}`, onClick: () => this.setState({ alarmTab: id }), ...sel(s.alarmTab === id) }; });
+
+    const banners = {
+      stale: [I.st.attention, 'Stale data.', 'Last update 22 min ago. Values shown are the last received and must be confirmed in the field.', 'var(--warnSoft)', 'var(--warn)', 'var(--warnInk)'],
+      disconnected: [I.unplug, 'Disconnected from terminal data service.', 'Showing last received values. Operational actions are disabled until the connection is restored.', 'var(--critSoft)', 'var(--crit)', 'var(--critInk)'],
+      loading: [I.signal, 'Loading.', 'Terminal data service is responding slowly.', 'var(--surf2)', 'var(--line)', 'var(--ink)'],
+    };
+    const bn = banners[s.demo];
+    const bannerTerm = !bn && stale && s.scope === 'terminal' ? [I.st.attention, `${t.name}: data is stale.`, `Last update ${D.tm(D.NOW - t.upd, t.tz)} (${Math.round(t.upd)} min). Values are the last received and are not current.`, 'var(--warnSoft)', 'var(--warn)', 'var(--warnInk)'] : null;
+    const B = bn || bannerTerm;
+
+    const screenIds = ['network', 'terminal', 'transfers', 'blending', 'quality', 'schedule', 'inventory', 'config'];
+    const loadingView = s.demo === 'loading' || s.switching;
+    const show = {}; screenIds.forEach(id => { show[id] = !loadingView && s.screen === id; });
+    const ph = { maint: [I.maint, 'Maintenance', 'Planned maintenance windows that affect operations are shown on the Scheduling board. Work orders open in the maintenance system.'], docs: [I.docs, 'Documents', 'Certificates and documents linked to batches can be traced from the Quality workspace.'], admin: [I.lock, 'Administration — access restricted', 'Your current role does not include user administration. Switch role from the user menu to explore permission-limited states.'] };
+    const phx = ph[s.screen];
+    show.placeholder = !loadingView && !!phx;
+
+    const userInitials = role.name.split(/[ .]+/).filter(Boolean).map(x => x[0]).slice(0, 2).join('');
+    return {
+      I, theme: s.theme, motion: s.motion, ctx, D, go: this.go, setCtx: this.setCtx, toast: this.toast, openAlarms: this.openAlarms,
+      showRail: !mobile, railOpen, railW: railOpen ? '216px' : '72px', toggleRail: () => this.set({ railOpen: !s.railOpen }), railToggleIcon: railOpen ? I.collapse : I.expand, railToggleLabel: railOpen ? 'Collapse navigation' : 'Expand navigation',
+      navItems, navSecondary, showMobileNav: mobile,
+      scopeKicker: net ? 'Scope' : 'Terminal', scopeLabel: net ? 'Network · 14 terminals' : t.name, scopeTz: net ? 'WIB' : t.tz, scopeMaxW: mobile ? '200px' : '340px', scopeOpen: s.scopeOpen,
+      toggleScope: () => this.setState({ scopeOpen: !s.scopeOpen, rangeOpen: false, prodOpen: false, userOpen: false }), scopeOptions, netOptBg: net ? 'var(--accSoft)' : 'transparent',
+      pickNetwork: () => { this.set({ scope: 'network', scopeOpen: false }); if (['terminal', 'transfers', 'blending', 'schedule'].includes(s.screen)) this.go('network'); },
+      showSearch: !mobile, q: s.q, searchRef: this.searchRef, searchOpen: s.searchOpen && q.length > 0, results, noResults: q.length > 0 && !results.length,
+      onSearch: e => this.setState({ q: e.target.value, searchOpen: true, hi: 0 }), onSearchFocus: () => this.setState({ searchOpen: true }),
+      onSearchKey: e => { if (e.key === 'ArrowDown') { e.preventDefault(); this.setState({ hi: Math.min(s.hi + 1, results.length - 1) }); } if (e.key === 'ArrowUp') { e.preventDefault(); this.setState({ hi: Math.max(0, s.hi - 1) }); } if (e.key === 'Enter' && this.results[s.hi]) this.results[s.hi].onClick(); if (e.key === 'Escape') { this.setState({ searchOpen: false }); e.target.blur(); } },
+      showRange: !mobile, rangeLabel: s.range, rangeSub: `${ranges[s.range]} · ${tz}`, rangeOpen: s.rangeOpen, toggleRange: () => this.setState({ rangeOpen: !s.rangeOpen, scopeOpen: false, prodOpen: false, userOpen: false }),
+      rangeOptions: Object.keys(ranges).map(r => ({ label: r, onClick: () => this.set({ range: r }), ...sel(s.range === r) })),
+      shiftOptions: shifts.map(([id, sub]) => ({ label: 'Shift ' + id, sub, onClick: () => this.set({ shift: id, range: 'Current shift' }), ...sel(s.shift === id) })),
+      showProdFilter: !tablet, prodOpen: s.prodOpen, toggleProd: () => this.setState({ prodOpen: !s.prodOpen, scopeOpen: false, rangeOpen: false, userOpen: false }), prodOptions, prodLabel, clearProd: () => this.set({ products: [] }), prodBd: s.products.length ? 'var(--ink)' : 'var(--line)', prodBg: s.products.length ? 'var(--surf2)' : 'var(--surf)',
+      freshLabel, freshSub, freshFg, freshBg, freshBd, freshIcon, freshTitle: `Terminal local time ${localNow}`,
+      critN, warnN, hasCrit: critN > 0, alarmBtnBg: critN ? 'var(--critSoft)' : 'var(--surf)', toggleAlarms: () => this.setState({ alarmsOpen: !s.alarmsOpen, resolving: null }), alarmsOpen: s.alarmsOpen, drawerW: mobile ? '100%' : '460px',
+      alarmTabs: tabs, alarmList, alarmEmpty: !alarmList.length, toggleAlarmScope: () => this.setState({ alarmScope: s.alarmScope === 'network' ? 'terminal' : 'network' }), alarmScopeLabel: s.alarmScope === 'network' ? 'All terminals' : 'Only ' + t.id,
+      resNote: s.resNote, onResNote: e => this.setState({ resNote: e.target.value }), resDisabled: !s.resNote.trim(), resOpacity: s.resNote.trim() ? 1 : 0.4, cancelResolve: () => this.setState({ resolving: null }),
+      userOpen: s.userOpen, toggleUser: () => this.setState({ userOpen: !s.userOpen, scopeOpen: false, rangeOpen: false, prodOpen: false }), userName: role.name, roleLabel: role.label, userInitials, showUserText: !tablet,
+      roleOptions: Object.entries(roles).map(([id, r]) => ({ label: r.label, sub: r.sub, onClick: () => this.set({ role: id }), bd: s.role === id ? 'var(--ink)' : 'var(--line)', bg: s.role === id ? 'var(--surf2)' : 'transparent' })),
+      setLight: () => this.set({ theme: 'light' }), setDark: () => this.set({ theme: 'dark' }), lightBd: s.theme === 'light' ? 'var(--ink)' : 'var(--line)', darkBd: s.theme === 'dark' ? 'var(--ink)' : 'var(--line)', lightBg: s.theme === 'light' ? 'var(--surf2)' : 'transparent', darkBg: s.theme === 'dark' ? 'var(--surf2)' : 'transparent',
+      toggleMotion: () => this.set({ motion: s.motion === 'on' ? 'off' : 'on' }), motionLabel: s.motion === 'off' ? 'On' : 'Off · follows system',
+      demoOptions: [['normal', 'Normal'], ['loading', 'Loading'], ['stale', 'Stale data'], ['disconnected', 'Disconnected']].map(([id, label]) => ({ label, onClick: () => this.setState({ demo: id, userOpen: false }), bd: s.demo === id ? 'var(--ink)' : 'var(--line)', bg: s.demo === id ? 'var(--surf2)' : 'transparent' })),
+      banner: !!B, bannerIcon: B && B[0], bannerTitle: B && B[1], bannerText: B && B[2], bannerBg: B && B[3], bannerBd: B && B[4], bannerFg: B && B[5], clearDemo: () => { if (bn) this.setState({ demo: 'normal' }); else this.go('network', { scope: 'network' }); },
+      showSkeleton: loadingView, loadingText: s.demo === 'loading' ? 'Waiting for terminal data service…' : 'Loading workspace…',
+      show, phIcon: phx && phx[0], phTitle: phx && phx[1], phText: phx && phx[2], goNetwork: () => this.go('network'),
+      anyMenu: s.scopeOpen || s.rangeOpen || s.prodOpen || s.userOpen || (s.searchOpen && q.length > 0), closeMenus: this.closeMenus,
+      toastMsg: s.toastMsg,
+    };
+  }
+}
+</script>
+</body>
+</html>

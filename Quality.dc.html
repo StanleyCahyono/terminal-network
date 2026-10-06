@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<div style="position:absolute;inset:0;overflow:auto;background:var(--bg)">
+<sc-if value="{{ ready }}" hint-placeholder-val="{{ true }}">
+<div style="padding:32px 40px 56px;display:flex;flex-direction:column;gap:40px">
+  <div style="display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap">
+    <div>
+      <div style="display:flex;align-items:center;gap:10px"><h1 style="margin:0;font-size:30px;font-weight:500;letter-spacing:-.015em;line-height:1.1">Quality and traceability</h1></div>
+      <div style="font-size:12px;color:var(--ink3);margin-top:3px">{{ scopeText }}</div>
+    </div>
+    <div style="flex:1"></div>
+    <div style="display:flex;gap:4px;flex-wrap:wrap">
+      <sc-for list="{{ statusChips }}" as="c" hint-placeholder-count="6">
+        <button onClick="{{ c.onClick }}" style="height:30px;padding:0 10px;border:1px solid {{ c.bd }};border-radius:0;background:{{ c.bg }};color:{{ c.fg }};display:flex;align-items:center;gap:6px;font-size:12px;white-space:nowrap">{{ c.icon }}{{ c.label }}<span style="font-family:var(--fnum);font-size:11px;opacity:.75">{{ c.n }}</span></button>
+      </sc-for>
+    </div>
+    <button onClick="{{ toggleScope }}" style="height:30px;padding:0 10px;border:1px solid var(--line);border-radius:0;background:var(--surf);font-size:12px;white-space:nowrap">{{ scopeBtn }}</button>
+  </div>
+
+  <div style="display:grid;grid-template-columns:{{ cols2 }};gap:40px;align-items:start">
+    <section aria-label="Samples" style="background:var(--surf);border:1px solid var(--pBd);overflow:hidden;min-width:0">
+      <div style="overflow-x:auto">
+        <div style="min-width:900px">
+          <div style="display:grid;grid-template-columns:{{ cols }};padding:7px 14px;background:var(--surf);font-size:12.5px;font-weight:600;color:var(--ink);border-bottom:2px solid var(--line);gap:8px;border-bottom:1px solid var(--line)"><span>Sample</span><span>Product · batch</span><span>Location</span><span>Sampled</span><span>Test status</span><span>Release decision</span></div>
+          <sc-if value="{{ empty }}" hint-placeholder-val="{{ false }}"><div style="padding:22px 14px;color:var(--ink3)">No samples match this status in the current scope.</div></sc-if>
+          <sc-for list="{{ rows }}" as="r" hint-placeholder-count="8">
+            <div role="row" tabindex="0" onClick="{{ r.onClick }}" onKeyDown="{{ r.onKey }}" style="display:grid;grid-template-columns:{{ cols }};padding:8px 14px;gap:8px;border-bottom:1px solid var(--line2);cursor:pointer;align-items:center;background:{{ r.bg }};box-shadow:{{ r.sh }}" style-hover="background:var(--surf2)">
+              <span style="min-width:0"><span style="display:block;font-family:var(--fid);white-space:nowrap;letter-spacing:-.02em;font-size:11.5px;font-weight:600">{{ r.id }}</span><span style="display:block;font-size:10.5px;color:var(--ink3)">{{ r.term }}</span></span>
+              <span style="min-width:0"><span style="display:flex;align-items:center;gap:6px"><span style="width:9px;height:9px;flex:none;background:{{ r.color }}"></span>{{ r.prod }}</span><span style="display:block;font-family:var(--fid);white-space:nowrap;letter-spacing:-.02em;font-size:10.5px;color:var(--ink3);overflow:hidden;text-overflow:ellipsis">{{ r.batch }}</span></span>
+              <span style="font-size:12px;color:var(--ink2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ r.loc }}</span>
+              <span style="font-family:var(--fnum);font-size:11.5px">{{ r.at }}</span>
+              <span style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:500">{{ r.icon }}{{ r.status }}</span>
+              <span style="display:flex;align-items:center;gap:6px;font-size:12px">{{ r.decIcon }}{{ r.decision }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </section>
+
+    <sc-if value="{{ hasSel }}" hint-placeholder-val="{{ true }}">
+      <section aria-label="Sample detail" style="background:var(--surf);border:1px solid var(--pBd);overflow:hidden;min-width:0">
+        <div style="padding:12px 16px;border-bottom:1px solid var(--line)">
+          <div style="font-size:12.5px;color:var(--ink3)">Sample</div>
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:2px"><span style="font-family:var(--fid);white-space:nowrap;letter-spacing:-.02em;font-size:15px;font-weight:600">{{ sd.id }}</span><span style="display:flex;align-items:center;gap:6px;font-weight:600">{{ sd.icon }}{{ sd.status }}</span></div>
+          <div style="display:grid;grid-template-columns:96px 1fr;gap:4px 10px;font-size:12px;margin-top:10px">
+            <span style="color:var(--ink3)">Product</span><span style="display:flex;align-items:center;gap:6px"><span style="width:9px;height:9px;background:{{ sd.color }}"></span>{{ sd.prod }}</span>
+            <span style="color:var(--ink3)">Batch</span><span style="font-family:var(--fid);white-space:nowrap;letter-spacing:-.02em;font-size:11.5px">{{ sd.batch }}</span>
+            <span style="color:var(--ink3)">Location</span><span>{{ sd.loc }}</span>
+            <span style="color:var(--ink3)">Sampled</span><span style="font-family:var(--fnum);font-size:11.5px">{{ sd.at }}</span>
+            <span style="color:var(--ink3)">Laboratory</span><span>{{ sd.lab }}</span>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1.3fr 0.9fr 0.9fr 0.9fr;padding:7px 16px;background:var(--surf);font-size:12.5px;font-weight:600;color:var(--ink);border-bottom:2px solid var(--line);gap:8px"><span>Test · method</span><span style="text-align:right">Result</span><span>Specification</span><span>Status</span></div>
+        <sc-for list="{{ sd.tests }}" as="x" hint-placeholder-count="4">
+          <div style="display:grid;grid-template-columns:1.3fr 0.9fr 0.9fr 0.9fr;padding:8px 16px;border-top:1px solid var(--line2);gap:8px;align-items:baseline">
+            <span style="min-width:0"><span style="display:block">{{ x.prop }}</span><span style="display:block;font-family:var(--fnum);font-size:10.5px;color:var(--ink3)">{{ x.method }}</span></span>
+            <span style="text-align:right;font-family:var(--fnum);font-size:12.5px;font-style:{{ x.fs }};color:{{ x.vf }}">{{ x.result }}</span>
+            <span style="font-family:var(--fnum);font-size:11.5px;color:var(--ink2)">{{ x.spec }}</span>
+            <span style="display:flex;align-items:center;gap:5px;font-size:12px">{{ x.icon }}{{ x.status }}</span>
+          </div>
+        </sc-for>
+        <div style="padding:12px 16px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:8px">
+          <div style="font-size:12.5px;color:var(--ink3)">Release decision</div>
+          <div style="display:flex;align-items:center;gap:8px;font-weight:600">{{ sd.decIcon }}{{ sd.decision }}</div>
+          <div style="font-size:12px;color:var(--ink2)">{{ sd.decBy }}</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <button onClick="{{ doRelease }}" disabled="{{ relDisabled }}" title="{{ relTitle }}" style="height:32px;padding:0 12px;border:0;border-radius:0;background:var(--ink);color:var(--surf);font-weight:600;opacity:{{ relOp }};white-space:nowrap">Release</button>
+            <button onClick="{{ doHold }}" disabled="{{ holdDisabled }}" style="height:32px;padding:0 12px;border:1px solid var(--line);border-radius:0;background:var(--surf);opacity:{{ holdOp }};white-space:nowrap">Place on hold</button>
+          </div>
+          <div style="display:flex;gap:6px;align-items:flex-start;font-size:11.5px;color:var(--ink3)">{{ relIcon }}<span>{{ relTitle }}</span></div>
+        </div>
+      </section>
+    </sc-if>
+  </div>
+
+  <section aria-label="Traceability" style="background:var(--surf);border:1px solid var(--pBd);overflow:hidden">
+    <div style="background:var(--bar);color:var(--barInk);--ink:var(--barInk);--ink2:var(--barInk2);--ink3:var(--barInk3);--acc:var(--barAcc);padding:9px 14px;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap"><span style="display:flex;align-items:center;gap:6px;font-weight:600">{{ I.trace }}Traceability</span><span style="font-family:var(--fid);white-space:nowrap;letter-spacing:-.02em;font-size:12px">{{ tr.batch }}</span><span style="font-size:11.5px;color:var(--ink3)">Finished batch → components → source tanks and receipts → documents</span></div>
+    <sc-if value="{{ tr.none }}" hint-placeholder-val="{{ false }}"><div style="padding:16px;color:var(--ink3)">{{ tr.noneText }}</div></sc-if>
+    <sc-if value="{{ tr.has }}" hint-placeholder-val="{{ true }}">
+      <div style="overflow-x:auto">
+        <div style="display:grid;grid-template-columns:240px 40px 1fr;min-width:900px;padding:16px">
+          <div style="border:1.5px solid var(--ink);border-radius:0;padding:10px 12px;display:flex;flex-direction:column;gap:4px;align-self:center">
+            <span style="font-size:12.5px;color:var(--ink3)">Finished batch</span>
+            <span style="font-family:var(--fid);white-space:nowrap;letter-spacing:-.02em;font-weight:600;font-size:12.5px">{{ tr.batch }}</span>
+            <span style="display:flex;align-items:center;gap:6px;font-size:12px"><span style="width:9px;height:9px;background:{{ tr.color }}"></span>{{ tr.prod }} · {{ tr.tank }}</span>
+            <span style="display:flex;align-items:center;gap:6px;font-size:12px">{{ tr.qIcon }}{{ tr.q }}</span>
+            <sc-for list="{{ tr.docs }}" as="d" hint-placeholder-count="2"><span style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--ink2)">{{ I.docs }}{{ d }}</span></sc-for>
+          </div>
+          <div style="position:relative"><div style="position:absolute;left:0;right:0;top:50%;height:1px;background:var(--line)"></div></div>
+          <div style="display:flex;flex-direction:column;gap:10px;border-left:1px solid var(--line);padding-left:16px">
+            <sc-for list="{{ tr.comps }}" as="c" hint-placeholder-count="2">
+              <div style="display:grid;grid-template-columns:minmax(0,1fr) 28px minmax(0,1fr) 28px minmax(0,1.2fr);align-items:center">
+                <div style="border:1px solid var(--line);border-radius:0;padding:8px 10px;display:flex;flex-direction:column;gap:2px">
+                  <span style="font-size:12.5px;color:var(--ink3)">Component · {{ c.share }}</span>
+                  <span style="display:flex;align-items:center;gap:6px;font-weight:500"><span style="width:9px;height:9px;background:{{ c.sw }};border:1px solid {{ c.swBd }}"></span>{{ c.label }}</span>
+                  <span style="font-family:var(--fid);white-space:nowrap;letter-spacing:-.02em;font-size:11px;color:var(--ink2)">{{ c.batch }}</span>
+                </div>
+                <div style="height:1px;background:var(--line)"></div>
+                <button onClick="{{ c.onTank }}" style="border:1px solid var(--line);border-radius:0;padding:8px 10px;display:flex;flex-direction:column;gap:2px;background:var(--surf);text-align:left" style-hover="border-color:var(--ink4)">
+                  <span style="font-size:12.5px;color:var(--ink3)">Source</span>
+                  <span style="font-family:var(--fid);white-space:nowrap;letter-spacing:-.02em;font-weight:600;font-size:12px">{{ c.tank }}</span>
+                  <span style="font-size:11px;color:var(--ink2)">{{ c.src }}</span>
+                </button>
+                <div style="height:1px;background:var(--line)"></div>
+                <div style="border:1px dashed var(--line);border-radius:0;padding:8px 10px;display:flex;flex-direction:column;gap:3px">
+                  <span style="font-size:12.5px;color:var(--ink3)">Documents</span>
+                  <sc-for list="{{ c.docs }}" as="d" hint-placeholder-count="2"><span style="display:flex;align-items:center;gap:6px;font-size:11.5px">{{ I.docs }}{{ d }}</span></sc-for>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+  </section>
+</div>
+</sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = p.d ? p.d.ui.load('qa', { filter: 'All', sel: null, net: false, traceBatch: null }) : {}; }
+  componentDidMount() { this.applyFocus(); }
+  componentDidUpdate() { this.applyFocus(); }
+  applyFocus() { const f = this.props.ctx && this.props.ctx.focus; const D = this.props.d; if (!f || f.n === this.lf) return; this.lf = f.n; if (f.type === 'sample') this.upd({ sel: f.id, traceBatch: null, filter: 'All' }); if (f.type === 'batch') { const s = D.SAMPLES.find(x => x.batch === f.id); this.upd({ sel: s ? s.id : this.state.sel, traceBatch: f.id, filter: 'All' }); } }
+  upd(p) { this.setState(p, () => this.props.d.ui.save('qa', this.state)); }
+  renderVals() {
+    const D = this.props.d, ctx = this.props.ctx;
+    if (!D || !ctx) return { ready: false };
+    const I = ctx.I, s = this.state, prods = ctx.products;
+    const net = s.net || ctx.scope === 'network';
+    const t = D.term(ctx.terminalId);
+    const statusOf = x => x.decision === 'On hold' ? 'On hold' : x.status;
+    let base = D.SAMPLES.filter(x => (net || x.term === t.id) && (!prods.length || prods.includes(x.code)));
+    const cats = ['All', 'Pending', 'Passed', 'Failed', 'Missing result', 'On hold'];
+    const iconFor = st => I.st[st === 'Passed' ? 'ok' : st === 'Failed' ? 'critical' : st === 'Missing result' ? 'attention' : st === 'On hold' ? 'hold' : st === 'Released' || st === 'Accepted for discharge' ? 'ok' : 'pending'];
+    const statusChips = cats.map(c => { const n = c === 'All' ? base.length : base.filter(x => statusOf(x) === c || (c === 'Failed' && x.status === 'Failed')).length; const on = s.filter === c; return { label: c, n, icon: c === 'All' ? null : iconFor(c), onClick: () => this.upd({ filter: c }), bd: on ? 'var(--ink)' : 'var(--line)', bg: on ? 'var(--ink)' : 'var(--surf)', fg: on ? 'var(--surf)' : 'var(--ink)' }; });
+    const list = base.filter(x => s.filter === 'All' || statusOf(x) === s.filter || (s.filter === 'Failed' && x.status === 'Failed')).sort((a, b) => b.at - a.at);
+    const sel = list.find(x => x.id === s.sel) || D.SAMPLES.find(x => x.id === s.sel && (net || x.term === t.id)) || list[0];
+    const rows = list.map(x => { const T = D.term(x.term), p = D.prod(x.code), on = sel && x.id === sel.id; const st = statusOf(x); return { id: x.id, term: T.name, prod: p.label, color: p.color, batch: x.batch, loc: x.loc, at: D.tm(x.at, T.tz, { date: true }), status: st, icon: iconFor(st), decision: x.decision, decIcon: iconFor(x.decision === 'Pending' ? 'Pending' : x.decision), bg: on ? 'var(--accSoft)' : 'transparent', sh: on ? 'inset 2px 0 0 var(--acc)' : 'none', onClick: () => this.upd({ sel: x.id, traceBatch: null }), onKey: e => { if (e.key === 'Enter') this.upd({ sel: x.id, traceBatch: null }); } }; });
+    let sd = {}, relDisabled = true, holdDisabled = true, relTitle = '';
+    if (sel) {
+      const T = D.term(sel.term), p = D.prod(sel.code);
+      const st = statusOf(sel);
+      sd = { id: sel.id, status: st, icon: iconFor(st), prod: p.label, color: p.color, batch: sel.batch, loc: sel.loc, at: D.tm(sel.at, T.tz, { date: true }), lab: sel.lab,
+        tests: sel.tests.map(x => ({ prop: x.prop, method: x.method, result: x.result == null ? (x.status === 'Missing result' ? 'Missing' : 'Pending') : `${x.result} ${x.unit}`, fs: x.result == null ? 'italic' : 'normal', vf: x.result == null ? 'var(--ink3)' : x.status === 'Failed' ? 'var(--critInk)' : 'var(--ink)', spec: x.spec, status: x.status, icon: iconFor(x.status) })),
+        decision: sel.decision, decIcon: iconFor(sel.decision === 'Pending' ? 'Pending' : sel.decision), decBy: sel.by ? `Recorded by ${sel.by.who} · ${D.tm(sel.by.at, T.tz, { date: true })}` : 'No decision recorded.' };
+      const allPass = sel.tests.every(x => x.status === 'Passed');
+      const isRel = sel.decision === 'Released' || sel.decision === 'Accepted for discharge';
+      if (!ctx.perm.release) relTitle = `Release decisions require the Quality officer role · current: ${ctx.roleLabel}`;
+      else if (isRel) relTitle = 'Already released.';
+      else if (!allPass) relTitle = 'Release blocked until every required test is Passed. A completed transfer or blend never releases product by itself.';
+      else relTitle = 'All required tests passed. Release records your name and time.';
+      relDisabled = !ctx.perm.release || isRel || !allPass; holdDisabled = !ctx.perm.release || sel.decision === 'On hold';
+    }
+    // trace
+    const tb = s.traceBatch || (sel && sel.batch);
+    const T0 = D.TRACE[tb];
+    let tr = { batch: tb || '—', has: false, none: true, noneText: 'Select a sample to trace its batch.' };
+    if (T0) {
+      const p = D.prod(T0.product); const term0 = sel ? sel.term : t.id; const k = D.tank(term0, T0.tank); const bl = D.BLENDS.find(b => b.id === tb);
+      const q = bl ? bl.state : k ? k.q : '—';
+      tr = { batch: tb, has: true, none: false, prod: p.label, color: p.color, tank: T0.tank, q, qIcon: iconFor(q === 'Released' ? 'Released' : q === 'On hold' ? 'On hold' : 'Pending'), docs: T0.docs,
+        comps: T0.comps.map(c => { const P = D.prod(c.c); return { label: P.label, sw: P.sw, swBd: P.kind === 'component' ? P.color : 'transparent', share: c.share + ' %', batch: c.batch, tank: c.tank, src: c.src, docs: c.docs, onTank: () => c.tank.startsWith('T-') && this.props.go('terminal', { terminalId: term0, focus: { type: 'tank', id: c.tank } }) }; }) };
+    } else if (tb) tr.noneText = `No component trace recorded for ${tb}. Tank batches received directly from a vessel trace to their receipt documents in the Transfers workspace.`;
+    return {
+      ready: true, I, statusChips, rows, empty: !rows.length, hasSel: !!sel, sd, tr,
+      scopeText: net ? `All 14 terminals · ${list.length} samples` : `${t.name} · ${list.length} samples`,
+      toggleScope: () => this.upd({ net: !s.net }), scopeBtn: net ? 'Show this terminal only' : 'Show all terminals',
+      cols: 'minmax(0,1.1fr) minmax(0,1.3fr) minmax(0,1.5fr) minmax(0,0.9fr) minmax(0,0.9fr) minmax(0,1fr)', cols2: ctx.tablet ? 'minmax(0,1fr)' : 'minmax(0,1fr) 440px',
+      relDisabled, relOp: relDisabled ? 0.4 : 1, relTitle, relIcon: relDisabled ? I.lock : I.st.ok, holdDisabled, holdOp: holdDisabled ? 0.4 : 1,
+      doRelease: () => { sel.decision = 'Released'; sel.by = { who: `${ctx.user} · Quality officer`, at: ctx.now }; const k = D.tank(sel.term, sel.link.id) || null; if (k && k.batch === sel.batch) k.q = 'Released'; const b = D.BLENDS.find(x => x.id === sel.batch); if (b) b.state = 'Released'; this.props.toast && this.props.toast(`${sel.batch} released by ${ctx.user}.`); ctx.bump(); this.forceUpdate(); },
+      doHold: () => { sel.decision = 'On hold'; sel.by = { who: `${ctx.user} · Quality officer`, at: ctx.now }; const k = D.TERMINALS.find(x => x.id === sel.term).tanks.find(x => x.batch === sel.batch); if (k) k.q = 'On hold'; const b = D.BLENDS.find(x => x.id === sel.batch); if (b) b.state = 'On hold'; this.props.toast && this.props.toast(`${sel.batch} placed on hold.`); ctx.bump(); this.forceUpdate(); },
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<div style="position:absolute;inset:0;display:flex;background:var(--bg);overflow:hidden">
+<sc-if value="{{ ready }}" hint-placeholder-val="{{ true }}">
+  <sc-if value="{{ showList }}" hint-placeholder-val="{{ true }}">
+    <aside aria-label="Transfers at terminal" style="width:{{ listW }};flex:none;border-right:1px solid var(--line);background:var(--surf);display:flex;flex-direction:column;min-height:0">
+      <div style="padding:18px 18px 14px;border-bottom:1px solid var(--line)">
+        <div style="font-size:18px;font-weight:600">Transfers</div>
+        <div style="font-size:13px;color:var(--ink2);margin-top:2px">{{ t.name }}</div>
+      </div>
+      <div style="flex:1;overflow:auto">
+        <sc-for list="{{ groups }}" as="g" hint-placeholder-count="2">
+          <div style="font-size:12.5px;font-weight:600;color:var(--ink2);padding:14px 18px 6px;background:var(--surf2);border-bottom:1px solid var(--line2)">{{ g.label }}</div>
+          <sc-if value="{{ g.empty }}" hint-placeholder-val="{{ false }}"><div style="padding:10px 18px;font-size:12.5px;color:var(--ink3)">{{ g.emptyText }}</div></sc-if>
+          <sc-for list="{{ g.items }}" as="x" hint-placeholder-count="3">
+            <button onClick="{{ x.onClick }}" aria-pressed="{{ x.pressed }}" style="width:100%;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;padding:11px 18px;border:0;border-bottom:1px solid var(--line2);background:{{ x.bg }};text-align:left;box-shadow:{{ x.sh }}" style-hover="background:var(--surf2)">
+              <span style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ x.title }}</span>
+              <span style="font-size:12.5px;white-space:nowrap;color:var(--ink2)">{{ x.pct }}</span>
+              <span style="font-size:12.5px;color:var(--ink3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ x.sub }}</span>
+              <span style="font-size:12.5px;white-space:nowrap;display:flex;align-items:center;gap:5px;justify-content:flex-end">{{ x.icon }}{{ x.state }}</span>
+              <span style="grid-column:1 / -1;height:3px;background:var(--surf3);margin-top:6px;display:block"><span style="display:block;height:3px;width:{{ x.pct }};background:var(--ink)"></span></span>
+            </button>
+          </sc-for>
+        </sc-for>
+      </div>
+      <div style="padding:12px 18px;border-top:1px solid var(--line);font-size:12px;color:var(--ink3);text-wrap:pretty">{{ marineNote }}</div>
+    </aside>
+  </sc-if>
+
+  <div style="flex:1;min-width:0;overflow:auto">
+    <sc-if value="{{ noneSelected }}" hint-placeholder-val="{{ false }}">
+      <div style="padding:48px 40px;max-width:560px;display:flex;flex-direction:column;gap:10px">
+        <div style="font-size:22px;font-weight:600">No transfers at this terminal</div>
+        <div style="color:var(--ink2)">{{ marineNote }}</div>
+        <button onClick="{{ goNetwork }}" style="align-self:flex-start;height:34px;padding:0 14px;border:1px solid var(--line);background:var(--surf);white-space:nowrap">Choose another terminal</button>
+      </div>
+    </sc-if>
+    <sc-if value="{{ hasSel }}" hint-placeholder-val="{{ true }}">
+    <div style="padding:28px 36px 48px;display:flex;flex-direction:column;gap:24px">
+      <div style="display:flex;align-items:flex-end;gap:24px;flex-wrap:wrap">
+        <div style="display:flex;flex-direction:column;gap:6px;min-width:0">
+          <h1 style="margin:0;font-size:30px;font-weight:500;letter-spacing:-.015em;line-height:1.1">{{ x.title }}</h1>
+          <div style="display:flex;gap:18px;flex-wrap:wrap;font-size:13.5px;color:var(--ink2);align-items:center">
+            <span style="display:flex;align-items:center;gap:6px;font-weight:600;color:{{ x.stFg }}">{{ x.stIcon }}{{ x.state }}</span>
+            <span style="font-family:var(--fid);font-size:12.5px">{{ x.id }}</span>
+            <span style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;background:{{ x.color }}"></span>{{ x.prod }}</span>
+            <span>Batch <span style="font-family:var(--fid);font-size:12.5px">{{ x.batch }}</span></span>
+            <span>{{ x.where }}</span>
+          </div>
+        </div>
+        <div style="flex:1"></div>
+        <div style="display:flex;align-items:center;gap:18px;flex-wrap:wrap">
+          <span style="display:flex;align-items:center;gap:7px;font-size:12.5px;color:{{ x.frFg }}">{{ x.frIcon }}<span><b style="font-weight:600">{{ x.frLabel }}</b> · {{ x.frSub }}</span></span>
+          <sc-if value="{{ x.canSim }}" hint-placeholder-val="{{ false }}">
+            <button onClick="{{ toggleLoss }}" style="border:0;background:transparent;padding:0;color:var(--acc);font-size:12.5px;white-space:nowrap">{{ lossLabel }}</button>
+          </sc-if>
+          <button onClick="{{ logEvent }}" disabled="{{ noAct }}" title="{{ actTitle }}" style="height:34px;padding:0 14px;border:0;background:var(--ink);color:var(--surf);font-weight:600;display:flex;align-items:center;gap:7px;white-space:nowrap;opacity:{{ actOp }}">{{ actIcon }}{{ logLabel }}</button>
+        </div>
+      </div>
+
+      <section aria-label="Transfer route" style="background:var(--surf);border:1px solid var(--pBd)">
+        <div style="background:var(--bar);color:var(--barInk);padding:9px 14px;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap"><span style="font-weight:600">Route</span><span style="font-size:12px;color:var(--barInk3);font-weight:400">{{ x.routeText }}</span><div style="flex:1"></div><span style="font-size:12px;color:var(--barInk3);font-weight:400">Select the vessel or tank to inspect its readings</span></div>
+        <div>{{ routeSvg }}</div>
+      </section>
+
+      <div style="display:grid;grid-template-columns:{{ mainCols }};gap:24px;align-items:start">
+        <div style="display:flex;flex-direction:column;gap:24px;min-width:0">
+          <section aria-label="Progress" style="background:var(--surf);border:1px solid var(--pBd)">
+            <div style="background:var(--bar);color:var(--barInk);padding:9px 14px;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap"><span style="font-weight:600">Progress</span></div>
+            <div style="padding:18px 18px 16px;display:flex;flex-direction:column;gap:16px">
+              <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr)) minmax(0,1.3fr);gap:20px">
+                <div><div style="font-size:13px;color:var(--ink3)">Planned</div><div style="font-size:28px;font-weight:500;line-height:1.15">{{ x.planned }}</div></div>
+                <div><div style="font-size:13px;color:var(--ink3)">{{ x.recvWord }}</div><div style="font-size:28px;font-weight:600;line-height:1.15">{{ x.recv }}</div><div style="font-size:12.5px;color:var(--ink2)">{{ x.pctText }}</div></div>
+                <div><div style="font-size:13px;color:var(--ink3)">Remaining</div><div style="font-size:28px;font-weight:500;line-height:1.15">{{ x.remaining }}</div></div>
+                <div style="border-left:1px solid var(--line);padding-left:20px"><div style="font-size:13px;color:var(--ink3)">Estimated completion</div><div style="font-size:28px;font-weight:500;line-height:1.15;color:{{ x.etaFg }};font-style:{{ x.etaFs }}">{{ x.eta }}</div><div style="font-size:12.5px;color:var(--ink2);text-wrap:pretty">{{ x.etaNote }}</div></div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:6px">
+                <div style="position:relative;height:14px;background:var(--surf3)">
+                  <div style="position:absolute;left:0;top:0;bottom:0;width:{{ x.pct }};background:var(--ink)"></div>
+                  <div style="position:absolute;left:{{ x.pct }};top:0;bottom:0;width:{{ x.pausedW }};background:var(--warn)"></div>
+                  <div title="Destination limit at max. operating capacity" style="position:absolute;top:-4px;bottom:-4px;left:{{ x.capPos }};width:2px;background:var(--crit)"></div>
+                </div>
+                <div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:12.5px;color:var(--ink2)"><span>{{ x.capText }}</span><span style="display:flex;align-items:center;gap:6px"><span style="width:2px;height:12px;background:var(--crit)"></span>Destination limit</span></div>
+              </div>
+              <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:0 28px;border-top:1px solid var(--line);padding-top:6px">
+                <sc-for list="{{ x.kpis }}" as="k" hint-placeholder-count="6">
+                  <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:7px 0;border-bottom:1px solid var(--line2)"><span style="color:var(--ink2)">{{ k.k }}</span><span style="text-align:right;white-space:nowrap"><b style="font-weight:600;color:{{ k.fg }};font-style:{{ k.fs }}">{{ k.v }}</b> <span style="font-size:12px;color:var(--ink3)">{{ k.u }}</span></span></div>
+                </sc-for>
+              </div>
+            </div>
+          </section>
+
+          <section aria-label="Flow rate trend" style="background:var(--surf);border:1px solid var(--pBd)">
+            <div style="background:var(--bar);color:var(--barInk);padding:9px 14px;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap"><span style="font-weight:600">Flow rate</span><span style="font-size:12px;color:var(--barInk3);font-weight:400">{{ x.flowCaption }}</span></div>
+            <div style="padding:12px 16px">{{ chart }}</div>
+          </section>
+
+          <section aria-label="Measurement basis" style="background:var(--surf);border:1px solid var(--pBd)">
+            <div style="background:var(--bar);color:var(--barInk);padding:9px 14px;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap"><span style="font-weight:600">Quantities by measurement basis</span></div>
+            <div style="display:grid;grid-template-columns:minmax(0,1.6fr) repeat(3,minmax(0,1fr));padding:9px 16px;font-weight:600;border-bottom:2px solid var(--line)"><span>Basis</span><span style="text-align:right">Planned</span><span style="text-align:right">{{ x.recvWord }}</span><span style="text-align:right">Remaining</span></div>
+            <sc-for list="{{ x.basis }}" as="b" hint-placeholder-count="3">
+              <div style="display:grid;grid-template-columns:minmax(0,1.6fr) repeat(3,minmax(0,1fr));padding:9px 16px;border-bottom:1px solid var(--line2);align-items:baseline">
+                <span>{{ b.label }} <span style="font-size:12.5px;color:var(--ink3)">{{ b.unit }}</span></span>
+                <span style="text-align:right">{{ b.p }}</span><span style="text-align:right;font-weight:600">{{ b.r }}</span><span style="text-align:right">{{ b.m }}</span>
+              </div>
+            </sc-for>
+            <div style="padding:9px 16px;font-size:12.5px;color:var(--ink3)">{{ x.basisNote }}</div>
+          </section>
+
+          <section aria-label="Reconciliation" style="background:var(--surf);border:1px solid var(--pBd)">
+            <div style="background:var(--bar);color:var(--barInk);padding:9px 14px;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap"><span style="font-weight:600">Reconciliation</span><span style="font-size:12px;color:var(--barInk3);font-weight:400">{{ x.reconState }} · {{ x.reconNote }}</span></div>
+            <div style="overflow-x:auto"><div style="min-width:760px">
+              <div style="display:grid;grid-template-columns:minmax(0,2fr) repeat(4,minmax(0,0.8fr)) minmax(0,1.3fr);padding:9px 16px;font-weight:600;gap:10px;border-bottom:2px solid var(--line)"><span>Figure</span><span style="text-align:right">kL @ 15 °C</span><span style="text-align:right">Mass t</span><span style="text-align:right">Δ kL</span><span style="text-align:right">Δ %</span><span>Document</span></div>
+              <sc-for list="{{ x.recon }}" as="r" hint-placeholder-count="5">
+                <div style="display:grid;grid-template-columns:minmax(0,2fr) repeat(4,minmax(0,0.8fr)) minmax(0,1.3fr);padding:9px 16px;gap:10px;border-bottom:1px solid var(--line2);align-items:baseline;background:{{ r.bg }}">
+                  <span style="font-weight:{{ r.fw }}">{{ r.label }}</span>
+                  <span style="text-align:right;font-style:{{ r.fs }};color:{{ r.vf }}">{{ r.v }}</span>
+                  <span style="text-align:right;color:var(--ink2)">{{ r.mass }}</span>
+                  <span style="text-align:right;color:{{ r.dFg }}">{{ r.d }}</span>
+                  <span style="text-align:right;color:{{ r.dFg }}">{{ r.dp }}</span>
+                  <span style="font-size:12.5px;color:var(--ink3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.doc }}</span>
+                </div>
+              </sc-for>
+            </div></div>
+            <div style="padding:9px 16px;font-size:12.5px;color:var(--ink3)">Δ = figure − vessel arrival quantity. Negative means lower than the vessel figure. Tolerance ±0.30 %.</div>
+          </section>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:24px;min-width:0">
+          <section aria-label="Readings" style="background:var(--surf);border:1px solid var(--pBd)">
+            <div role="tablist" style="display:flex;background:var(--bar)">
+              <sc-for list="{{ inspTabs }}" as="tb" hint-placeholder-count="2">
+                <button role="tab" aria-selected="{{ tb.on }}" onClick="{{ tb.onClick }}" style="flex:1;height:38px;border:0;background:{{ tb.bg }};color:{{ tb.fg }};font-weight:600;white-space:nowrap">{{ tb.label }}</button>
+              </sc-for>
+            </div>
+            <div style="padding:14px 16px 10px">
+              <div style="font-weight:600;font-size:15px">{{ insp.title }}</div>
+              <div style="font-size:12.5px;color:var(--ink3);margin:2px 0 8px">{{ insp.sub }}</div>
+              <sc-for list="{{ insp.rows }}" as="m" hint-placeholder-count="6">
+                <div style="display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;padding:7px 0;border-bottom:1px solid var(--line2);align-items:baseline">
+                  <span>{{ m.k }}</span>
+                  <span style="text-align:right;font-weight:600;font-style:{{ m.fs }};color:{{ m.vf }};white-space:nowrap">{{ m.v }}</span>
+                  
+                </div>
+              </sc-for>
+              <sc-if value="{{ insp.link }}" hint-placeholder-val="{{ false }}">
+                <button onClick="{{ insp.onLink }}" style="margin-top:10px;border:0;background:transparent;color:var(--acc);padding:0;display:flex;gap:5px;align-items:center;white-space:nowrap">{{ insp.link }} {{ I.arrowR }}</button>
+              </sc-if>
+            </div>
+          </section>
+
+          <section aria-label="Event timeline" style="background:var(--surf);border:1px solid var(--pBd)">
+            <div style="background:var(--bar);color:var(--barInk);padding:9px 14px;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap"><span style="font-weight:600">Event timeline</span></div>
+            <div style="padding:14px 16px 4px">
+              <sc-for list="{{ x.events }}" as="e" hint-placeholder-count="9">
+                <div style="display:grid;grid-template-columns:62px 14px minmax(0,1fr);gap:10px;padding-bottom:14px">
+                  <span style="font-size:12.5px;color:{{ e.tf }};text-align:right;white-space:nowrap;padding-top:1px">{{ e.time }}</span>
+                  <span style="position:relative;display:flex;justify-content:center"><span style="position:absolute;top:13px;bottom:-14px;width:1px;background:{{ e.lineBg }}"></span><span style="position:relative;margin-top:4px;width:10px;height:10px;border-radius:{{ e.r }};border:2px solid {{ e.dotBd }};background:{{ e.dotBg }}"></span></span>
+                  <span style="min-width:0"><span style="display:block;font-weight:{{ e.fw }};color:{{ e.fg }}">{{ e.label }}</span><span style="display:block;font-size:12.5px;color:var(--ink3);text-wrap:pretty">{{ e.note }}</span></span>
+                </div>
+              </sc-for>
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <section aria-label="Berth occupancy" style="background:var(--surf);border:1px solid var(--pBd)">
+        <div style="background:var(--bar);color:var(--barInk);padding:9px 14px;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap"><span style="font-weight:600">Berth occupancy</span><span style="font-size:12px;color:var(--barInk3);font-weight:400">{{ berthRange }}</span><div style="flex:1"></div><button onClick="{{ goSchedule }}" style="border:0;background:transparent;color:var(--barAcc);display:flex;gap:5px;align-items:center;padding:0;white-space:nowrap">Scheduling board {{ I.arrowR }}</button></div>
+        <sc-if value="{{ noBerths }}" hint-placeholder-val="{{ false }}"><div style="padding:16px;color:var(--ink3)">This terminal has no berths configured.</div></sc-if>
+        <div style="overflow-x:auto">
+          <div style="min-width:820px;padding:10px 16px 14px">
+            <div style="display:grid;grid-template-columns:110px 1fr;height:22px">
+              <span></span>
+              <div style="position:relative"><sc-for list="{{ bTicks }}" as="k" hint-placeholder-count="7"><span style="position:absolute;left:{{ k.x }};transform:translateX(-50%);font-size:12px;color:var(--ink3);white-space:nowrap">{{ k.label }}</span></sc-for></div>
+            </div>
+            <sc-for list="{{ bLanes }}" as="ln" hint-placeholder-count="2">
+              <div style="display:grid;grid-template-columns:110px 1fr;height:40px;border-top:1px solid var(--line2)">
+                <span style="align-self:center;font-weight:600">{{ ln.name }}</span>
+                <div style="position:relative;background:repeating-linear-gradient(90deg,transparent 0,transparent calc(100%/12 - 1px),var(--line2) calc(100%/12 - 1px),var(--line2) calc(100%/12))">
+                  <sc-for list="{{ ln.items }}" as="b" hint-placeholder-count="2">
+                    <button onClick="{{ b.onClick }}" title="{{ b.title }}" style="position:absolute;top:7px;bottom:7px;left:{{ b.x }};width:{{ b.w }};border:1px solid {{ b.bd }};background:{{ b.bg }};color:{{ b.fg }};padding:0 7px;font-size:12px;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ b.label }}</button>
+                  </sc-for>
+                  <div style="position:absolute;top:-4px;bottom:-4px;left:{{ nowX }};width:2px;background:var(--acc)"></div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </section>
+    </div>
+    </sc-if>
+  </div>
+</sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  constructor(p) {
+    super(p);
+    this.state = { ...(p.d ? p.d.ui.load('trf', { sel: {}, insp: 'dst', loss: {} }) : {}), hover: null, logs: {} };
+  }
+  componentDidMount() { this.applyFocus(); }
+  componentDidUpdate() { this.applyFocus(); }
+  applyFocus() { const f = this.props.ctx && this.props.ctx.focus; if (!f || f.n === this.lf) return; this.lf = f.n; if (f.type === 'transfer') this.upd({ sel: { ...this.state.sel, [this.props.ctx.terminalId]: f.id } }); }
+  upd(p) { this.setState(p, () => { const { hover, logs, ...rest } = this.state; this.props.d.ui.save('trf', rest); }); }
+  routeSvg(D, ctx, t, tr, dst, st, p, flow, meterLost, insp) {
+    const h = React.createElement, dark = ctx.theme === 'dark';
+    const C = dark ? { bg: '#24282c', water: '#1e2a33', quay: '#3a4046', line: '#4b5259', pipe: '#59616a', act: '#e5e8eb', sel: '#7fb0ff', selSoft: 'rgba(127,176,255,.14)', pause: '#f2a531', txt: '#e5e8eb', mute: '#a4abb2', faint: '#7f878f', eq: '#30353a', eqBd: '#a3aab1', hull: '#2f353b', shell: '#353a40', hatch: 'rgba(0,0,0,.38)' } : { bg: '#dcdfe2', water: '#c6d0d8', quay: '#b9bec3', line: '#9ea4aa', pipe: '#9aa0a6', act: '#23272b', sel: '#1f63c4', selSoft: 'rgba(31,99,196,.12)', pause: '#c27a00', txt: '#23272b', mute: '#4f575f', faint: '#6f777e', eq: '#f4f5f6', eqBd: '#5b636b', hull: '#eef0f1', shell: '#f4f5f6', hatch: 'rgba(0,0,0,.30)' };
+    const W = 1200, H = 310, Y = 140, K = []; let n = 0; const k = () => 'r' + (n++);
+    const T = (x, y, s, o = {}) => K.push(h('text', { key: k(), x, y, fontFamily: 'Barlow', fontSize: 15, fill: C.mute, ...o }, s));
+    const val = (x, y, label, v, o = {}) => { T(x, y, label, { fontSize: 14, fill: C.faint, textAnchor: o.a || 'middle' }); T(x, y + 20, v == null ? 'Unavailable' : v, { fontSize: 17, fontWeight: 600, fill: v == null ? C.faint : C.txt, fontStyle: v == null ? 'italic' : 'normal', textAnchor: o.a || 'middle' }); };
+    const paused = tr.state === 'Paused', live = tr.active && !paused && !meterLost, done = tr.state === 'Completed';
+    const lineSt = paused ? { stroke: C.pause, strokeWidth: 3, strokeDasharray: '8 6' } : live || (tr.active && meterLost) ? { stroke: C.act, strokeWidth: 3 } : done ? { stroke: C.faint, strokeWidth: 3 } : { stroke: C.pipe, strokeWidth: 2, strokeDasharray: '3 5' };
+    K.push(h('defs', { key: k() }, h('pattern', { id: 'trHold', width: 6, height: 6, patternUnits: 'userSpaceOnUse', patternTransform: 'rotate(45)' }, h('line', { x1: 0, y1: 0, x2: 0, y2: 6, stroke: C.hatch, strokeWidth: 2.2 }))));
+    K.push(h('rect', { key: k(), x: 0, y: 0, width: W, height: H, fill: C.bg }));
+    const seg = (x1, x2) => { K.push(h('line', { key: k(), x1, x2, y1: Y, y2: Y, ...lineSt })); if (live) { K.push(h('line', { key: k(), x1, x2, y1: Y, y2: Y, stroke: dark ? '#111' : '#fff', strokeWidth: 1.2, strokeDasharray: '3 14', style: { animation: 'tnflow 1.1s linear infinite' } })); const mx = (x1 + x2) / 2; K.push(h('path', { key: k(), d: 'M-6 -5L5 0L-6 5Z', fill: C.act, transform: `translate(${mx},${Y})` })); } };
+    const sel = (x, y, w, hh, on) => on && K.push(h('rect', { key: k(), x, y, width: w, height: hh, fill: C.selSoft, stroke: C.sel, strokeWidth: 1.6 }));
+    const g = (kids, onClick, label) => K.push(h('g', { key: k(), style: { cursor: 'pointer' }, onClick, role: 'button', tabIndex: 0, onKeyDown: e => { if (e.key === 'Enter') onClick(); }, 'aria-label': label }, ...kids));
+    const tankX = 1000, tw = 110, th = 150, tTop = 60, tBase = tTop + th;
+    if (tr.marine) {
+      K.push(h('rect', { key: k(), x: 0, y: 0, width: 420, height: H, fill: C.water }));
+      K.push(h('rect', { key: k(), x: 420, y: 0, width: 10, height: H, fill: C.quay }));
+      T(16, 22, 'Harbour basin', { fontSize: 12, fill: C.faint });
+      sel(24, 40, 360, 200, insp === 'src');
+      const x0 = 40, x1 = 360, y0 = 82, y1 = 198;
+      const hull = `${x0},${(y0 + y1) / 2} ${x0 + 50},${y0} ${x1 - 8},${y0} ${x1},${y0 + 8} ${x1},${y1 - 8} ${x1 - 8},${y1} ${x0 + 50},${y1}`;
+      const m = tr.comp.match(/(\d)\s*[–-]\s*(\d)/); const act = new Set();
+      if (m) { for (let i = +m[1]; i <= +m[2]; i++) { act.add(i + 'P'); act.add(i + 'S'); } } else (tr.comp.match(/\d[PSC]/g) || []).forEach(x => { act.add(x); if (x.endsWith('C')) { act.add(x[0] + 'P'); act.add(x[0] + 'S'); } });
+      const frac = done ? 0 : 1 - tr.recv / tr.planned;
+      const kids = [h('polygon', { key: 'h', points: hull, fill: C.hull, stroke: C.eqBd, strokeWidth: 1.4 })];
+      const cx0 = x0 + 62, cw = 34;
+      for (let i = 0; i < 6; i++) ['P', 'S'].forEach((sd, j) => { const id = (6 - i) + sd; const on = act.has(id); const cx = cx0 + i * (cw + 4), cy = j ? (y0 + y1) / 2 + 2 : y0 + 10, chh = ((y1 - y0) / 2) - 12; kids.push(h('rect', { key: id + 'b', x: cx, y: cy, width: cw, height: chh, fill: 'none', stroke: on ? C.act : C.line, strokeWidth: on ? 1.4 : 1 })); if (on && frac > 0) kids.push(h('rect', { key: id + 'f', x: cx, y: cy + chh * (1 - frac), width: cw, height: chh * frac, fill: p.color, fillOpacity: 0.8 })); kids.push(h('text', { key: id + 't', x: cx + cw / 2, y: cy + 14, textAnchor: 'middle', fontFamily: 'Overpass Mono', fontSize: 10, fill: on ? C.txt : C.faint }, id)); });
+      kids.push(h('rect', { key: 'br', x: x1 - 46, y: y0 + 14, width: 32, height: y1 - y0 - 28, fill: C.quay, stroke: C.eqBd }));
+      g(kids, () => this.upd({ insp: 'src' }), `Source vessel ${tr.vessel}`);
+      T(x0, y0 - 16, tr.vessel, { fontSize: 19, fontWeight: 600, fill: C.txt });
+      T(x1, y0 - 16, `${tr.voyage} · ${tr.comp}`, { fontSize: 14, textAnchor: 'end' });
+      val(x0 + 70, y1 + 30, 'Cargo pump', tr.vesselPress != null && tr.active && !paused ? D.fmt(tr.vesselPress, 1) + ' bar' : (tr.active ? (paused ? '0.0 bar' : null) : '—'));
+      val(x0 + 240, y1 + 30, 'Cargo temperature', tr.vesselTemp != null ? D.fmt(tr.vesselTemp, 1) + ' °C' : null);
+      seg(x1, 470);
+      K.push(h('circle', { key: k(), cx: 480, cy: Y, r: 10, fill: C.eq, stroke: C.eqBd, strokeWidth: 1.4 }));
+      T(480, Y - 22, tr.arm, { fontFamily: 'Overpass Mono', fontSize: 13.5, textAnchor: 'middle', fill: C.txt });
+      val(480, Y + 34, 'Marine arm', tr.active || done ? 'Connected' : 'Free');
+      seg(490, 610);
+      T(550, Y - 12, 'Jetty line 16"', { fontSize: 12, textAnchor: 'middle', fill: C.faint });
+    } else {
+      sel(24, 60, 300, 160, insp === 'src');
+      const srcT = t.tanks.find(k2 => k2.id === tr.src);
+      g([h('rect', { key: 'b', x: 60, y: Y - 40, width: 200, height: 80, fill: C.eq, stroke: C.eqBd, strokeWidth: 1.4 }), h('text', { key: 't', x: 160, y: Y - 6, textAnchor: 'middle', fontFamily: 'Barlow', fontSize: 15, fontWeight: 600, fill: C.txt }, tr.src), h('text', { key: 's', x: 160, y: Y + 14, textAnchor: 'middle', fontFamily: 'Barlow', fontSize: 12.5, fill: C.mute }, srcT ? D.prod(srcT.code).label : (t.pipeIn || 'Upstream pipeline'))], () => this.upd({ insp: 'src' }), 'Source ' + tr.src);
+      seg(260, 610);
+    }
+    K.push(h('rect', { key: k(), x: 610, y: Y - 30, width: 24, height: 60, fill: C.eq, stroke: C.eqBd, strokeWidth: 1.4 }));
+    T(622, Y - 40, tr.marine ? 'M-01' : (tr.type.includes('receipt') ? 'M-01' : 'M-02'), { fontFamily: 'Overpass Mono', fontSize: 13.5, textAnchor: 'middle', fill: C.txt });
+    val(622, Y + 52, 'Manifold', (tr.press != null || !tr.marine) && tr.active ? D.fmt(tr.press != null ? tr.press : 3.1 + (tr.flow % 4) / 10, 1) + ' bar(g)' : (tr.active ? null : '—'));
+    seg(634, 730);
+    const mid = tr.marine ? (tr.meter || 'FM') : (tr.pump || 'P');
+    K.push(h(tr.marine ? 'rect' : 'circle', tr.marine ? { key: k(), x: 730, y: Y - 18, width: 60, height: 36, fill: C.eq, stroke: meterLost ? C.pause : C.eqBd, strokeWidth: meterLost ? 2 : 1.4 } : { key: k(), cx: 760, cy: Y, r: 18, fill: tr.active ? C.act : C.eq, stroke: C.eqBd, strokeWidth: 1.4 }));
+    if (tr.marine) T(760, Y + 5, 'FQ', { fontSize: 13, fontWeight: 600, textAnchor: 'middle', fill: C.txt });
+    T(760, Y - 28, mid, { fontFamily: 'Overpass Mono', fontSize: 13.5, textAnchor: 'middle', fill: C.txt });
+    val(760, Y + 42, tr.truck ? 'Gantry throughput' : 'Flow', tr.state === 'Completed' ? '—' : paused ? '0 kL/h · paused' : flow != null ? D.fmt(flow) + ' kL/h' : null);
+    if (tr.truck) val(760, Y + 86, 'Trucks loaded', `${tr.trucksDone} of ${tr.truckN} · ${tr.truck} kL`);
+    if (tr.marine) val(760, Y + 86, 'Meter temperature', tr.temp != null && !meterLost ? D.fmt(tr.temp, 1) + ' °C' : (tr.active ? null : '—'));
+    seg(790, tankX - 14);
+    K.push(h('path', { key: k(), d: `M${tankX - 60} ${Y - 9}l18 9-18 9zM${tankX - 24} ${Y - 9}l-18 9 18 9z`, fill: tr.active ? C.act : C.eq, stroke: C.eqBd, strokeWidth: 1.2 }));
+    T(tankX - 42, Y - 18, String(tr.dst || '').startsWith('T-') ? 'MOV-1' + String(tr.dst).slice(2) : 'Bay valve', { fontFamily: String(tr.dst || '').startsWith('T-') ? 'Overpass Mono' : 'Barlow', fontSize: 10.5, textAnchor: 'middle', fill: C.faint });
+    // destination tank
+    sel(tankX - 20, 24, tw + 40, 250, insp === 'dst');
+    if (dst) {
+      const fill = Math.min(1, st.fill), ly = tBase - th * fill;
+      const kids = [h('rect', { key: 's', x: tankX, y: tTop, width: tw, height: th, fill: C.shell }), h('rect', { key: 'l', x: tankX, y: ly, width: tw, height: tBase - ly, fill: p.color, fillOpacity: 0.8 })];
+      if (dst.q !== 'Released') kids.push(h('rect', { key: 'hd', x: tankX, y: ly, width: tw, height: tBase - ly, fill: 'url(#trHold)' }));
+      if (tr.active && !done) { const rem = Math.min(tr.remaining, st.rx); const ry = ly - th * rem / dst.nominal; kids.push(h('rect', { key: 'r', x: tankX, y: ry, width: tw, height: ly - ry, fill: 'none', stroke: C.act, strokeDasharray: '4 3' })); }
+      const hy = tBase - th * dst.hla / dst.nominal, my = tBase - th * dst.moc / dst.nominal;
+      kids.push(h('rect', { key: 'o', x: tankX, y: tTop, width: tw, height: th, fill: 'none', stroke: C.eqBd, strokeWidth: 1.6 }), h('path', { key: 'rf', d: `M${tankX} ${tTop}L${tankX + tw / 2} ${tTop - 8}L${tankX + tw} ${tTop}`, fill: C.shell, stroke: C.eqBd, strokeWidth: 1.6 }));
+      kids.push(h('line', { key: 'm', x1: tankX + tw, x2: tankX + tw + 10, y1: my, y2: my, stroke: '#cf3b2e', strokeWidth: 2 }), h('line', { key: 'hh', x1: tankX + tw, x2: tankX + tw + 7, y1: hy, y2: hy, stroke: C.mute, strokeWidth: 1.4 }));
+      g(kids, () => this.upd({ insp: 'dst' }), 'Destination tank ' + dst.id);
+      T(tankX + tw / 2, tTop - 16, dst.id, { fontFamily: 'Overpass Mono', fontSize: 16, fontWeight: 600, textAnchor: 'middle', fill: C.txt });
+      T(tankX + tw + 14, my + 4, 'MOC', { fontSize: 11, fill: '#cf3b2e', fontWeight: 600 });
+      T(tankX + tw + 14, hy + 14, 'HLA', { fontSize: 11, fill: C.faint });
+      T(tankX + tw / 2, tBase + 24, `${Math.round(st.fill * 100)}% · ${D.fmt(dst.vol)} kL`, { fontSize: 17, fontWeight: 600, textAnchor: 'middle', fill: C.txt });
+      T(tankX + tw / 2, tBase + 44, tr.active ? `Room ${D.fmt(st.rx)} kL · need ${D.fmt(tr.remaining)}` : dst.q, { fontSize: 14, textAnchor: 'middle', fill: tr.active && st.rx < tr.remaining ? '#cf3b2e' : C.mute });
+    } else {
+      K.push(h('rect', { key: k(), x: tankX - 10, y: Y - 40, width: tw + 20, height: 80, fill: C.eq, stroke: C.eqBd, strokeWidth: 1.4 }));
+      T(tankX + tw / 2, Y + 4, tr.dst, { fontSize: 14, fontWeight: 600, textAnchor: 'middle', fill: C.txt });
+    }
+    return h('svg', { viewBox: `0 0 ${W} ${H}`, width: '100%', style: { display: 'block', aspectRatio: `${W} / ${H}` }, role: 'img', 'aria-label': 'Transfer route diagram' }, ...K);
+  }
+  renderVals() {
+    const D = this.props.d, ctx = this.props.ctx;
+    if (!D || !ctx) return { ready: false };
+    const I = ctx.I, s = this.state, h = React.createElement;
+    const t = D.term(ctx.terminalId), tz = t.tz;
+    const all = D.TRANSFERS.filter(tr => tr.term === t.id);
+    const marine = all.filter(tr => tr.marine), other = all.filter(tr => !tr.marine);
+    let selId = s.sel[t.id];
+    if (!all.find(x => x.id === selId)) selId = (marine.find(x => x.active) || marine[0] || other[0] || {}).id;
+    const mk = tr => { const p = D.prod(tr.code), sel = tr.id === selId; return { id: tr.id, title: tr.marine ? tr.vessel : `${tr.type} · ${tr.src}`, sub: tr.marine ? `${tr.berth} → ${tr.dst} · ${p.short}` : tr.truck ? `${tr.src} → ${tr.dst} · ${tr.trucksDone}/${tr.truckN} trucks` : `${tr.src} → ${tr.dst} · ${p.short}`, color: p.color, state: tr.state, icon: I.st[D.statKind(tr.state)], pct: (tr.recv / tr.planned * 100).toFixed(1) + '%', pressed: sel ? 'true' : 'false', bg: sel ? 'var(--accSoft)' : 'transparent', sh: sel ? 'inset 3px 0 0 var(--acc)' : 'none', onClick: () => this.upd({ sel: { ...s.sel, [t.id]: tr.id } }) }; };
+    const groups = [{ label: 'Ship-to-shore', items: marine.map(mk), empty: !marine.length, emptyText: t.marine ? 'No vessel transfers in the current schedule.' : 'No marine access configured at this terminal.' }, { label: 'Other transfers', items: other.map(mk), empty: !other.length, emptyText: 'None.' }];
+    const marineNote = t.marine ? `Marine access · ${t.marine.join(', ')}` : `No marine access configured. ${t.pipeIn || 'Receipts by pipeline or road'}. Ship-to-shore workspace is unavailable for this terminal.`;
+    const tr = all.find(x => x.id === selId);
+    const base = { ready: true, I, t, groups, marineNote, showList: !ctx.mobile, listW: ctx.tablet ? '230px' : '280px', noneSelected: !tr, hasSel: !!tr, goNetwork: () => this.props.go('network') };
+    if (!tr) return base;
+
+    const p = D.prod(tr.code), dst = t.tanks.find(k => k.id === tr.dst);
+    const lossSim = !!s.loss[tr.id];
+    const meterLost = tr.meterLost != null || lossSim;
+    const lostAt = tr.meterLost != null ? tr.meterLost : D.NOW - 2;
+    const flow = meterLost ? null : tr.flow;
+    const paused = tr.state === 'Paused';
+    const etaMin = !meterLost && tr.etaMin;
+    const st = dst ? D.stock(dst) : null;
+    // freshness
+    let frLabel = (tr.marine ? 'Meter online' : 'Online'), frSub = `Last sample ${D.tm(D.NOW, tz)}`, frFg = 'var(--ink)', frBg = 'var(--surf)', frBd = 'var(--line)', frIcon = I.signal;
+    if (meterLost) { frLabel = `${tr.meter || 'Meter'} communication lost`; frSub = `No flow data since ${D.tm(lostAt, tz)}`; frFg = 'var(--warnInk)'; frBg = 'var(--warnSoft)'; frBd = 'var(--warn)'; frIcon = I.st.attention; }
+    if (ctx.stale) { frLabel = 'Stale data'; frSub = 'Readings are not current'; frFg = 'var(--warnInk)'; frBg = 'var(--warnSoft)'; frBd = 'var(--warn)'; frIcon = I.st.attention; }
+    const stateTone = tr.state === 'Paused' || tr.state === 'Delayed' ? ['var(--warnSoft)', 'var(--warn)', 'var(--warnInk)'] : tr.state === 'Completed' ? ['var(--okSoft)', 'var(--ok)', 'var(--ink)'] : ['var(--surf)', 'var(--line)', 'var(--ink)'];
+    const active = tr.active && !paused && !meterLost;
+    // route sequence
+    const conn = (label, on) => ({ conn: true, label, lineBg: paused ? 'repeating-linear-gradient(90deg,var(--warn) 0 10px,transparent 10px 14px)' : (tr.active || tr.state === 'Completed') && on !== false ? (active ? 'repeating-linear-gradient(90deg,oklch(0.74 0.12 258) 0 14px,rgba(120,150,230,.35) 14px 24px)' : 'oklch(0.55 0.08 258)') : '#3a4047', anim: active ? 'tndash 0.9s linear infinite' : 'none' });
+    const insp = s.insp || 'dst';
+    const nodeBase = (kicker, title, sub, metrics, o = {}) => ({ node: true, kicker, title, sub, metrics: metrics.map(([k, v, miss]) => ({ k, v: v == null ? 'Unavailable' : v, fg: v == null ? '#8f969d' : '#e4e6e8', fs: v == null ? 'italic' : 'normal' })), w: o.w || '150px', bd: o.sel ? 'oklch(0.74 0.12 258)' : '#3a4047', bg: o.sel ? '#222c40' : '#1d2024', sh: o.sel ? '0 0 0 3px oklch(0.74 0.12 258 / .2)' : 'none', static: !o.onClick, cursor: o.onClick ? 'pointer' : 'default', onClick: o.onClick, ...o.extra });
+    let seq;
+    if (tr.marine) {
+      const m = tr.comp.match(/(\d)\s*[–-]\s*(\d)/); const act = new Set();
+      if (m) { for (let i = +m[1]; i <= +m[2]; i++) { act.add(i + 'P'); act.add(i + 'S'); } } else (tr.comp.match(/\d[PSC]/g) || []).forEach(x => act.add(x));
+      const frac = tr.state === 'Completed' ? 0 : 1 - tr.recv / tr.planned;
+      const cells = []; for (let i = 1; i <= 6; i++) ['P', 'S'].forEach(sd => { const id = i + sd; const on = act.has(id) || (sd === 'S' && act.has(i + 'C')); cells.push({ id, fill: on ? (frac * 100).toFixed(0) + '%' : '0%', color: p.color, bd: on ? 'oklch(0.74 0.12 258)' : '#30353b', title: on ? `${id} · in this parcel` : `${id} · not in this parcel` }); });
+      const order = []; for (let i = 0; i < 12; i += 2) order.push(cells[i]); for (let i = 1; i < 12; i += 2) order.push(cells[i]);
+      seq = [
+        nodeBase('Source · vessel', tr.vessel, `${tr.voyage} · ${tr.comp}`, [['Cargo pump disch.', tr.vesselPress != null && tr.active ? D.fmt(tr.vesselPress, 1) + ' bar' : (tr.active ? null : '—')], ['Cargo temp.', tr.vesselTemp != null ? D.fmt(tr.vesselTemp, 1) + ' °C' : null]], { w: '210px', sel: insp === 'src', onClick: () => this.upd({ insp: 'src' }), extra: { vessel: true, cells: order } }),
+        conn('ship manifold'),
+        nodeBase('Marine connection', tr.arm, `${tr.berth} · 12" arm`, [['Status', tr.active || tr.state === 'Completed' ? 'Connected' : 'Disconnected']], { w: '128px' }),
+        conn('jetty line 16"'),
+        nodeBase('Shore manifold', 'M-01', 'Receipt header', [['Pressure', tr.press != null && tr.active ? D.fmt(tr.press, 1) + ' bar(g)' : (tr.active ? null : '—')]], { w: '128px' }),
+        conn(''),
+        nodeBase('Meter skid', tr.meter, 'Custody meter', [['Flow', flow != null && tr.active ? D.fmt(flow) + ' kL/h' : (tr.active ? null : '—')], ['Temp.', tr.temp != null && tr.active && !meterLost ? D.fmt(tr.temp, 1) + ' °C' : (tr.active ? null : '—')]], { w: '138px' }),
+        conn('MOV-1' + (tr.dst || '').slice(2)),
+        nodeBase('Destination tank', tr.dst, p.label, [['Receiving cap.', st ? D.fmt(st.rx) + ' kL' : null]], { w: '190px', sel: insp === 'dst', onClick: () => this.upd({ insp: 'dst' }), extra: { tank: true, fill: st ? (st.fill * 100).toFixed(1) + '%' : '0%', tankLine1: st ? `${Math.round(st.fill * 100)}% · ${D.fmt(dst.vol)} kL` : '', tankLine2: st ? `MOC ${D.fmt(dst.moc)} kL` : '' } }),
+      ];
+    } else {
+      const srcT = t.tanks.find(k => k.id === tr.src);
+      seq = [
+        nodeBase('Source', tr.src, srcT ? D.prod(srcT.code).label : (tr.type.includes('Pipeline') ? t.pipeIn || 'Upstream pipeline' : ''), [['Flow', flow ? D.fmt(flow) + ' kL/h' : null]], { w: '170px', sel: insp === 'src', onClick: () => this.upd({ insp: 'src' }) }),
+        conn(''),
+        nodeBase('Manifold', tr.type.includes('receipt') ? 'M-01' : 'M-02', '', [], { w: '120px' }),
+        conn(''),
+        nodeBase('Pump', tr.pump || '—', '', [['Status', tr.active ? 'Running' : 'Stopped']], { w: '120px' }),
+        conn(''),
+        nodeBase('Destination', tr.dst, '', [], { w: '170px', sel: insp === 'dst', onClick: () => this.upd({ insp: 'dst' }) }),
+      ];
+    }
+    // KPIs
+    const elapsed = tr.start <= D.NOW ? (tr.end != null ? tr.end : D.NOW) - tr.start : null;
+    const kv = (k, v, u) => ({ k, v: v == null ? 'Unavailable' : v, u, fg: v == null ? 'var(--ink3)' : 'var(--ink)', fs: v == null ? 'italic' : 'normal' });
+    const kpis = [
+      kv(tr.truck ? 'Gantry throughput' : 'Current flow', tr.state === 'Completed' ? '—' : paused ? '0 · paused' : flow != null ? D.fmt(flow) : null, tr.truck ? `kL/h · ≈ ${tr.trucksH.toFixed(1)} trucks/h` : 'kL/h'),
+      ...(tr.truck ? [kv('Trucks loaded', `${tr.trucksDone} of ${tr.truckN}`, `${tr.truck} kL tankers`)] : []),
+      kv('Pressure', tr.press != null && tr.active && !paused ? D.fmt(tr.press, 1) : tr.active ? (paused ? D.fmt(tr.press, 1) : null) : '—', 'bar(g) · M-01'),
+      kv('Temperature', tr.temp != null && !meterLost ? D.fmt(tr.temp, 1) : (tr.active ? null : '—'), '°C · meter'),
+      kv('Started', tr.start <= D.NOW ? D.tm(tr.start, tz, { tz: false }) : 'Not started', tz + (tr.start <= D.NOW && tr.start < 0 ? ' · ' + D.tm(tr.start, tz, { date: true, tz: false }).slice(0, 6) : '')),
+      kv('Elapsed', elapsed != null ? D.dur(elapsed) : '—', tr.pumpMin ? 'pumping ' + D.dur(tr.pumpMin) : ''),
+      kv('Average rate', tr.avgRate ? D.fmt(tr.avgRate) : '—', 'kL/h while pumping'),
+    ];
+    let eta, etaNote, etaFg = 'var(--ink)', etaFs = 'normal';
+    if (tr.state === 'Completed') { eta = D.tm(tr.end, tz, { date: true }); etaNote = 'Completed. Release requires laboratory results.'; }
+    else if (tr.state === 'Scheduled' || tr.state === 'Delayed') { eta = 'Not started'; etaNote = `Planned start ${D.tm(tr.start, tz, { date: true })}${tr.state === 'Delayed' ? ' · delayed, berth closed' : ''}`; etaFg = 'var(--ink3)'; }
+    else if (etaMin) { eta = D.tm(etaMin, tz); etaNote = `At current flow ${D.fmt(flow)} kL/h · ${D.dur(etaMin - D.NOW)} remaining`; }
+    else { eta = 'Unavailable'; etaFg = 'var(--ink3)'; etaFs = 'italic'; etaNote = paused ? 'Transfer paused — no flow to estimate from.' : `Flow information insufficient — ${tr.meter || 'meter'} offline since ${D.tm(lostAt, tz)}.`; }
+    const capLimit = st ? tr.recv + st.rx : tr.planned;
+    const capPos = Math.min(100, capLimit / Math.max(tr.planned, capLimit) * 100);
+    const scale = Math.max(tr.planned, capLimit);
+    const capText = st ? (tr.state === 'Completed' ? `${tr.dst} now ${D.fmt(dst.vol)} kL · receiving capacity ${D.fmt(st.rx)} kL` : `${tr.dst} receiving capacity ${D.fmt(st.rx)} kL vs remaining ${D.fmt(tr.remaining)} kL → headroom ${D.sgn(st.rx - tr.remaining)} kL`) : `Destination ${tr.dst}`;
+    // chart
+    let chart = null, flowCaption = '';
+    if (tr.start < D.NOW) {
+      const e = tr.end != null ? tr.end : D.NOW; const pts = []; const rate = tr.avgRate * 1.025; let seed = tr.recv;
+      for (let x = tr.start; x <= e + 0.1; x += 10) {
+        const inPause = (tr.pauses || []).some(([a, b]) => x >= a && x <= (b == null ? e : b));
+        const ramp = Math.min(1, (x - tr.start) / 35);
+        seed = (seed * 9301 + 49297) % 233280; const noise = (seed / 233280 - 0.5) * rate * 0.04;
+        let v = inPause ? 0 : rate * ramp + noise;
+        if (tr.pauses.some(([a, b]) => b != null && x > b && x < b + 30)) v = rate * Math.min(1, (x - tr.pauses.find(([a, b]) => b != null && x > b)[1]) / 30) + noise;
+        if (meterLost && x >= lostAt) v = null;
+        if (x >= e - 0.1 && !meterLost && !inPause && flow) v = flow;
+        pts.push({ t: x, v: v == null ? null : Math.max(0, v) });
+      }
+      const span = e - tr.start; const step = span > 900 ? 180 : 120; const xt = []; for (let x = Math.ceil(tr.start / step) * step; x <= e; x += step) xt.push({ t: x, label: D.tm(x, tz, { tz: false }) });
+      chart = D.lineChart(h, { w: 760, h: 200, series: [{ pts, color: 'var(--ink)', label: 'Flow', unit: 'kL/h', area: true }], y0: 0, y1: Math.max(...pts.map(q => q.v || 0)) * 1.18, x0: tr.start, x1: e, xTicks: xt, bands: (tr.pauses || []).map(([a, b, why]) => ({ a, b: b == null ? e : b, label: 'Paused · ' + why })), gaps: meterLost ? [{ a: lostAt, b: e, label: 'No meter data' }] : [], hover: s.hover, onHover: v => this.setState({ hover: v }), tz, aria: 'Flow rate trend' });
+      flowCaption = `${tr.meter || 'Meter'} · kL/h · ${D.tm(tr.start, tz)} → ${tr.end != null ? D.tm(tr.end, tz) : 'now'} · hover for values`;
+    } else flowCaption = 'Transfer has not started — no flow data.';
+    // basis
+    const temp = tr.temp || (dst ? dst.temp : 30);
+    const vcf = D.vcf(tr.code, temp), dens = tr.dens || p.dens;
+    const B = v => [D.fmt(v / vcf), D.fmt(v), D.fmt(v * dens / 1000)];
+    const P = B(tr.planned), R = B(tr.recv), M = B(tr.remaining);
+    const basis = [{ label: 'Observed volume (GOV)', unit: `kL @ ${D.fmt(temp, 1)} °C`, p: P[0], r: R[0], m: M[0] }, { label: 'Standard volume (GSV)', unit: 'kL @ 15 °C', p: P[1], r: R[1], m: M[1] }, { label: 'Mass', unit: 't · in vacuum', p: P[2], r: R[2], m: M[2] }];
+    const basisNote = `Reference temperature 15 °C (terminal setting) · VCF ${vcf.toFixed(4)} (Table 54B) · density ${D.fmt(dens, 1)} kg/m³ @ 15 °C`;
+    // reconciliation
+    let recon = [], reconState, reconNote;
+    if (tr.recon) {
+      const ref = tr.recon.rows[2][1];
+      recon = tr.recon.rows.map((r, i) => ({ label: r[0], v: D.fmt(r[1]), mass: D.fmt(r[1] * dens / 1000, 1), d: i === 2 ? 'Reference' : D.sgn(r[1] - ref), dp: i === 2 ? '' : D.sgn((r[1] - ref) / ref * 100, 2) + ' %', dFg: i === 2 ? 'var(--ink3)' : Math.abs((r[1] - ref) / ref) > 0.003 ? 'var(--critInk)' : 'var(--ink)', doc: r[2], fw: i === 4 ? 600 : 400, bg: i === 2 ? 'var(--surf2)' : 'transparent', fs: 'normal', vf: 'var(--ink)' }));
+      reconState = 'Final'; reconNote = 'Shore tank vs vessel arrival −0.11 % — within tolerance.';
+    } else {
+      const bl = Math.round(tr.planned * 1.0017), arr = Math.round(tr.planned * 0.99935);
+      const started = tr.recv > 0;
+      const meterSoFar = started ? tr.recv + 8 : null;
+      const rows = [['Nominated quantity', tr.planned, 'Nomination'], ['Vessel figures — bill of lading', bl, 'B/L (load port)'], ['Vessel figures — arrival ullage, VEF applied', arr, 'Ullage report'], ['Shore meter ' + (tr.meter || ''), null, 'Meter ticket on completion'], ['Shore tank ' + tr.dst, null, 'Closing gauge on completion']];
+      recon = rows.map((r, i) => ({ label: r[0], v: r[1] == null ? 'Pending completion' : D.fmt(r[1]), mass: r[1] == null ? '' : D.fmt(r[1] * dens / 1000, 1), d: i === 2 ? 'Reference' : r[1] == null ? '' : D.sgn(r[1] - arr), dp: i === 2 || r[1] == null ? '' : D.sgn((r[1] - arr) / arr * 100, 2) + ' %', dFg: 'var(--ink)', doc: r[2], fw: 400, bg: i === 2 ? 'var(--surf2)' : 'transparent', fs: r[1] == null ? 'italic' : 'normal', vf: r[1] == null ? 'var(--ink3)' : 'var(--ink)' }));
+      reconState = started ? 'Provisional' : 'Not started';
+      reconNote = started ? `So far: meter ${D.fmt(meterSoFar)} kL vs tank gain ${D.fmt(tr.recv)} kL (${D.sgn(tr.recv - meterSoFar)} kL). Final figures after completion.` : 'Available after the transfer completes.';
+    }
+    if (!tr.marine) { reconState = 'Not applicable'; reconNote = 'Reconciled in the daily inventory balance.'; recon = []; }
+    // events
+    const ev = [];
+    const E = (label, time, note, kind) => ev.push({ label, time, note, kind });
+    if (tr.marine) {
+      E('Vessel arrival', tr.arrive, `Notice of readiness tendered · ${tr.berth}`, 'done');
+      E('Documentation', tr.arrive + 190, 'B/L, cargo manifest and certificate of quality received', 'done');
+      E('Sampling', tr.arrive + 285, `Vessel composite sample ${tr.comp}`, 'done');
+      E('Route readiness', tr.start - 35, `Line-up ${tr.arm} → M-01 → ${tr.meter} → ${tr.dst} verified`, 'done');
+    }
+    E('Transfer commenced', tr.start, tr.marine ? 'Vessel pumps started' : 'Pump started', 'done');
+    (tr.pauses || []).forEach(([a, b, why]) => { E('Paused', a, why, 'warn'); if (b != null) E('Resumed', b, 'Flow re-established', 'done'); });
+    if (meterLost) E('Meter data lost', lostAt, `${tr.meter} communication lost — flow and completion estimate unavailable`, 'warn');
+    (s.logs[tr.id] || []).forEach(l => E(l.label, l.at, l.note, 'done'));
+    if (tr.state === 'Completed') { E('Completion', tr.end, 'Vessel pumps stopped · line drained', 'done'); E('Reconciliation', tr.end + 95, 'Final figures agreed · ship/shore difference −0.11 %', 'done'); }
+    else { E('Completion', etaMin || null, etaMin ? 'Estimated at current flow' : 'Estimate unavailable', 'future'); E('Reconciliation', null, 'After completion: meter ticket, tank closing gauge, vessel ullage', 'future'); }
+    const done = ev.filter(e => e.time != null && e.kind !== 'future' && e.time <= D.NOW).sort((a, b) => a.time - b.time);
+    const fut = ev.filter(e => !(e.time != null && e.kind !== 'future' && e.time <= D.NOW));
+    const nowEv = tr.active ? [{ label: 'Now', time: D.NOW, note: tr.state === 'Paused' ? 'Paused' : `${D.fmt(tr.recv)} kL received`, kind: 'now' }] : [];
+    const events = [...done, ...nowEv, ...fut].map((e, i, arr) => ({ label: e.label, note: e.note, time: e.time == null ? (e.kind === 'future' ? 'Pending' : 'Unavailable') : D.tm(e.time, tz, { date: e.time < 0 || e.time >= 1440 }), r: e.kind === 'now' ? '1px' : '50%', dotBd: e.kind === 'warn' ? 'var(--warn)' : e.kind === 'now' ? 'var(--acc)' : e.kind === 'future' ? 'var(--ink4)' : 'var(--ink)', dotBg: e.kind === 'warn' ? 'var(--warn)' : e.kind === 'now' ? 'var(--acc)' : e.kind === 'future' ? 'transparent' : 'var(--ink)', fw: e.kind === 'now' ? 600 : 500, fg: e.kind === 'future' ? 'var(--ink3)' : 'var(--ink)', tf: e.kind === 'future' ? 'var(--ink3)' : 'var(--ink2)', lineBg: i === arr.length - 1 ? 'transparent' : (e.kind === 'future' ? 'var(--line2)' : 'var(--line)') }));
+    // inspector
+    const badge = src => src === 'M' ? { src: 'measured', bBd: 'var(--ink2)', bFg: 'var(--ink2)' } : src === 'V' ? { src: 'vessel', bBd: 'var(--acc)', bFg: 'var(--acc)' } : src === 'C' ? { src: 'calculated', bBd: 'var(--ink3)', bFg: 'var(--ink3)' } : { src: 'unavailable', bBd: 'var(--ink4)', bFg: 'var(--ink3)' };
+    const row = (k, v, src) => ({ k, v: v == null ? 'Unavailable' : v, fs: v == null ? 'italic' : 'normal', vf: v == null ? 'var(--ink3)' : 'var(--ink)', ...badge(v == null ? 'U' : src) });
+    let inspObj;
+    if (insp === 'src' && tr.marine) {
+      const bl = Math.round(tr.planned * 1.0017), arr = Math.round(tr.planned * 0.99935);
+      inspObj = { title: `${tr.vessel} · ${tr.voyage}`, sub: `Source · ${tr.comp} · vessel-reported values`, rows: [row('Cargo pump discharge pressure', tr.vesselPress != null && tr.active && !paused ? D.fmt(tr.vesselPress, 1) + ' bar' : null, 'V'), row('Cargo temperature', tr.vesselTemp != null ? D.fmt(tr.vesselTemp, 1) + ' °C' : null, 'V'), row('Quantity on board (est.)', tr.state === 'Completed' ? '0 kL' : D.fmt(arr - tr.recv) + ' kL', 'C'), row('B/L quantity', D.fmt(bl) + ' kL', 'V'), row('Arrival quantity (VEF applied)', D.fmt(arr) + ' kL', 'V'), row('Vessel experience factor', '0.9984', 'V'), row('Water on board', tr.id.endsWith('0418') ? null : '0.0 kL', 'V')], link: null };
+    } else if (dst) {
+      const ds = D.stock(dst);
+      inspObj = { title: `${dst.id} · ${D.prod(dst.code).label}`, sub: `Destination · ${dst.status} · ${dst.q}`, rows: [row('Liquid level', D.fmt(ds.level) + ' mm', 'M'), row('Current volume', D.fmt(dst.vol) + ' kL @ 15 °C', 'C'), row('Temperature', dst.tempSrc === 'unavailable' ? null : D.fmt(dst.temp, 1) + ' °C', 'M'), row('Receiving capacity to MOC', D.fmt(ds.rx) + ' kL', 'C'), row('Margin to high-level alarm', D.fmt(dst.hla - dst.vol) + ' kL', 'C'), row('Water bottom', dst.water != null ? D.fmt(dst.water) + ' mm' : null, 'M'), row('Inlet valve MOV-1' + dst.id.slice(2), tr.active ? 'Open' : 'Closed', 'M')], link: 'Open tank in terminal workspace', onLink: () => this.props.go('terminal', { terminalId: t.id, focus: { type: 'tank', id: dst.id } }) };
+    } else inspObj = { title: tr.dst, sub: 'Destination outside tank register', rows: [], link: null };
+    // berth chart
+    const sch = D.scheduleFor(t.id);
+    const X0 = D.NOW - 12 * 60, X1 = D.NOW + 60 * 60;
+    const pos = v => (Math.max(0, Math.min(1, (v - X0) / (X1 - X0))) * 100).toFixed(2) + '%';
+    const bLanes = (t.marine || []).map(b => ({ name: b, items: sch.items.filter(i => i.lane === b && i.b > X0 && i.a < X1).map(i => { const trx = D.TRANSFERS.find(x => x.id === i.ref); const planned = i.a > D.NOW; const delayed = trx && trx.state === 'Delayed'; const sel = i.ref === tr.id; return { label: i.label, title: `${i.label} · ${D.tm(i.a, tz, { date: true })} → ${D.tm(i.b, tz, { date: true })}`, x: pos(i.a), w: `calc(${pos(i.b)} - ${pos(i.a)})`, bd: sel ? 'var(--acc)' : delayed ? 'var(--warn)' : planned ? 'var(--ink3)' : 'var(--ink2)', bg: delayed ? 'var(--warnSoft)' : planned ? 'transparent' : sel ? 'var(--acc)' : 'var(--ink2)', fg: delayed || planned ? 'var(--ink)' : 'var(--surf)', onClick: () => trx && this.upd({ sel: { ...s.sel, [t.id]: trx.id } }) }; }) }));
+    const bTicks = []; for (let v = Math.ceil(X0 / 360) * 360; v <= X1; v += 360) bTicks.push({ x: pos(v), label: D.tm(v, tz, { tz: false, date: v % 1440 === 0 }) });
+    const canAct = ctx.perm.act && tr.active;
+    return {
+      ...base,
+      x: { title: tr.marine ? `${tr.vessel} · ${tr.voyage}` : `${tr.type} · ${tr.src} → ${tr.dst}`, id: tr.id, state: tr.state, stIcon: I.st[D.statKind(tr.state)], stBg: stateTone[0], stBd: stateTone[1], stFg: tr.state === 'Paused' || tr.state === 'Delayed' ? 'var(--warnInk)' : 'var(--ink)', prod: p.label, color: p.color, batch: tr.batch || '—', where: tr.marine ? `${tr.berth} · ${tr.comp} → ${tr.dst}` : `${tr.src} → ${tr.dst}`,
+        frLabel, frSub, frFg, frBg, frBd, frIcon, canSim: false,
+        routeText: tr.marine ? `Vessel cargo compartment → marine connection → shore manifold → receiving tank` : `${tr.src} → ${tr.dst}`,
+        planned: D.fmt(tr.planned), recv: D.fmt(tr.recv), remaining: D.fmt(tr.remaining), recvWord: tr.type.includes('dispatch') ? 'Dispatched' : 'Received', pctText: `${(tr.recv / tr.planned * 100).toFixed(1)} % of planned`,
+        pct: (tr.recv / scale * 100).toFixed(2) + '%', pausedW: paused ? '0.6%' : '0%', capPos: (capLimit / scale * 100).toFixed(2) + '%', capText,
+        eta, etaNote, etaFg, etaFs, kpis, flowCaption, basis, basisNote, recon, reconState, reconNote, events },
+      seq, chart, inspTabs: [['src', tr.marine ? 'Source · vessel' : 'Source'], ['dst', 'Destination · tank']].map(([id, label]) => ({ label, on: insp === id ? 'true' : 'false', onClick: () => this.upd({ insp: id }), bg: insp === id ? 'var(--surf)' : 'transparent', fg: insp === id ? 'var(--ink)' : 'var(--barInk2)' })), routeSvg: this.routeSvg(D, ctx, t, tr, dst, st, p, flow, meterLost, insp), insp: inspObj,
+      mainCols: ctx.tablet ? 'minmax(0,1fr)' : 'minmax(0,1fr) 360px',
+      toggleLoss: () => this.upd({ loss: { ...s.loss, [tr.id]: !lossSim } }), lossLabel: lossSim ? 'Restore meter signal' : 'Simulate meter signal loss',
+      logEvent: () => { const at = ctx.now; const label = paused ? 'Resumption logged' : 'Event logged'; this.setState({ logs: { ...s.logs, [tr.id]: [...(s.logs[tr.id] || []), { label: 'Operator note', at, note: `Logged by ${ctx.user}` }] } }); this.props.toast && this.props.toast(`Event logged on ${tr.id} by ${ctx.user}.`); },
+      noAct: !canAct, actOp: canAct ? 1 : 0.5, actIcon: canAct ? I.plus : I.lock, logLabel: 'Log event', actTitle: canAct ? 'Add an operator event to the timeline' : (tr.active ? `Requires operator role · current: ${ctx.roleLabel}` : 'Transfer is not active'),
+      berthRange: `${D.tm(X0, tz, { date: true })} → ${D.tm(X1, tz, { date: true })} · next 60 h`, bLanes, noBerths: !(t.marine || []).length, bTicks, nowX: pos(D.NOW), goSchedule: () => this.props.go('schedule'),
+    };
+  }
+}
+</script>
+</body>
+</html>

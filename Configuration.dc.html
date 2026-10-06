@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<div style="position:absolute;inset:0;overflow:auto;background:var(--bg)">
+<sc-if value="{{ ready }}" hint-placeholder-val="{{ true }}">
+<div style="padding:32px 40px 56px;display:flex;flex-direction:column;gap:40px">
+  <div style="display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap">
+    <div>
+      <h1 style="margin:0;font-size:30px;font-weight:500;letter-spacing:-.015em;line-height:1.1">Terminal configuration</h1>
+      <div style="font-size:12px;color:var(--ink3);margin-top:3px">Capabilities, tank register and equipment materials are configured per terminal.</div>
+    </div>
+    <div style="flex:1"></div>
+    <sc-if value="{{ locked }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border:1px solid var(--line);border-radius:0;background:var(--surf2);font-size:12px;color:var(--ink2)">{{ I.lock }}Read only · editing requires the Configuration admin role (current: {{ role }})</div>
+    </sc-if>
+  </div>
+
+  <section aria-label="Capability matrix" style="background:var(--surf);border:1px solid var(--pBd);overflow:hidden">
+    <div style="padding:10px 14px;border-bottom:1px solid var(--line2);font-weight:600">Capability matrix</div>
+    <div style="overflow-x:auto">
+      <div style="min-width:960px">
+        <div style="display:grid;grid-template-columns:{{ mcols }};padding:7px 14px;background:var(--surf);font-size:12.5px;font-weight:600;color:var(--ink);border-bottom:2px solid var(--line);gap:8px"><span>Terminal</span><span>Time zone</span><span>Tanks</span><span>Marine</span><span>Blending</span><span>Truck</span><span>Hydrant</span><span>Pipeline</span><span>Products</span></div>
+        <sc-for list="{{ matrix }}" as="r" hint-placeholder-count="14">
+          <div onClick="{{ r.onClick }}" style="display:grid;grid-template-columns:{{ mcols }};padding:7px 14px;gap:8px;border-top:1px solid var(--line2);align-items:center;cursor:pointer;background:{{ r.bg }};box-shadow:{{ r.sh }}" style-hover="background:var(--surf2)">
+            <span style="font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.name }}</span>
+            <select value="{{ r.tz }}" onChange="{{ r.onTz }}" onClick="{{ stop }}" disabled="{{ locked }}" style="height:28px;border:1px solid var(--line);border-radius:0;background:var(--surf);padding:0 6px;color:var(--ink);font-family:var(--fnum);font-size:12px;width:80px"><option value="WIB">WIB</option><option value="WITA">WITA</option><option value="WIT">WIT</option></select>
+            <span style="font-family:var(--fnum);font-size:12px">{{ r.tanks }}</span>
+            <span style="font-size:12px;color:{{ r.mFg }}">{{ r.marine }}</span>
+            <span style="font-size:12px;color:{{ r.bFg }}">{{ r.blend }}</span>
+            <span style="font-size:12px;color:{{ r.tFg }}">{{ r.truck }}</span>
+            <span style="font-size:12px;color:{{ r.hFg }}">{{ r.hyd }}</span>
+            <span style="font-size:12px;color:{{ r.pFg }}">{{ r.pipe }}</span>
+            <span style="display:flex;gap:3px;flex-wrap:wrap"><sc-for list="{{ r.prods }}" as="p" hint-placeholder-count="3"><span title="{{ p.label }}" style="display:flex;align-items:center;gap:4px;font-family:var(--fnum);font-size:10.5px;padding:0 4px;border:1px solid var(--line);border-radius:0"><span style="width:7px;height:7px;background:{{ p.sw }}"></span>{{ p.short }}</span></sc-for></span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </section>
+
+  <section aria-label="Tank register" style="background:var(--surf);border:1px solid var(--pBd);overflow:hidden">
+    <div style="background:var(--bar);color:var(--barInk);--ink:var(--barInk);--ink2:var(--barInk2);--ink3:var(--barInk3);--acc:var(--barAcc);padding:9px 14px;display:flex;gap:10px;align-items:baseline;flex-wrap:wrap"><span style="font-weight:600">Tank register · {{ t.name }}</span><span style="font-size:11.5px;color:var(--ink3)">Product assignment, capacities, roof type and materials. The schematic's satin finish is a visual treatment only.</span></div>
+    <div style="overflow-x:auto">
+      <div style="min-width:1000px">
+        <div style="display:grid;grid-template-columns:{{ tcols }};padding:7px 14px;background:var(--surf);font-size:12.5px;font-weight:600;color:var(--ink);border-bottom:2px solid var(--line);gap:8px"><span>Tank</span><span>Bund</span><span>Product / component</span><span>Nominal kL</span><span>MOC kL</span><span>Roof type</span><span>Shell material</span><span>Dimensions</span></div>
+        <sc-for list="{{ tanks }}" as="k" hint-placeholder-count="10">
+          <div style="display:grid;grid-template-columns:{{ tcols }};padding:6px 14px;gap:8px;border-top:1px solid var(--line2);align-items:center">
+            <span style="font-family:var(--fid);white-space:nowrap;letter-spacing:-.02em;font-weight:600;font-size:12px">{{ k.id }}</span>
+            <span style="font-family:var(--fnum);font-size:12px;color:var(--ink3)">{{ k.bund }}</span>
+            <select value="{{ k.code }}" onChange="{{ k.onCode }}" disabled="{{ locked }}" style="height:28px;border:1px solid var(--line);border-radius:0;background:var(--surf);padding:0 6px;color:var(--ink)">
+              <optgroup label="Finished products"><sc-for list="{{ prodOpts }}" as="o" hint-placeholder-count="8"><option value="{{ o.code }}">{{ o.label }}</option></sc-for></optgroup>
+              <optgroup label="Blend components"><sc-for list="{{ compOpts }}" as="o" hint-placeholder-count="5"><option value="{{ o.code }}">{{ o.label }}</option></sc-for></optgroup>
+            </select>
+            <input type="number" step="500" value="{{ k.nominal }}" onChange="{{ k.onNom }}" disabled="{{ locked }}" style="height:28px;border:1px solid var(--line);border-radius:0;background:var(--surf);padding:0 6px;font-family:var(--fnum);font-size:12px;color:var(--ink);width:100%">
+            <input type="number" step="100" value="{{ k.moc }}" onChange="{{ k.onMoc }}" disabled="{{ locked }}" style="height:28px;border:1px solid {{ k.mocBd }};border-radius:0;background:var(--surf);padding:0 6px;font-family:var(--fnum);font-size:12px;color:var(--ink);width:100%">
+            <select value="{{ k.roof }}" onChange="{{ k.onRoof }}" disabled="{{ locked }}" style="height:28px;border:1px solid var(--line);border-radius:0;background:var(--surf);padding:0 6px;color:var(--ink)"><option>Fixed cone roof</option><option>Internal floating roof</option><option>External floating roof</option><option>Dome roof</option></select>
+            <select value="{{ k.material }}" onChange="{{ k.onMat }}" disabled="{{ locked }}" style="height:28px;border:1px solid var(--line);border-radius:0;background:var(--surf);padding:0 6px;color:var(--ink)"><option>Carbon steel shell</option><option>Stainless steel shell</option><option>Aluminium dome, carbon steel shell</option><option>Internally lined carbon steel</option></select>
+            <span style="font-family:var(--fnum);font-size:11.5px;color:var(--ink2)">{{ k.dims }}</span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </section>
+</div>
+</sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    const D = this.props.d, ctx = this.props.ctx;
+    if (!D || !ctx) return { ready: false };
+    const I = ctx.I, t = D.term(ctx.terminalId), locked = !ctx.perm.config;
+    const yes = (v, txt) => ({ v: v ? txt : '—', fg: v ? 'var(--ink)' : 'var(--ink4)' });
+    const done = () => { ctx.bump(); this.forceUpdate(); };
+    const matrix = D.TERMINALS.map(x => { const m = yes(x.marine, x.marine ? x.marine.length + ' berth' + (x.marine.length > 1 ? 's' : '') : ''), b = yes(x.blend, x.blend ? x.blend.mode : ''), tr = yes(x.truck, x.truck + ' bays'), hy = yes(x.hydrant, 'Yes'), pp = yes(x.pipeIn || x.pipeOut, x.pipeIn && x.pipeOut ? 'In + out' : x.pipeIn ? 'Receipt' : 'Dispatch'); const on = x.id === t.id;
+      return { name: x.name, tz: x.tz, tanks: x.tanks.length, marine: m.v, mFg: m.fg, blend: b.v, bFg: b.fg, truck: tr.v, tFg: tr.fg, hyd: hy.v, hFg: hy.fg, pipe: pp.v, pFg: pp.fg, prods: [...new Set(x.tanks.map(k => k.code))].map(c => D.prod(c)), bg: on ? 'var(--accSoft)' : 'transparent', sh: on ? 'inset 2px 0 0 var(--acc)' : 'none', onClick: () => this.props.setCtx({ terminalId: x.id }), onTz: e => { x.tz = e.target.value; this.props.toast && this.props.toast(`${x.name} time zone set to ${x.tz}. Local times update across screens.`); done(); } }; });
+    const tanks = t.tanks.map(k => ({ id: k.id, bund: k.bund, code: k.code, nominal: k.nominal, moc: k.moc, mocBd: k.moc > k.nominal ? 'var(--crit)' : 'var(--line)', roof: k.roof, material: k.material, dims: `Ø ${k.diam} m × ${k.height} m`,
+      onCode: e => { const c = e.target.value; k.code = c; k.kind = D.prod(c).kind; done(); },
+      onNom: e => { const v = Math.max(500, +e.target.value || k.nominal); k.nominal = v; if (k.moc > v) k.moc = Math.round(v * 0.95 / 10) * 10; k.hla = Math.round(v * 0.925 / 10) * 10; done(); },
+      onMoc: e => { const v = Math.min(k.nominal, Math.max(0, +e.target.value || k.moc)); k.moc = v; done(); },
+      onRoof: e => { k.roof = e.target.value; done(); }, onMat: e => { k.material = e.target.value; done(); } }));
+    return { ready: true, I, t, locked, role: ctx.roleLabel, matrix, tanks, stop: e => e.stopPropagation(),
+      prodOpts: D.PRODUCTS.map(p => ({ code: p.code, label: p.label })), compOpts: D.COMPONENTS.map(p => ({ code: p.code, label: p.label })),
+      mcols: 'minmax(0,1.8fr) 90px 60px repeat(5,minmax(0,0.7fr)) minmax(0,1.6fr)', tcols: '60px 50px minmax(0,1.5fr) 110px 110px minmax(0,1.2fr) minmax(0,1.4fr) minmax(0,0.9fr)' };
+  }
+}
+</script>
+</body>
+</html>

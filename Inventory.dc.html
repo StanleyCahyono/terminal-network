@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<div style="position:absolute;inset:0;overflow:auto;background:var(--bg)">
+<sc-if value="{{ ready }}" hint-placeholder-val="{{ true }}">
+<div style="padding:32px 40px 56px;display:flex;flex-direction:column;gap:40px">
+  <div style="display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap">
+    <div>
+      <div style="display:flex;align-items:center;gap:10px"><h1 style="margin:0;font-size:30px;font-weight:500;letter-spacing:-.015em;line-height:1.1">Inventory and reconciliation</h1></div>
+      <div style="font-size:12px;color:var(--ink3);margin-top:3px">{{ periodText }}</div>
+    </div>
+    <div style="flex:1"></div>
+    <div role="group" aria-label="Scope" style="display:flex;border:1px solid var(--line);border-radius:0;overflow:hidden">
+      <sc-for list="{{ scopeOpts }}" as="o" hint-placeholder-count="2"><button onClick="{{ o.onClick }}" style="height:32px;padding:0 12px;border:0;background:{{ o.bg }};color:{{ o.fg }};white-space:nowrap">{{ o.label }}</button></sc-for>
+    </div>
+    <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink3)">Basis
+      <select value="{{ basis }}" onChange="{{ onBasis }}" style="height:32px;border:1px solid var(--line);border-radius:0;background:var(--surf);padding:0 8px;color:var(--ink)">
+        <option value="gsv">Standard volume · kL @ 15 °C</option>
+        <option value="mass">Mass · t (in vacuum)</option>
+      </select>
+    </label>
+  </div>
+
+  <sc-if value="{{ unavailable }}" hint-placeholder-val="{{ false }}">
+    <div style="padding:28px 22px;background:var(--surf);border:1px solid var(--pBd);display:flex;flex-direction:column;gap:8px;align-items:flex-start">
+      <span style="color:var(--ink3)">{{ I.inventory }}</span>
+      <div style="font-weight:600;font-size:15px">No reconciliation available for {{ rangeName }}</div>
+      <div style="color:var(--ink2)">Balances before 04 Oct 14:20 WIB are archived. Choose Current shift, Today or Last 24 h in the time range selector.</div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ available }}" hint-placeholder-val="{{ true }}">
+    <section aria-label="Balance" style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));background:var(--surf);border:1px solid var(--pBd)">
+      <sc-for list="{{ summary }}" as="x" hint-placeholder-count="7">
+        <div style="padding:12px 14px;border-right:1px solid var(--line2);display:flex;flex-direction:column;gap:2px;min-width:0">
+          <span style="font-size:12.5px;color:var(--ink3);white-space:nowrap">{{ x.op }} {{ x.label }}</span>
+          <span style="font-family:var(--fnum);font-size:17px;font-weight:600;white-space:nowrap">{{ x.v }}</span>
+        </div>
+      </sc-for>
+    </section>
+    <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink2)">{{ balIcon }}<span>{{ balText }}</span></div>
+
+    <section aria-label="Inventory table" style="background:var(--surf);border:1px solid var(--pBd);overflow:hidden">
+      <div style="overflow-x:auto">
+        <div style="min-width:1080px">
+          <div style="display:grid;grid-template-columns:{{ cols }};padding:7px 14px;background:var(--surf);font-size:12.5px;font-weight:600;color:var(--ink);border-bottom:2px solid var(--line);gap:8px;border-bottom:1px solid var(--line)">
+            <span>Terminal</span><span>Tank</span><span>Product</span><span style="text-align:right">Opening</span><span style="text-align:right">+ Receipts</span><span style="text-align:right">− Dispatches</span><span style="text-align:right">± Adjust.</span><span style="text-align:right">= Closing</span><span style="text-align:right">Quality held</span><span style="text-align:right">Available</span>
+          </div>
+          <sc-if value="{{ empty }}" hint-placeholder-val="{{ false }}"><div style="padding:22px 14px;color:var(--ink3)">No tanks store the selected products in this scope.</div></sc-if>
+          <sc-for list="{{ rows }}" as="r" hint-placeholder-count="12">
+            <div role="row" tabindex="{{ r.tab }}" onClick="{{ r.onClick }}" style="display:grid;grid-template-columns:{{ cols }};padding:7px 14px;gap:8px;border-bottom:1px solid var(--line2);align-items:center;background:{{ r.bg }};cursor:{{ r.cursor }};font-weight:{{ r.fw }}" style-hover="background:var(--surf2)">
+              <span style="display:flex;align-items:center;gap:6px;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-left:{{ r.ind }}"><span style="color:var(--ink3)">{{ r.chev }}</span>{{ r.term }}</span>
+              <span style="font-family:var(--fid);white-space:nowrap;letter-spacing:-.02em;font-size:12px">{{ r.tank }}</span>
+              <span style="display:flex;align-items:center;gap:6px;min-width:0;white-space:nowrap;overflow:hidden"><span style="width:9px;height:9px;flex:none;background:{{ r.sw }};border:1px solid {{ r.swBd }}"></span><span style="overflow:hidden;text-overflow:ellipsis">{{ r.prod }}</span></span>
+              <span style="text-align:right;font-family:var(--fnum);font-size:12px">{{ r.open }}</span>
+              <span style="text-align:right;font-family:var(--fnum);font-size:12px;color:{{ r.recFg }}">{{ r.rec }}</span>
+              <span style="text-align:right;font-family:var(--fnum);font-size:12px;color:{{ r.disFg }}">{{ r.dis }}</span>
+              <span style="text-align:right;font-family:var(--fnum);font-size:12px;color:{{ r.adjFg }}">{{ r.adj }}</span>
+              <span style="text-align:right;font-family:var(--fnum);font-size:12px;font-weight:600">{{ r.close }}</span>
+              <span style="text-align:right;font-family:var(--fnum);font-size:12px;display:flex;justify-content:flex-end;align-items:center;gap:6px"><span style="width:10px;height:10px;background:{{ r.heldSw }}"></span>{{ r.held }}</span>
+              <span style="text-align:right;font-family:var(--fnum);font-size:12px">{{ r.avail }}</span>
+            </div>
+          </sc-for>
+          <div style="display:grid;grid-template-columns:{{ cols }};padding:9px 14px;gap:8px;background:var(--surf2);font-weight:600;align-items:center">
+            <span>Total finished products</span><span></span><span></span>
+            <sc-for list="{{ totals }}" as="v" hint-placeholder-count="7"><span style="text-align:right;font-family:var(--fnum);font-size:12px">{{ v }}</span></sc-for>
+          </div>
+        </div>
+      </div>
+      <div style="padding:8px 14px;border-top:1px solid var(--line2);font-size:11.5px;color:var(--ink3);display:flex;gap:14px;flex-wrap:wrap">
+        <span>Opening + receipts − dispatches ± adjustments = closing, on one basis per reconciliation.</span>
+        <span>Adjustments: gauge corrections and temperature recalculations.</span>
+        <span>Quality held is part of closing stock and is not available.</span>
+      </div>
+    </section>
+
+    <section aria-label="Blend components" style="background:var(--surf);border:1px solid var(--pBd);overflow:hidden">
+      <div style="background:var(--bar);color:var(--barInk);--ink:var(--barInk);--ink2:var(--barInk2);--ink3:var(--barInk3);--acc:var(--barAcc);padding:9px 14px;display:flex;gap:10px;align-items:baseline"><span style="font-weight:600">Blend components</span><span style="font-size:11.5px;color:var(--ink3)">Separate inventory category — excluded from finished-product totals</span></div>
+      <sc-if value="{{ noComp }}" hint-placeholder-val="{{ false }}"><div style="padding:14px;color:var(--ink3)">No blend components stored in this scope.</div></sc-if>
+      <sc-for list="{{ compRows }}" as="r" hint-placeholder-count="2">
+        <div style="display:grid;grid-template-columns:{{ cols }};padding:7px 14px;gap:8px;border-bottom:1px solid var(--line2);align-items:center">
+          <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.term }}</span><span style="font-family:var(--fid);white-space:nowrap;letter-spacing:-.02em;font-size:12px">{{ r.tank }}</span>
+          <span style="display:flex;align-items:center;gap:6px;white-space:nowrap;overflow:hidden"><span style="width:9px;height:9px;flex:none;background:{{ r.sw }};border:1px solid {{ r.swBd }}"></span>{{ r.prod }}</span>
+          <span style="text-align:right;font-family:var(--fnum);font-size:12px">{{ r.open }}</span><span style="text-align:right;font-family:var(--fnum);font-size:12px">{{ r.rec }}</span><span style="text-align:right;font-family:var(--fnum);font-size:12px">{{ r.dis }}</span><span style="text-align:right;font-family:var(--fnum);font-size:12px">{{ r.adj }}</span><span style="text-align:right;font-family:var(--fnum);font-size:12px;font-weight:600">{{ r.close }}</span><span style="text-align:right;font-family:var(--fnum);font-size:12px">{{ r.held }}</span><span style="text-align:right;font-family:var(--fnum);font-size:12px">{{ r.avail }}</span>
+        </div>
+      </sc-for>
+    </section>
+  </sc-if>
+</div>
+</sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = p.d ? p.d.ui.load('inv', { basis: 'gsv', open: {}, scopeLocal: null }) : {}; }
+  upd(p) { this.setState(p, () => this.props.d.ui.save('inv', this.state)); }
+  renderVals() {
+    const D = this.props.d, ctx = this.props.ctx;
+    if (!D || !ctx) return { ready: false };
+    const I = ctx.I, s = this.state, prods = ctx.products, has = c => !prods.length || prods.includes(c);
+    const net = (s.scopeLocal || (ctx.scope === 'network' ? 'network' : 'terminal')) === 'network';
+    const t = D.term(ctx.terminalId);
+    const shifts = { A: [360, 840], B: [840, D.NOW], C: [-120, 360] };
+    const per = { 'Current shift': shifts[ctx.shift] || shifts.B, Today: [0, D.NOW], 'Last 24 h': [D.NOW - 1440, D.NOW] }[ctx.range];
+    const base = { ready: true, I, scopeOpts: [['terminal', t.name], ['network', 'Network · by terminal']].map(([id, label]) => ({ label, onClick: () => this.upd({ scopeLocal: id }), bg: (net ? 'network' : 'terminal') === id ? 'var(--ink)' : 'var(--surf)', fg: (net ? 'network' : 'terminal') === id ? 'var(--surf)' : 'var(--ink)' })), basis: s.basis, onBasis: e => this.upd({ basis: e.target.value }) };
+    if (!per) return { ...base, unavailable: true, available: false, rangeName: ctx.range.toLowerCase(), periodText: `${ctx.range} · archived` };
+    const [a, b] = per;
+    const mass = s.basis === 'mass';
+    const f = k => mass ? k.dens15 / 1000 : 1;
+    const calc = k => { const m = D.movements(k, a, b); const close = Math.round(D.volAt(k, b)); const adj = m.adj; const open = close - m.rec + m.dis - adj; const st = D.stock(k); const held = b >= D.NOW - 1 ? st.held : 0; const avail = b >= D.NOW - 1 ? st.avail : null; const x = f(k); return { open: open * x, rec: m.rec * x, dis: m.dis * x, adj: adj * x, close: close * x, held: held * x, avail: avail == null ? null : avail * x }; };
+    const dp = mass ? 0 : 0;
+    const F = v => v == null ? '—' : D.fmt(v, dp);
+    const terms = net ? D.TERMINALS : [t];
+    const rows = []; const tot = { open: 0, rec: 0, dis: 0, adj: 0, close: 0, held: 0, avail: 0 };
+    const add = (A, x) => Object.keys(tot).forEach(k => A[k] += x[k] || 0);
+    const rowOf = (k, T, ind) => { const x = calc(k); const P = D.prod(k.code); return { term: ind ? '' : T.name, tank: k.id, prod: P.label, sw: P.sw, swBd: P.kind === 'component' ? P.color : 'transparent', open: F(x.open), rec: x.rec ? F(x.rec) : '—', dis: x.dis ? F(x.dis) : '—', adj: x.adj ? D.sgn(x.adj) : '—', close: F(x.close), held: x.held ? F(x.held) : '—', heldSw: x.held ? 'repeating-linear-gradient(135deg, var(--holdA) 0 2px, var(--holdB) 2px 4px)' : 'transparent', avail: F(x.avail), recFg: x.rec ? 'var(--ink)' : 'var(--ink4)', disFg: x.dis ? 'var(--ink)' : 'var(--ink4)', adjFg: x.adj ? 'var(--warnInk)' : 'var(--ink4)', bg: 'transparent', cursor: 'default', fw: 400, ind: ind ? '22px' : '0', chev: null, tab: -1, x }; };
+    terms.forEach(T => {
+      const ks = T.tanks.filter(k => k.kind === 'product' && has(k.code)); if (!ks.length) return;
+      if (net) {
+        const agg = { open: 0, rec: 0, dis: 0, adj: 0, close: 0, held: 0, avail: 0 }; const sub = ks.map(k => rowOf(k, T, true)); sub.forEach(r => add(agg, r.x)); add(tot, agg);
+        const open = !!s.open[T.id];
+        rows.push({ term: T.name, tank: `${ks.length} tanks`, prod: [...new Set(ks.map(k => D.prod(k.code).short))].join(' · '), sw: 'transparent', swBd: 'transparent', open: F(agg.open), rec: agg.rec ? F(agg.rec) : '—', dis: agg.dis ? F(agg.dis) : '—', adj: agg.adj ? D.sgn(agg.adj) : '—', close: F(agg.close), held: agg.held ? F(agg.held) : '—', heldSw: agg.held ? 'repeating-linear-gradient(135deg, var(--holdA) 0 2px, var(--holdB) 2px 4px)' : 'transparent', avail: F(agg.avail), recFg: 'var(--ink)', disFg: 'var(--ink)', adjFg: agg.adj ? 'var(--warnInk)' : 'var(--ink4)', bg: open ? 'var(--surf2)' : 'transparent', cursor: 'pointer', fw: 500, ind: '0', chev: open ? I.chevD : I.chevR, tab: 0, onClick: () => this.upd({ open: { ...s.open, [T.id]: !open } }) });
+        if (open) sub.forEach(r => rows.push(r));
+      } else ks.forEach(k => { const r = rowOf(k, T, false); add(tot, r.x); rows.push(r); });
+    });
+    const comps = []; terms.forEach(T => T.tanks.filter(k => k.kind === 'component').forEach(k => comps.push(rowOf(k, T, false))));
+    const unit = mass ? 't' : 'kL';
+    const summary = [['', 'Opening', tot.open], ['+', 'Receipts', tot.rec], ['−', 'Dispatches', tot.dis], ['±', 'Adjustments', tot.adj], ['=', 'Closing', tot.close], ['', 'Quality held', tot.held], ['', 'Available', tot.avail]].map(([op, label, v]) => ({ op, label, v: (label === 'Adjustments' ? D.sgn(v) : F(v)) + ' ' + unit }));
+    const bal = tot.open + tot.rec - tot.dis + tot.adj - tot.close;
+    const tz = net ? 'WIB' : t.tz;
+    return { ...base, unavailable: false, available: true, rows, empty: !rows.length, compRows: comps, noComp: !comps.length,
+      totals: [F(tot.open), F(tot.rec), F(tot.dis), D.sgn(tot.adj), F(tot.close), F(tot.held), F(tot.avail)], summary,
+      balIcon: Math.abs(bal) < 1 ? I.st.ok : I.st.attention, balText: Math.abs(bal) < 1 ? `Balance closes: opening + receipts − dispatches ± adjustments equals closing (difference ${D.fmt(bal, 0)} ${unit}).` : `Balance difference ${D.fmt(bal, 1)} ${unit}.`,
+      periodText: `${net ? 'Network · 14 terminals' : t.name} · ${ctx.range}${ctx.range === 'Current shift' ? ' ' + ctx.shift : ''} · ${D.tm(a, tz, { date: true })} → ${D.tm(b, tz, { date: true })} · basis ${mass ? 'mass t (in vacuum)' : 'GSV kL @ 15 °C'}`,
+      cols: 'minmax(0,1.5fr) 70px minmax(0,1.2fr) repeat(7,minmax(0,0.85fr))' };
+  }
+}
+</script>
+</body>
+</html>
