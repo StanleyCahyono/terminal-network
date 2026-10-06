@@ -36,9 +36,9 @@
   </sc-if>
 
   <sc-if value="{{ available }}" hint-placeholder-val="{{ true }}">
-    <section aria-label="Balance" style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));background:var(--surf);border:1px solid var(--pBd)">
+    <section aria-label="Balance" style="display:grid;grid-template-columns:{{ balCols }};background:var(--surf);border:1px solid var(--pBd)">
       <sc-for list="{{ summary }}" as="x" hint-placeholder-count="7">
-        <div style="padding:12px 14px;border-right:1px solid var(--line2);display:flex;flex-direction:column;gap:2px;min-width:0">
+        <div style="padding:12px 14px;border-right:1px solid var(--line2);border-bottom:{{ balBd }};display:flex;flex-direction:column;gap:2px;min-width:0">
           <span style="font-size:12.5px;color:var(--ink3);white-space:nowrap">{{ x.op }} {{ x.label }}</span>
           <span style="font-family:var(--fnum);font-size:17px;font-weight:600;white-space:nowrap">{{ x.v }}</span>
         </div>
@@ -134,7 +134,7 @@ class Component extends DCLogic {
     const bal = tot.open + tot.rec - tot.dis + tot.adj - tot.close;
     const tz = net ? 'WIB' : t.tz;
     return { ...base, unavailable: false, available: true, rows, empty: !rows.length, compRows: comps, noComp: !comps.length,
-      totals: [F(tot.open), F(tot.rec), F(tot.dis), D.sgn(tot.adj), F(tot.close), F(tot.held), F(tot.avail)], summary,
+      totals: [F(tot.open), F(tot.rec), F(tot.dis), D.sgn(tot.adj), F(tot.close), F(tot.held), F(tot.avail)], summary, balCols: ctx.mobile ? 'repeat(2,minmax(0,1fr))' : ctx.tablet ? 'repeat(4,minmax(0,1fr))' : 'repeat(7,minmax(0,1fr))', balBd: ctx.tablet ? '1px solid var(--line2)' : '0',
       balIcon: Math.abs(bal) < 1 ? I.st.ok : I.st.attention, balText: Math.abs(bal) < 1 ? `Balance closes: opening + receipts − dispatches ± adjustments equals closing (difference ${D.fmt(bal, 0)} ${unit}).` : `Balance difference ${D.fmt(bal, 1)} ${unit}.`,
       periodText: `${net ? `Network · ${D.TERMINALS.length} terminals` : t.name} · ${ctx.range}${ctx.range === 'Current shift' ? ' ' + ctx.shift : ''} · ${D.tm(a, tz, { date: true })} → ${D.tm(b, tz, { date: true })} · basis ${mass ? 'mass t (in vacuum)' : 'GSV kL @ 15 °C'}`,
       cols: 'minmax(0,1.5fr) 70px minmax(0,1.2fr) repeat(7,minmax(0,0.85fr))' };

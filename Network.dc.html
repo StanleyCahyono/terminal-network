@@ -292,7 +292,7 @@ class Component extends DCLogic {
       capOptions: ['All capabilities', 'Marine', 'Blending', 'Truck loading', 'Hydrant', 'Pipeline', 'Filling & packaging', 'Rail'], statusOptions: ['All statuses', 'Operating', 'Restricted'], sevOptions: ['All severities', 'Critical', 'Attention', 'No open exception'],
       filtered, clearFilters: () => this.upd({ text: '', cap: 'All capabilities', status: 'All statuses', sev: 'All severities' }),
       hasProdFilter: prods.length > 0, prodChips: prods.map(c => D.prod(c)),
-      sumCols: ctx.tablet ? 'repeat(2,minmax(0,1fr))' : '1.5fr 1fr 0.9fr 1.1fr', sum, prodBar, trTypes: Object.entries(types).map(([type, n]) => ({ type, n })),
+      sumCols: ctx.mobile ? 'minmax(0,1fr)' : ctx.tablet ? 'repeat(2,minmax(0,1fr))' : '1.5fr 1fr 0.9fr 1.1fr', sum, prodBar, trTypes: Object.entries(types).map(([type, n]) => ({ type, n })),
       goInventory: () => this.props.go('inventory', { scope: 'network' }), sortByRx: () => this.upd({ sort: 'rx', dir: -1 }), openAlarmsAll: () => this.props.openAlarms && this.props.openAlarms('network'),
       trListOpen: s.trList, toggleTrList: () => this.upd({ trList: !s.trList }), trListLabel: s.trList ? 'Hide records' : 'Show records', trRows,
       mainCols: ctx.vw < 1700 ? 'minmax(0,1fr)' : 'minmax(0,1fr) 400px', asideCols: ctx.vw < 1700 ? 'minmax(0,720px)' : '1fr', asideDir: ctx.vw < 1700 ? 'grid' : 'flex', cols: 'minmax(180px,1.6fr) 118px minmax(190px,1.5fr) 118px 62px 92px 64px minmax(200px,2.2fr) 96px',

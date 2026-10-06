@@ -453,6 +453,13 @@ export function searchIndex() {
   TRANSFERS.forEach(tr => { out.push({ type: tr.type.includes('blend') ? 'Batch' : 'Transfer', label: tr.id, sub: `${tr.type} · ${prod(tr.code).label} · ${term(tr.term).name}`, go: tr.type.includes('blend') ? ['blending', { terminalId: tr.term, focus: { type: 'blend', id: tr.id } }] : ['transfers', { terminalId: tr.term, focus: { type: 'transfer', id: tr.id } }] }); if (tr.vessel) out.push({ type: 'Vessel', label: tr.vessel, sub: `${tr.voyage} · ${tr.berth} · ${term(tr.term).name}`, go: ['transfers', { terminalId: tr.term, focus: { type: 'transfer', id: tr.id } }] }); });
   BLENDS.forEach(b => { if (!out.find(o => o.label === b.id)) out.push({ type: 'Batch', label: b.id, sub: `${b.state} · ${prod(b.code).label} · ${term(b.term).name}`, go: ['blending', { terminalId: b.term, focus: { type: 'blend', id: b.id } }] }); });
   SAMPLES.forEach(s => out.push({ type: 'Sample', label: s.id, sub: `${s.batch} · ${s.status}`, go: ['quality', { terminalId: s.term, focus: { type: 'sample', id: s.id } }] }));
+  if (HUB.id && HUB.state.ready) { // superhub equipment and products open their detail panel in the superhub workspace
+    const t = term(HUB.id), S = HUB.state, add = (type, id, label) => out.push({ type, label, sub: t.name, go: ['terminal', { terminalId: t.id, focus: { type: 'asset', id } }] });
+    S.blenders.forEach(b => add('Blender', b.id, `${b.id} · ${b.type === 'ILB' ? 'In-line' : b.type === 'ABB' ? 'Automated batch' : 'Simple batch'} blender, ${b.hall.toLowerCase()}`));
+    S.lines.forEach(l => add('Line', l.id, `${l.id} · Filling line, ${HUB.info.HALLS[l.hall]}`));
+    S.isoCranes.forEach(c => add('Crane', c.id, `${c.id} · ISO crane position, bay ${c.bay}`));
+    HUB.info.GRADES.forEach(G => add('Product', G.code, G.label));
+  }
   return out;
 }
 
