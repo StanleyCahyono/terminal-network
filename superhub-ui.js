@@ -292,7 +292,7 @@ function header() {
           h('h1', { style: { margin: 0, fontSize: mob ? 21 : 28, fontWeight: 500, letterSpacing: '-.015em', lineHeight: 1.15, minWidth: 0, overflowWrap: 'anywhere' } }, t.name),
           chip(t.status === 'Operating' ? 'Operating' : t.status, t.status === 'Operating' ? 'ok' : 'warn')),
         div({ fontSize: 12.5, color: 'var(--ink3)', display: 'flex', gap: '4px 12px', flexWrap: 'wrap', minWidth: 0 },
-          span({}, `${t.area} · ${t.kind}`), span({ fontFamily: 'var(--fnum)' }, `Local ${D.tm(D.NOW, tz, { date: true })}`), span({}, '84 products · 169 grades · 2.0 Mt/y nameplate · plan 4,380 t/d'))),
+          span({}, `${t.area} · ${t.kind}`), span({ fontFamily: 'var(--fnum)' }, `Local ${D.tm(D.NOW, tz, { date: true })}`))),
       div({ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' },
         chip(W.text, wxT, `${W.season} · wind ${W.wind} km/h`),
         S.gridDown ? chip('On gensets', 'crit') : null,
@@ -819,7 +819,7 @@ function logTab() {
         span({ fontSize: 12.5, minWidth: 0, overflowWrap: 'anywhere' }, ctx.mobile ? `${e.area} · ${e.text}` : e.text))),
       evs.length ? null : empty('No events in this area yet.'),
     ], { key: 'evlog' }) :
-    section('Alarms', note('raised by the simulation; acknowledge and resolve them in the alarm panel'), [table([
+    section('Alarms', note('acknowledge and resolve them in the alarm panel'), [table([
       { label: 'Alarm', w: '84px', f: e => e.id, mono: true },
       { label: 'Severity', w: '98px', f: e => chip(e.sev === 'critical' ? 'Critical' : e.sev === 'attention' ? 'Attention' : 'Advisory', e.sev === 'critical' ? 'crit' : e.sev === 'attention' ? 'warn' : 'idle') },
       { label: 'Asset', w: 'minmax(110px,1fr)', f: e => e.asset },
@@ -979,7 +979,7 @@ function dGrade(G) {
     sub('Stock', dl([G.P.fam !== 'GR' ? ['Released in tanks', T0(st.rel, 1)] : null, st.qc ? ['In quality hold', T0(st.qc, 1)] : null, st.wip ? ['Being blended', T0(st.wip, 1)] : null, ['In the warehouse', T0(st.wh, 1)], ['Cover', st.cover == null ? '—' : DAYS(st.cover), { color: st.cover != null && st.cover < 1.5 ? 'var(--critInk)' : 'var(--ink)' }]])),
     tanks.length ? sub('Tanks', ...tanks.map(t => itemRow({ key: t.id, id: t.id, label: `${KL(t.vol)} · ${PCT(t.vol / t.nominal)}`, right: t.state === 'QC hold' ? 'Quality hold' : t.status, tone: t.state === 'QC hold' || t.q === 'On hold' ? 'warn' : tone(t.status), onClick: () => A.sel('tank', t.id) }))) : null,
     wh.length ? sub('Warehouse by pack', table([{ label: 'Pack', w: 'minmax(100px,1.6fr)', f: r => r.label }, { label: 'Units', w: '80px', f: r => D.fmt(r.units), mono: true, align: 'right' }, { label: 'Pallets', w: '66px', f: r => D.fmt(r.pallets, 1), mono: true, align: 'right' }, { label: 'Cover', w: '60px', f: r => DAYS(r.days), mono: true, align: 'right' }], wh, { key: r => r.pack })) : null,
-    sub('Recipe, % m/m', table([{ label: 'Component', w: 'minmax(130px,2fr)', f: ([c]) => [sw((HUB.info.COMP[c] || {}).color || 'var(--ink3)', true), span({ ...ell }, (HUB.info.COMP[c] || {}).label || c)] }, { label: '%', w: '60px', f: ([, p]) => D.fmt(p, p < 1 ? 2 : 1), mono: true, align: 'right' }], G.recipe, { key: r => r[0] }), note('Treat rates and thickener contents are formulation assumptions for this simulation.')),
+    sub('Recipe, % m/m', table([{ label: 'Component', w: 'minmax(130px,2fr)', f: ([c]) => [sw((HUB.info.COMP[c] || {}).color || 'var(--ink3)', true), span({ ...ell }, (HUB.info.COMP[c] || {}).label || c)] }, { label: '%', w: '60px', f: ([, p]) => D.fmt(p, p < 1 ? 2 : 1), mono: true, align: 'right' }], G.recipe, { key: r => r[0] }), note('Treat rates and thickener contents are planning assumptions, not product disclosures.')),
   ];
 }
 function zoneBody(id) {

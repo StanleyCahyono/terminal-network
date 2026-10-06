@@ -65,11 +65,11 @@ class Component extends DCLogic {
   renderVals() {
     const D = this.props.d, ctx = this.props.ctx, M = this.M;
     if (this.state.err) return { ready: false, loading: true, loadingText: 'The superhub view could not load: ' + this.state.err };
-    if (!D || !ctx || !M || !D.HUB || !D.HUB.state || !D.HUB.state.ready) return { ready: false, loading: true, loadingText: 'Starting the superhub simulation…' };
+    if (!D || !ctx || !M || !D.HUB || !D.HUB.state || !D.HUB.state.ready) return { ready: false, loading: true, loadingText: 'Loading the superhub…' };
     const scr = this.screen(), def = scr === 'blending' ? 'blend' : scr === 'quality' ? 'lab' : 'plan';
     const st = { ...this.state, tab: (this.state.tabBy || {})[scr] || def };
     const v = M.view(React.createElement, D, ctx, st, this.act);
-    if (!v) return { ready: false, loading: true, loadingText: 'Starting the superhub simulation…' };
+    if (!v) return { ready: false, loading: true, loadingText: 'Loading the superhub…' };
     const tabLabel = (M.TABS.find(t => t[0] === st.tab) || ['', 'Superhub'])[1];
     return { ready: true, loading: false, header: v.header, tabs: v.tabs, body: v.body, drawer: v.drawer, scrollRef: this.scrollRef, mainLabel: tabLabel, pad: ctx.mobile ? '10px 10px 28px' : '14px 18px 28px' };
   }

@@ -376,7 +376,6 @@ html:has(.tn-root[data-theme="dark"]),html:has(.tn-root[data-theme="dark"]) body
       <div style="height:52px;flex:none;display:flex;align-items:center;gap:10px;padding:0 10px 0 16px;border-bottom:1px solid var(--line);min-width:0">
         <span style="flex:none">{{ I.bell }}</span>
         <span style="font-weight:600;font-size:14px;white-space:nowrap">Alarm centre</span>
-        <span style="font-family:var(--fnum);font-size:11px;color:var(--ink3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0">Demo data</span>
         <div style="flex:1"></div>
         <button onClick="{{ closeAlarms }}" aria-label="Close alarm centre" title="Close" style="width:34px;height:34px;flex:none;border:0;border-radius:0;background:transparent;display:grid;place-items:center;color:var(--ink2);white-space:nowrap" style-hover="background:var(--surf2);color:var(--ink)">{{ I.close }}</button>
       </div>
@@ -624,7 +623,7 @@ class Component extends DCLogic {
     // freshness
     const tz = net ? 'WIB' : t.tz;
     const localNow = D.tm(D.NOW, tz);
-    let fresh = { full: ['Live · simulated data', `Last update ${D.tm(D.NOW, tz)}`], short: ['Live', D.tm(D.NOW, tz)], fg: 'var(--ink)', bg: 'var(--surf)', bd: 'var(--line)', icon: I.st.ok };
+    let fresh = { full: ['Live', `Last update ${D.tm(D.NOW, tz)}`], short: ['Live', D.tm(D.NOW, tz)], fg: 'var(--ink)', bg: 'var(--surf)', bd: 'var(--line)', icon: I.st.ok };
     if (stale) { const m = s.demo === 'stale' ? 22 : t.upd; fresh = { full: ['Online · sync delayed', `Last sync ${D.tm(D.NOW - m, tz)} · ${Math.round(m)} min ago`], short: ['Delayed', `${Math.round(m)} min ago`], fg: 'var(--warnInk)', bg: 'var(--warnSoft)', bd: 'var(--warn)', icon: I.st.attention }; }
     if (disc) fresh = { full: ['Disconnected', `Last received ${D.tm(D.NOW - 22, tz)}`], short: ['Offline', `since ${D.tm(D.NOW - 22, tz, { tz: false })}`], fg: 'var(--critInk)', bg: 'var(--critSoft)', bd: 'var(--crit)', icon: I.unplug };
     const freshLines = tier >= 3 ? fresh.full : tier >= 1 ? fresh.short : [null, null];

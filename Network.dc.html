@@ -358,7 +358,7 @@ class Component extends DCLogic {
     const K = { inv: this.tileAct(() => this.props.go('inventory', { scope: 'network' })), rx: this.tileAct(() => this.upd({ sort: 'rx', dir: -1 })), tr: this.tileAct(() => this.upd({ trList: !this.state.trList })), ex: this.tileAct(() => this.props.openAlarms && this.props.openAlarms('network')), rxOn: rxSel ? 1 : 0, rxBd: rxSel ? 'var(--accLine)' : 'var(--pBd)', rxPressed: rxSel, trOn: s.trList ? 1 : 0, trBd: s.trList ? 'var(--accLine)' : 'var(--pBd)', trOpen: !!s.trList, trChev: s.trList ? 'rotate(180deg)' : 'none' };
     const T = { table: !mob, cards: mob, empty: !trRows.length, emptyMsg: prods.length ? 'No active transfers for the current product filter.' : 'No active transfers right now.', minW: '900px', cols: '116px 124px minmax(0,1.4fr) minmax(0,1.2fr) minmax(0,1.3fr) minmax(110px,.8fr) 112px' };
     return {
-      ready: true, I, f: s, subtitle: `${D.TERMINALS.length} terminals · ${D.SNAPSHOT} · live simulation with fictional values, not plant telemetry`,
+      ready: true, I, f: s, subtitle: `${D.TERMINALS.length} terminals · ${D.SNAPSHOT}`,
       onText: e => this.upd({ text: e.target.value }), onCap: e => this.upd({ cap: e.target.value }), onStatus: e => this.upd({ status: e.target.value }), onSev: e => this.upd({ sev: e.target.value }),
       capOptions: ['All capabilities', 'Marine', 'Blending', 'Truck loading', 'Hydrant', 'Pipeline', 'Filling & packaging', 'Rail'], statusOptions: ['All statuses', 'Operating', 'Restricted'], sevOptions: ['All severities', 'Critical', 'Attention', 'No open exception'],
       filtered, clearFilters: () => this.upd({ text: '', cap: 'All capabilities', status: 'All statuses', sev: 'All severities' }),
