@@ -1,16 +1,37 @@
 // Fictional demonstration data for the terminal network prototype. NOT live telemetry.
-export const NOW = 860; // minutes after 05 Oct 2026 00:00 WIB  → 14:20 WIB
-export const SNAPSHOT = '05 Oct 2026 · 14:20 WIB';
-const OFF = { WIB: 0, WITA: 60, WIT: 120 };
+// Times are scenario minutes. Minute REF is the moment the data below describes; it is pinned to the
+// real clock when the console opens, and tick() runs transfers, blends and tank levels forward in real time.
+const REF = 860;
+const KEEP_H = 6; // reopening within this many hours continues the same run instead of starting a fresh one
+const OFF = { WIB: 420, WITA: 480, WIT: 540 }; // minutes ahead of UTC
+const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const pad = n => String(n).padStart(2, '0');
+function anchor() { // shift the scenario by whole hours so planned times keep their minutes (08:00 stays on the hour)
+  const now = Date.now(); let a = (REF + Math.floor((now / 60000 - REF) / 60) * 60) * 60000;
+  try { const s = +localStorage.getItem('tnops:anchor'); if (s && now >= s && now - s < KEEP_H * 3600000) a = s; else localStorage.setItem('tnops:anchor', String(a)); } catch (e) {}
+  return a;
+}
+const BASE = anchor() / 60000 - REF; // real UTC minute at scenario minute 0
+export let NOW = REF; // scenario minute now, advanced by tick()
+export let SNAPSHOT = '';
+const zone = tz => OFF[tz] ?? OFF.WIB;
+const local = (m, tz) => new Date((BASE + m + zone(tz)) * 60000); // read with getUTC* for local clock fields
+const dayNo = (m, tz) => Math.floor((BASE + m + zone(tz)) / 1440);
+const hhmm = (m, tz = 'WIB') => { const d = local(Math.round(m), tz); return pad(d.getUTCHours()) + ':' + pad(d.getUTCMinutes()); };
+const sameDay = (m, tz = 'WIB') => dayNo(Math.round(m), tz) === dayNo(NOW, tz);
+function day(m, tz = 'WIB', year = false) { const d = local(Math.round(m), tz); return pad(d.getUTCDate()) + ' ' + MON[d.getUTCMonth()] + (year ? ' ' + d.getUTCFullYear() : ''); }
 export function tm(min, tz = 'WIB', o = {}) {
   if (min == null || !isFinite(min)) return null;
-  const m = Math.round(min + (OFF[tz] || 0));
-  const day = Math.floor(m / 1440), mm = m - day * 1440;
-  const s = pad(Math.floor(mm / 60)) + ':' + pad(mm % 60);
-  const pre = (day !== 0 || o.date) ? pad(5 + day) + ' Oct ' : '';
-  return pre + s + (o.tz === false ? '' : ' ' + tz);
+  const pre = (o.date || !sameDay(min, tz)) ? day(min, tz) + ' ' : '';
+  return pre + hhmm(min, tz) + (o.tz === false ? '' : ' ' + tz);
 }
+export const clockMin = (m, tz = 'WIB') => (((BASE + m + zone(tz)) % 1440) + 1440) % 1440; // minutes after local midnight
+export const dayStart = (d = 0, tz = 'WIB') => (dayNo(NOW, tz) + d) * 1440 - zone(tz) - BASE; // local midnight, d days from today
+const at = (d, h, mi = 0, tz = 'WIB') => dayStart(d, tz) + h * 60 + mi;
+export const grid = (m, step, tz = 'WIB') => { const k = BASE + zone(tz); return Math.ceil((m + k) / step) * step - k; }; // first local clock multiple of step ≥ m
+const SHIFT_H = { A: 6, B: 14, C: 22 };
+export const shiftNow = (tz = 'WIB') => { const h = clockMin(NOW, tz) / 60; return h >= 6 && h < 14 ? 'A' : h >= 14 && h < 22 ? 'B' : 'C'; };
+export function shiftSpan(id, tz = 'WIB') { let a = at(0, SHIFT_H[id] ?? 14, 0, tz); while (a > NOW) a -= 1440; return [a, Math.min(a + 480, NOW)]; } // latest occurrence that has started
 export function dur(min) { if (min == null || !isFinite(min)) return null; min = Math.round(min); const h = Math.floor(min / 60), m = min % 60; return h ? `${h} h ${pad(m)} min` : `${m} min`; }
 export function fmt(n, dp = 0) { if (n == null || !isFinite(n)) return null; return Number(n).toLocaleString('en-US', { minimumFractionDigits: dp, maximumFractionDigits: dp }); }
 export function sgn(n, dp = 0) { if (n == null || !isFinite(n)) return null; const r = Number(n.toFixed(dp)); return (r > 0 ? '+' : r < 0 ? '−' : '±') + fmt(Math.abs(r), dp); }
@@ -78,7 +99,7 @@ const PLM_OVR = {
   'T-12': { vol: 8327, q: 'Awaiting test results', batch: 'BLD-PLM-2610-007' },
   'T-13': { vol: 27953, q: 'Awaiting test results', batch: 'BLD-PLM-2610-006', alarm: { sev: 'attention', text: 'High level' } },
   'T-14': { vol: 9874, water: 17, batch: 'PLM-R95-2609-033' },
-  'T-15': { vol: 383, status: 'Out of service', water: null, batch: null, q: 'Released', note: 'Internal inspection · returns 09 Oct' },
+  'T-15': { vol: 383, status: 'Out of service', water: null, batch: null, q: 'Released', note: `Internal inspection · returns ${day(7199)}` },
   'T-16': { vol: 6407, batch: 'PLM-FAME-2609-012' },
 };
 
@@ -143,32 +164,43 @@ function pumpMins(tr, a, b) {
   (tr.pauses || []).forEach(([p, q]) => { m -= overlap(a, b, Math.max(p, s), q == null ? e : Math.min(q, e)); });
   return Math.max(0, m);
 }
-TRANSFERS.forEach(tr => {
-  if (tr.recv == null) tr.recv = tr.truck ? Math.floor(tr.flow * Math.max(0, NOW - tr.start) / 60 / tr.truck) * tr.truck : Math.round(tr.flow * Math.max(0, NOW - tr.start) / 60);
-  if (tr.truck) { tr.planned = Math.ceil(tr.planned / tr.truck) * tr.truck; tr.truckN = tr.planned / tr.truck; tr.trucksDone = tr.recv / tr.truck; tr.trucksH = tr.flow / tr.truck; }
+const srcsOf = tr => tr.srcs || (tr.src && tr.src.startsWith('T-') ? [[tr.src, 1]] : []);
+function derive(tr) {
+  if (tr.truck) { tr.truckN = tr.planned / tr.truck; tr.trucksDone = tr.recv / tr.truck; tr.trucksH = (tr.flow || 0) / tr.truck; }
   const pm = pumpMins(tr, -1e9, 1e9);
   tr.avgRate = pm > 0 ? tr.recv / pm * 60 : 0;
   tr.remaining = Math.max(0, tr.planned - tr.recv);
   tr.active = ['In progress', 'Paused'].includes(tr.state);
   tr.pumpMin = pm;
   const flowKnown = tr.state === 'In progress' && tr.flow > 0;
-  tr.etaMin = flowKnown ? NOW + tr.remaining / tr.flow * 60 : null;
+  tr.etaMin = flowKnown ? NOW + Math.max(0, tr.planned - tr.qty) / tr.flow * 60 : null;
   tr.marine = tr.type === 'Ship-to-shore';
+}
+// tank status for a running or paused transfer
+function mark(tr) {
+  const t = term(tr.term); if (!t || !tr.active) return;
+  const blend = tr.type.includes('blend');
+  const dst = t.tanks.find(k => k.id === tr.dst);
+  if (dst) { dst.status = blend ? 'Blending' : (tr.state === 'Paused' ? 'Receiving · paused' : 'Receiving'); dst.activity = { ref: tr.id, kind: 'receipt' }; }
+  srcsOf(tr).forEach(([sid]) => { const k = t.tanks.find(x => x.id === sid); if (k) { k.status = blend ? 'Blending' : 'Dispatching'; k.activity = { ref: tr.id, kind: 'dispatch' }; } });
+}
+TRANSFERS.forEach(tr => {
+  if (tr.recv == null) tr.recv = tr.truck ? Math.floor(tr.flow * Math.max(0, NOW - tr.start) / 60 / tr.truck) * tr.truck : Math.round(tr.flow * Math.max(0, NOW - tr.start) / 60);
+  tr.qty = tr.truck ? tr.flow * Math.max(0, NOW - tr.start) / 60 : tr.recv; // quantity moved; for trucks recv counts completed loads only
+  if (tr.truck) tr.planned = Math.ceil(tr.planned / tr.truck) * tr.truck;
+  if (tr.state === 'In progress' && tr.flow > 0) tr.flow0 = tr.flow;
+  derive(tr);
 });
 export function flowText(tr) { if (tr.flow == null) return null; return tr.truck ? `${fmt(tr.flow)} kL/h · ≈ ${tr.trucksH.toFixed(1)} trucks/h` : `${fmt(tr.flow)} kL/h`; }
 export function moved(tr, a, b) { if (tr.start >= NOW && tr.state !== 'Completed') return 0; return tr.avgRate * pumpMins(tr, a, b) / 60; }
 
 // apply transfer activity to tanks, keep capacities consistent
 TRANSFERS.forEach(tr => {
-  const t = term(tr.term); if (!t) return;
+  const t = term(tr.term); if (!t || !tr.active) return;
   const dst = t.tanks.find(k => k.id === tr.dst);
-  if (dst && tr.active) {
-    if (tr.term !== 'PLM') { const maxVol = dst.moc - tr.remaining - 400; const opening = Math.max(dst.heel + 600, Math.min(dst.vol - tr.recv, maxVol - tr.recv)); dst.vol = Math.round(opening + tr.recv); dst.q = tr.marine ? 'Awaiting test results' : dst.q; if (tr.marine) dst.batch = tr.batch; }
-    dst.status = tr.type.includes('blend') ? 'Blending' : (tr.state === 'Paused' ? 'Receiving · paused' : 'Receiving');
-    dst.activity = { ref: tr.id, kind: 'receipt' };
-  }
-  const srcs = tr.srcs || (tr.src && tr.src.startsWith('T-') ? [[tr.src, 1]] : []);
-  srcs.forEach(([sid]) => { const k = t.tanks.find(x => x.id === sid); if (k && tr.active) { k.status = tr.type.includes('blend') ? 'Blending' : 'Dispatching'; k.activity = { ref: tr.id, kind: 'dispatch' }; if (tr.term !== 'PLM' && k.vol < k.heel + 3000) k.vol = Math.round(k.heel + 3127 + tr.recv); } });
+  if (dst && tr.term !== 'PLM') { const maxVol = dst.moc - tr.remaining - 400; const opening = Math.max(dst.heel + 600, Math.min(dst.vol - tr.recv, maxVol - tr.recv)); dst.vol = Math.round(opening + tr.recv); dst.q = tr.marine ? 'Awaiting test results' : dst.q; if (tr.marine) dst.batch = tr.batch; }
+  srcsOf(tr).forEach(([sid]) => { const k = t.tanks.find(x => x.id === sid); if (k && tr.term !== 'PLM' && k.vol < k.heel + 3000) k.vol = Math.round(k.heel + 3127 + tr.recv); });
+  mark(tr);
 });
 // a few deterministic holds outside PLM
 [['PLJ', 'T-04', 'On hold'], ['BLG', 'T-04', 'Awaiting test results']].forEach(([a, b, q]) => { const k = tank(a, b); if (k) k.q = q; });
@@ -181,8 +213,7 @@ export function tankFlows(k) {
   const out = [];
   TRANSFERS.filter(tr => tr.term === k.term).forEach(tr => {
     if (tr.dst === k.id) out.push({ tr, sign: 1, share: 1 });
-    const srcs = tr.srcs || (tr.src && tr.src.startsWith('T-') ? [[tr.src, 1]] : []);
-    srcs.forEach(([sid, sh]) => { if (sid === k.id) out.push({ tr, sign: -1, share: sh }); });
+    srcsOf(tr).forEach(([sid, sh]) => { if (sid === k.id) out.push({ tr, sign: -1, share: sh }); });
   });
   return out;
 }
@@ -196,15 +227,16 @@ export function movements(k, a, b) {
 }
 export function volAt(k, t) { let v = k.vol; tankFlows(k).forEach(f => { v -= f.sign * f.share * moved(f.tr, t, NOW); }); return v; }
 export function tankHistory(k, hours = 24, step = 30) {
-  const r = rng(hash(k.term + k.id + 'h')); const pts = [];
+  const pts = [], seed = hash(k.term + k.id + 'h');
   const area = Math.PI / 4 * k.diam * k.diam;
-  for (let t = NOW - hours * 60; t <= NOW + 0.1; t += step) {
+  const ts = []; for (let t = grid(NOW - hours * 60, step); t < NOW; t += step) ts.push(t); ts.push(NOW);
+  ts.forEach(t => {
     const v = volAt(k, t);
     const lvl = v / area * 1000;
-    let temp = k.temp + 0.7 * Math.sin((t - 840) / 1440 * 2 * Math.PI) - 0.7 * Math.sin(0) + (r() - 0.5) * 0.12;
+    let temp = k.temp0 - diurnal(REF) + diurnal(t) + (rng(seed ^ Math.round(t))() - 0.5) * 0.12;
     if (k.tempSrc === 'unavailable' && t > 190) temp = null;
     pts.push({ t, v, lvl, temp: temp == null ? null : +temp.toFixed(2) });
-  }
+  });
   return pts;
 }
 export function stock(k) {
@@ -223,9 +255,9 @@ export function vcf(code, temp) { const f = prod(code).fam; const a = f === 'Gas
 export const EXCEPTIONS = [
   { id: 'EX-3107', sev: 'attention', term: 'BIK', asset: 'Berth 1', what: 'Berth closed for swell — vessel holding at anchorage', since: 462, op: 'Receipt TRF-BIK-26-0077 · MT Teluk Cendana delayed', owner: 'D. Rumbewas · Marine supervisor', status: 'Acknowledged', ack: { by: 'D. Rumbewas', at: 470 }, res: null },
   { id: 'EX-3109', sev: 'attention', term: 'PLM', asset: 'T-13', what: 'High level — 27,953 kL above high-level alarm 27,750 kL', since: 618, op: 'Further receipts into T-13 blocked', owner: 'R. Hakim · Shift supervisor', status: 'Acknowledged', ack: { by: 'R. Hakim', at: 626 }, res: null },
-  { id: 'EX-3112', sev: 'attention', term: 'PLM', asset: 'TT-108 · T-08', what: 'Temperature probe fault — manual dip temperature in use', since: 190, op: 'T-08 corrected volume based on 06:00 manual temperature', owner: 'Instrument technician on call', status: 'In progress', ack: { by: 'R. Hakim', at: 204 }, res: null },
+  { id: 'EX-3112', sev: 'attention', term: 'PLM', asset: 'TT-108 · T-08', what: 'Temperature probe fault — manual dip temperature in use', since: 190, op: `T-08 corrected volume based on ${hhmm(360)} manual temperature`, owner: 'Instrument technician on call', status: 'In progress', ack: { by: 'R. Hakim', at: 204 }, res: null },
   { id: 'EX-3117', sev: 'attention', term: 'SMB', asset: 'FM-02 · Berth 2 line', what: 'Flow meter FM-02 not reporting — tank gauging used for progress', since: 832, op: 'TRF-SMB-26-0144 · completion estimate unavailable', owner: 'Control room · SMB', status: 'Open', ack: null, res: null },
-  { id: 'EX-3085', sev: 'attention', term: 'PLM', asset: 'MT Sanggar Lestari', what: 'Vessel cargo pump trip — transfer paused 55 min', since: 580, op: 'TRF-PLM-26-0418', owner: 'Loading master · Jetty 2', status: 'Resolved', ack: { by: 'R. Hakim', at: 584 }, res: { by: 'R. Hakim', at: 640, note: 'Vessel pump restarted; transfer resumed 10:35 WIB.' } },
+  { id: 'EX-3085', sev: 'attention', term: 'PLM', asset: 'MT Sanggar Lestari', what: 'Vessel cargo pump trip — transfer paused 55 min', since: 580, op: 'TRF-PLM-26-0418', owner: 'Loading master · Jetty 2', status: 'Resolved', ack: { by: 'R. Hakim', at: 584 }, res: { by: 'R. Hakim', at: 640, note: `Vessel pump restarted; transfer resumed ${tm(635)}.` } },
 ];
 export const SEV = { critical: { label: 'Critical', rank: 0 }, attention: { label: 'Attention', rank: 1 }, info: { label: 'Advisory', rank: 2 } };
 
@@ -234,11 +266,11 @@ const M = (k, v, u, src = 'M') => ({ k, v, u, src });
 export function equipment(t) {
   const E = [];
   const pumps = t.kind.startsWith('Aviation') ? 2 : t.tanks.length > 10 ? 4 : 3;
-  E.push({ id: 'M-01', type: 'Manifold', name: 'Receipt manifold', status: 'In service', material: 'Carbon steel, ANSI 150 (configurable)', readings: [M('Header pressure', 4.6, 'bar(g)'), M('Valve line-up', 'Verified 04:30', '', 'C')], note: 'MOV-101…116 tank inlet valves' });
+  E.push({ id: 'M-01', type: 'Manifold', name: 'Receipt manifold', status: 'In service', material: 'Carbon steel, ANSI 150 (configurable)', readings: [M('Header pressure', 4.6, 'bar(g)'), M('Valve line-up', 'Verified ' + tm(270, t.tz, { tz: false }), '', 'C')], note: 'MOV-101…116 tank inlet valves' });
   E.push({ id: 'M-02', type: 'Manifold', name: 'Dispatch manifold', status: 'In service', material: 'Carbon steel, ANSI 150 (configurable)', readings: [M('Header pressure', 3.1, 'bar(g)')] });
   (t.marine || []).forEach((b, i) => E.push({ id: 'MLA-' + (i + 1), type: 'Marine loading arm', name: b + ' loading arm', status: 'In service', material: '12" arm, stainless swivels (configurable)', readings: [M('Arm envelope', 'Within limits', '', 'M')] }));
   const nm = t.marine ? t.marine.length : 1;
-  for (let i = 1; i <= nm; i++) E.push({ id: 'FM-0' + i, type: 'Flow meter', name: (t.marine ? t.marine[i - 1] : 'Receipt') + ' meter skid', status: 'In service', material: 'Turbine meter, prover connection', readings: [M('Last proving', '28 Sep 2026', '', 'C'), M('Meter factor', 1.0012, '', 'C')] });
+  for (let i = 1; i <= nm; i++) E.push({ id: 'FM-0' + i, type: 'Flow meter', name: (t.marine ? t.marine[i - 1] : 'Receipt') + ' meter skid', status: 'In service', material: 'Turbine meter, prover connection', readings: [M('Last proving', day(NOW - 7 * 1440, t.tz, true), '', 'C'), M('Meter factor', 1.0012, '', 'C')] });
   for (let i = 1; i <= pumps; i++) E.push({ id: 'P-0' + i, type: 'Pump', name: 'Transfer pump ' + i, status: 'Standby', material: 'Centrifugal, ductile iron casing (configurable)', readings: [M('Discharge pressure', null, 'bar(g)'), M('Motor current', null, 'A'), M('Vibration', null, 'mm/s')] });
   if (t.truck) E.push({ id: 'GTY', type: 'Gantry', name: `Truck loading gantry · ${t.truck} bays`, status: 'In service', readings: [M('Bays in service', t.id === 'VPK' ? t.truck - 1 : t.truck, 'bays', 'M')] });
   if (t.hydrant) E.push({ id: 'HYD', type: 'Hydrant', name: 'Hydrant network supply', status: 'In service', readings: [M('Hydrant pressure', 8.4, 'bar(g)')] });
@@ -247,8 +279,10 @@ export function equipment(t) {
   if (t.pipeIn) E.push({ id: 'PL-IN', type: 'Pipeline', name: t.pipeIn, status: 'In service', readings: [M('Inlet pressure', 5.2, 'bar(g)')] });
   // running pumps from transfers
   TRANSFERS.filter(tr => tr.term === t.id && tr.active && tr.pump).forEach(tr => { const p = E.find(e => e.id === tr.pump); if (p) { p.status = tr.state === 'Paused' ? 'Standby' : 'Running'; p.duty = (p.duty ? p.duty + ' · ' : '') + tr.id; p.readings = [M('Flow', tr.flow, 'kL/h'), M('Discharge pressure', +(5.4 + (tr.flow % 7) / 3).toFixed(1), 'bar(g)'), M('Motor current', Math.round(28 + tr.flow / 12), 'A'), M('Vibration', +(1.6 + (tr.flow % 5) / 10).toFixed(1), 'mm/s')]; } });
-  if (t.id === 'PLM') { const p3 = E.find(e => e.id === 'P-03'); Object.assign(p3, { status: 'Standby', note: 'Seal replacement scheduled 06 Oct 05:00 WIB', readings: [M('Discharge pressure', 0.2, 'bar(g)'), M('Motor current', 0, 'A'), M('Vibration', null, 'mm/s', 'U')] }); const fm2 = E.find(e => e.id === 'FM-02'); fm2.readings.unshift(M('Flow', 1450, 'kL/h')); fm2.status = 'Running'; const bs = E.find(e => e.id === 'BS-1'); bs.status = 'Running'; bs.duty = 'BLD-PLM-2610-007'; }
-  if (t.id === 'SMB') { const fm = E.find(e => e.id === 'FM-02'); fm.status = 'Comms lost'; fm.readings.unshift(M('Flow', null, 'kL/h', 'U')); }
+  if (t.id === 'PLM') { const p3 = E.find(e => e.id === 'P-03'); Object.assign(p3, { status: 'Standby', note: `Seal replacement scheduled ${tm(1740, 'WIB', { date: true })}`, readings: [M('Discharge pressure', 0.2, 'bar(g)'), M('Motor current', 0, 'A'), M('Vibration', null, 'mm/s', 'U')] }); }
+  // receipt meters and the blend skid follow the live transfers
+  TRANSFERS.filter(tr => tr.term === t.id && tr.state === 'In progress' && tr.meter).forEach(tr => { const fm = E.find(e => e.id === tr.meter); if (!fm) return; if (tr.meterLost != null) { fm.status = 'Comms lost'; fm.readings.unshift(M('Flow', null, 'kL/h', 'U')); } else { fm.status = 'Running'; fm.readings.unshift(M('Flow', tr.flow, 'kL/h')); } });
+  const bs = E.find(e => e.id === 'BS-1'), blend = BLENDS.find(b => b.term === t.id && b.state === 'In progress'); if (bs && blend) { bs.status = 'Running'; bs.duty = blend.id; }
   return E;
 }
 
@@ -262,7 +296,7 @@ export const RECIPES = {
   J53: { comps: [['JFC', 94.62], ['HEFA', 5.38]], tol: 0.1, note: 'Synthetic component share is a recipe quantity only. Release depends on component certificates, blend certificate and laboratory results.', props: [['Synthetic component share', '%v/v', 'calc'], ['Density @ 15 °C', 'kg/m³', null], ['Freezing point', '°C', null], ['Flash point', '°C', null], ['Thermal stability (JFTOT)', '—', null]] },
 };
 export const BLENDS = [
-  { id: 'BLD-PLM-2610-008', term: 'PLM', code: 'B40', mode: 'Inline', state: 'Draft', target: 5840, dst: 'T-11', comps: [{ c: 'B0', tank: 'T-09', qty: 3481 }, { c: 'FAME', tank: 'T-16', qty: 2359 }], rate: 554, created: 'R. Hakim · 05 Oct 13:05 WIB' },
+  { id: 'BLD-PLM-2610-008', term: 'PLM', code: 'B40', mode: 'Inline', state: 'Draft', target: 5840, dst: 'T-11', comps: [{ c: 'B0', tank: 'T-09', qty: 3481 }, { c: 'FAME', tank: 'T-16', qty: 2359 }], rate: 554, created: `R. Hakim · ${tm(785, 'WIB', { date: true })}` },
   { id: 'BLD-PLM-2610-007', term: 'PLM', code: 'B40', mode: 'Inline', state: 'In progress', target: 6120, dst: 'T-12', comps: [{ c: 'B0', tank: 'T-09', qty: 3648, done: 2394, flow: 331 }, { c: 'FAME', tank: 'T-16', qty: 2472, done: 1617, flow: 223 }], rate: 554, start: 431, sample: 'S-PLM-261005-036' },
   { id: 'BLD-PLM-2610-006', term: 'PLM', code: 'B40', mode: 'Inline', state: 'Awaiting test results', target: 5962, dst: 'T-13', comps: [{ c: 'B0', tank: 'T-09', qty: 3553 }, { c: 'FAME', tank: 'T-16', qty: 2409 }], start: -760, end: -110, sample: 'S-PLM-261004-077' },
   { id: 'BLD-PLM-2610-005', term: 'PLM', code: 'B40', mode: 'Inline', state: 'Released', target: 6973, dst: 'T-11', comps: [{ c: 'B0', tank: 'T-10', qty: 4156 }, { c: 'FAME', tank: 'T-16', qty: 2817 }], start: -3300, end: -2540, sample: 'S-PLM-261003-041' },
@@ -294,7 +328,7 @@ export const SAMPLES = [
     tests: [tst('FAME content', 'EN 14078', 39.8, '%v/v', '39.0 – 41.0', 'Passed'), tst('Density @ 15 °C', 'ASTM D4052', 854.6, 'kg/m³', '840 – 870', 'Passed'), tst('Oxidation stability', 'EN 15751', 41, 'h', '≥ 35', 'Passed')] },
   { id: 'S-BLG-261004-012', term: 'BLG', code: 'J53', batch: 'BLD-BLG-2610-004', loc: 'T-04 · upper / middle / lower running sample', link: { type: 'blend', id: 'BLD-BLG-2610-004' }, at: -300, status: 'Pending', lab: 'LAB-BLG · job 26-1188', decision: 'Pending', by: null,
     tests: [tst('Density @ 15 °C', 'ASTM D4052', 797.3, 'kg/m³', '775 – 840', 'Passed'), tst('Flash point', 'IP 170', 42.5, '°C', '≥ 38', 'Passed'), tst('Freezing point', 'ASTM D5972', null, '°C', '≤ −47', 'Pending'), tst('Thermal stability (JFTOT)', 'ASTM D3241', null, '—', 'Pass', 'Pending')] },
-  { id: 'S-DPS-261004-009', term: 'DPS', code: 'J53', batch: 'DPS-J53-2610-004', loc: 'T-04 · composite', link: { type: 'tank', id: 'T-04' }, at: 180, status: 'Pending', lab: 'External lab · results due 16:00', decision: 'Pending', by: { who: 'Quality officer · DPS', at: 545 },
+  { id: 'S-DPS-261004-009', term: 'DPS', code: 'J53', batch: 'DPS-J53-2610-004', loc: 'T-04 · composite', link: { type: 'tank', id: 'T-04' }, at: 180, status: 'Pending', lab: `External lab · results due ${hhmm(900, 'WITA')}`, decision: 'Pending', by: { who: 'Quality officer · DPS', at: 545 },
     tests: [tst('Density @ 15 °C', 'ASTM D4052', 797.1, 'kg/m³', '775 – 840', 'Passed'), tst('Flash point', 'IP 170', null, '°C', '≥ 38', 'Pending')] },
   { id: 'S-PLJ-261004-021', term: 'PLJ', code: 'R98', batch: 'BLD-PLJ-2610-011', loc: 'T-04 · composite', link: { type: 'blend', id: 'BLD-PLJ-2610-011' }, at: -520, status: 'Failed', lab: 'LAB-PLJ · job 26-0933', decision: 'On hold', by: { who: 'M. Lubis · Quality officer', at: -480 },
     tests: [tst('Research octane number', 'ASTM D2699', 97.4, 'RON', '≥ 98.0', 'Failed'), tst('Density @ 15 °C', 'ASTM D4052', 747.0, 'kg/m³', '715 – 770', 'Passed')] },
@@ -311,6 +345,9 @@ export const TRACE = {
 };
 
 // ── Scheduling ─────────────────────────────────────────────────────────
+const span = (a, b) => `${hhmm(a)}–${hhmm(b)}, ${day(a)}`;
+// daily truck loading windows, moving with the scenario so dispatches stay inside them
+const gantry = id => [-1440, 0, 1440].map((d, i) => ({ id: id + i, lane: 'Gantry', type: 'Dispatch', label: `Loading window ${hhmm(360 + d)}–${hhmm(1320 + d)}`, a: 360 + d, b: 1320 + d }));
 export const SCHEDULE = {
   PLM: {
     lanes: ['Jetty 1', 'Jetty 2', 'Jetty 1 line', 'T-03', 'T-04', 'T-11', 'T-12', 'T-15', 'BS-1', 'P-03', 'Gantry'],
@@ -335,13 +372,12 @@ export const SCHEDULE = {
       { id: 'BS-CAL', lane: 'BS-1', type: 'Maintenance', label: 'FAME meter calibration', a: 2220, b: 2340 },
       { id: 'BS-008', lane: 'BS-1', type: 'Blending', label: 'BLD-PLM-2610-008 (draft)', a: 2100, b: 2760 },
       { id: 'P03-M', lane: 'P-03', type: 'Maintenance', label: 'Seal replacement', a: 1740, b: 2100 },
-      { id: 'GTY-1', lane: 'Gantry', type: 'Dispatch', label: 'Loading window 06:00–22:00', a: 360, b: 1320 },
-      { id: 'GTY-2', lane: 'Gantry', type: 'Dispatch', label: 'Loading window 06:00–22:00', a: 1800, b: 2760 },
+      ...gantry('GTY-'),
     ],
     conflicts: [
-      { id: 'CF-01', kind: 'Route availability', items: ['L1-PIG', 'L1-0422'], text: 'Jetty 1 line pigging (08:00–12:00, 06 Oct) overlaps the planned TRF-PLM-26-0422 discharge.', fix: 'Move pigging after 16:00 or delay discharge start.' },
-      { id: 'CF-02', kind: 'Tank availability', items: ['T11-D2', 'T11-BLD'], text: 'T-11 is scheduled to dispatch and receive BLD-PLM-2610-008 at the same time (11:00–20:00, 06 Oct).', fix: 'Select another destination tank or move the blend after dispatch.' },
-      { id: 'CF-03', kind: 'Equipment', items: ['BS-CAL', 'BS-008'], text: 'Blend skid BS-1 FAME meter calibration (13:00–15:00, 06 Oct) falls inside BLD-PLM-2610-008.', fix: 'Start the blend after 15:00 or reschedule calibration.' },
+      { id: 'CF-01', kind: 'Route availability', items: ['L1-PIG', 'L1-0422'], text: `Jetty 1 line pigging (${span(1920, 2160)}) overlaps the planned TRF-PLM-26-0422 discharge.`, fix: `Move pigging after ${hhmm(2400)} or delay discharge start.` },
+      { id: 'CF-02', kind: 'Tank availability', items: ['T11-D2', 'T11-BLD'], text: `T-11 is scheduled to dispatch and receive BLD-PLM-2610-008 at the same time (${span(2100, 2640)}).`, fix: 'Select another destination tank or move the blend after dispatch.' },
+      { id: 'CF-03', kind: 'Equipment', items: ['BS-CAL', 'BS-008'], text: `Blend skid BS-1 FAME meter calibration (${span(2220, 2340)}) falls inside BLD-PLM-2610-008.`, fix: `Start the blend after ${hhmm(2340)} or reschedule calibration.` },
     ],
   },
 };
@@ -355,7 +391,7 @@ export function scheduleFor(tid) {
     items.push({ id: tr.id + '-t', lane, type: tr.type.includes('dispatch') ? 'Dispatch' : tr.type.includes('blend') ? 'Blending' : 'Receipt', label: tr.id.slice(-7) + ' · ' + tr.type, a: tr.start, b: tr.etaMin || tr.start + Math.max(300, tr.planned / Math.max(tr.flow || 400, 1) * 60) });
   });
   BLENDS.filter(b => b.term === tid && b.start != null && b.state !== 'Released').forEach(b => { if (!lanes.includes(b.dst)) lanes.push(b.dst); items.push({ id: b.id, lane: b.dst, type: 'Blending', label: b.id, a: b.start, b: b.end || b.start + b.target / (b.rate || 500) * 60 }); });
-  if (t.truck) { lanes.push('Gantry'); items.push({ id: tid + '-g1', lane: 'Gantry', type: 'Dispatch', label: 'Loading window', a: 360, b: 1320 }, { id: tid + '-g2', lane: 'Gantry', type: 'Dispatch', label: 'Loading window', a: 1800, b: 2760 }); }
+  if (t.truck) { lanes.push('Gantry'); items.push(...gantry(tid + '-g')); }
   if (t.hydrant) { lanes.push('Hydrant'); items.push({ id: tid + '-h', lane: 'Hydrant', type: 'Dispatch', label: 'Hydrant supply · continuous', a: 0, b: 2880 }); }
   return { lanes, items, conflicts: [] };
 }
@@ -406,6 +442,61 @@ export function searchIndex() {
 export const LOG = [];
 export function ackEx(id, who, at) { const e = EXCEPTIONS.find(x => x.id === id); if (e && !e.ack) { e.ack = { by: who, at }; if (e.status === 'Open') e.status = 'Acknowledged'; } }
 export function resolveEx(id, who, at, note) { const e = EXCEPTIONS.find(x => x.id === id); if (e) { e.res = { by: who, at, note: note || 'Resolved by operator.' }; e.status = 'Resolved'; } }
+
+// ── Live clock (simulation only; no equipment is controlled) ───────────
+const diurnal = m => 0.7 * Math.sin((clockMin(m) - 600) / 1440 * 2 * Math.PI); // tank temperature swing, warmest late afternoon
+const wave = (id, m, amp) => { const h = hash(id) & 1023; return 1 + amp * (0.67 * Math.sin(m / 3.7 + h) + 0.33 * Math.sin(m / 1.3 + h * 2)); };
+function begin(tr) { tr.state = 'In progress'; tr.flow0 = tr.flow0 || tr.rate || Math.round(tr.planned / 10); tr.flow = tr.flow0; tr.recv = tr.qty = 0; tr.active = true; mark(tr); }
+function blendTransfer(b) {
+  const done = b.comps.reduce((a, c) => a + (c.done || 0), 0);
+  const tr = { id: b.id, term: b.term, type: b.mode + ' blend', code: b.code, src: b.comps.map(c => c.tank).join(' + '), srcs: b.comps.map(c => [c.tank, c.qty / b.target]), dst: b.dst, pump: 'P-04', planned: b.target, recv: Math.round(done), qty: done, flow: b.rate, flow0: b.rate, start: b.start, pauses: [], state: 'In progress' };
+  TRANSFERS.push(tr); derive(tr); mark(tr);
+}
+function settle(tr, end) {
+  const t = term(tr.term), blend = tr.type.includes('blend');
+  tr.state = 'Completed'; tr.end = end; tr.flow = 0; tr.qty = tr.recv = tr.planned; tr.active = false;
+  t.tanks.forEach(k => { if (k.activity && k.activity.ref === tr.id) { k.activity = null; k.status = k.id === tr.dst && (blend || tr.marine) ? 'Settling' : 'Idle'; if (k.id === tr.dst && blend) k.q = 'Awaiting test results'; } });
+  const b = BLENDS.find(x => x.id === tr.id); if (b) { b.state = 'Awaiting test results'; b.end = end; b.comps.forEach(c => { c.done = c.qty; }); }
+}
+// Moves the network forward to the real clock. Returns events worth telling the operator about.
+export function tick(to = Date.now() / 60000 - BASE) {
+  const from = NOW, ev = [];
+  if (to > from) {
+    BLENDS.forEach(b => {
+      if (b.state === 'Scheduled' && b.start != null && b.start <= to) { b.state = 'In progress'; b.comps.forEach(c => { c.done = 0; c.flow = Math.round(b.rate * c.qty / b.target); }); ev.push(`${b.id} started into ${b.dst}.`); }
+      if (b.state === 'In progress' && !TRANSFERS.some(tr => tr.id === b.id)) blendTransfer(b);
+    });
+    TRANSFERS.forEach(tr => {
+      if (tr.state === 'Scheduled' && tr.start <= to) { begin(tr); ev.push(`${tr.id} started · ${tr.type.toLowerCase()} into ${tr.dst}.`); }
+      if (tr.state === 'Delayed' && tr.start < to + 30) tr.start = Math.ceil(to / 15) * 15 + 60; // revised start keeps moving while the cause is open
+      if (tr.state !== 'In progress') return;
+      const rate = tr.flow != null ? tr.flow : tr.lastFlow; // meter offline: progress from tank gauging
+      const t0 = Math.max(from, tr.start), mins = to - t0;
+      if (!(rate > 0) || mins <= 0) return;
+      const t = term(tr.term), q = Math.min(rate * mins / 60, tr.planned - tr.qty);
+      if (q > 0) {
+        tr.qty += q; tr.recv = tr.truck ? Math.floor(tr.qty / tr.truck + 1e-9) * tr.truck : Math.round(tr.qty);
+        const dst = t.tanks.find(k => k.id === tr.dst); if (dst) dst.vol += q;
+        srcsOf(tr).forEach(([sid, sh]) => { const k = t.tanks.find(x => x.id === sid); if (k) k.vol -= q * sh; });
+        const b = BLENDS.find(x => x.id === tr.id);
+        if (b) { const fs = b.comps.reduce((a, c) => a + (c.flow || 0), 0) || 1; b.comps.forEach(c => { c.done = Math.min(c.qty, (c.done || 0) + q * (c.flow || 0) / fs); }); }
+      }
+      if (tr.qty >= tr.planned - 1e-6) { settle(tr, t0 + Math.max(0, q) / rate * 60); ev.push(`${tr.id} completed · ${fmt(tr.planned)} kL ${tr.type.includes('dispatch') ? 'dispatched' : 'received'}${tr.type.includes('blend') ? '. Batch awaiting test results — not released' : ''}.`); }
+    });
+    NOW = to;
+    TRANSFERS.forEach(tr => {
+      if (tr.state === 'In progress' && tr.flow0) tr.flow = Math.round(tr.flow0 * wave(tr.id, NOW, 0.012));
+      if (tr.state === 'In progress' && tr.press != null) { if (tr.press0 == null) tr.press0 = tr.press; tr.press = +(tr.press0 * wave(tr.id + 'p', NOW, 0.02)).toFixed(1); }
+      if (tr.active) mark(tr);
+      derive(tr);
+    });
+    TERMINALS.forEach(t => t.tanks.forEach(k => { k.temp = +(k.temp0 - diurnal(REF) + diurnal(NOW)).toFixed(1); }));
+  }
+  SNAPSHOT = `${day(NOW, 'WIB', true)} · ${hhmm(NOW)} WIB`;
+  return ev;
+}
+TERMINALS.forEach(t => t.tanks.forEach(k => { k.temp0 = k.temp; }));
+tick(); // catch up from the reference moment to the real clock
 
 // ── UI persistence ─────────────────────────────────────────────────────
 export const ui = {

@@ -280,7 +280,7 @@ class Component extends DCLogic {
     const wide = ctx.vw >= 1500; const mapH = ctx.vw < 1700 ? '360px' : '420px';
     const filtered = !!(s.text || s.cap !== 'All capabilities' || s.status !== 'All statuses' || s.sev !== 'All severities');
     return {
-      ready: true, I, f: s, subtitle: `14 terminals · ${D.SNAPSHOT} · fictional demonstration values, not live telemetry`,
+      ready: true, I, f: s, subtitle: `14 terminals · ${D.SNAPSHOT} · live simulation with fictional values, not plant telemetry`,
       onText: e => this.upd({ text: e.target.value }), onCap: e => this.upd({ cap: e.target.value }), onStatus: e => this.upd({ status: e.target.value }), onSev: e => this.upd({ sev: e.target.value }),
       capOptions: ['All capabilities', 'Marine', 'Blending', 'Truck loading', 'Hydrant', 'Pipeline'], statusOptions: ['All statuses', 'Operating', 'Restricted'], sevOptions: ['All severities', 'Critical', 'Attention', 'No open exception'],
       filtered, clearFilters: () => this.upd({ text: '', cap: 'All capabilities', status: 'All statuses', sev: 'All severities' }),

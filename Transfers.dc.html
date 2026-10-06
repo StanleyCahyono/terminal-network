@@ -363,7 +363,7 @@ class Component extends DCLogic {
       ...(tr.truck ? [kv('Trucks loaded', `${tr.trucksDone} of ${tr.truckN}`, `${tr.truck} kL tankers`)] : []),
       kv('Pressure', tr.press != null && tr.active && !paused ? D.fmt(tr.press, 1) : tr.active ? (paused ? D.fmt(tr.press, 1) : null) : '—', 'bar(g) · M-01'),
       kv('Temperature', tr.temp != null && !meterLost ? D.fmt(tr.temp, 1) : (tr.active ? null : '—'), '°C · meter'),
-      kv('Started', tr.start <= D.NOW ? D.tm(tr.start, tz, { tz: false }) : 'Not started', tz + (tr.start <= D.NOW && tr.start < 0 ? ' · ' + D.tm(tr.start, tz, { date: true, tz: false }).slice(0, 6) : '')),
+      kv('Started', tr.start <= D.NOW ? D.tm(tr.start, tz, { tz: false }) : 'Not started', tz),
       kv('Elapsed', elapsed != null ? D.dur(elapsed) : '—', tr.pumpMin ? 'pumping ' + D.dur(tr.pumpMin) : ''),
       kv('Average rate', tr.avgRate ? D.fmt(tr.avgRate) : '—', 'kL/h while pumping'),
     ];
@@ -452,7 +452,7 @@ class Component extends DCLogic {
     const X0 = D.NOW - 12 * 60, X1 = D.NOW + 60 * 60;
     const pos = v => (Math.max(0, Math.min(1, (v - X0) / (X1 - X0))) * 100).toFixed(2) + '%';
     const bLanes = (t.marine || []).map(b => ({ name: b, items: sch.items.filter(i => i.lane === b && i.b > X0 && i.a < X1).map(i => { const trx = D.TRANSFERS.find(x => x.id === i.ref); const planned = i.a > D.NOW; const delayed = trx && trx.state === 'Delayed'; const sel = i.ref === tr.id; return { label: i.label, title: `${i.label} · ${D.tm(i.a, tz, { date: true })} → ${D.tm(i.b, tz, { date: true })}`, x: pos(i.a), w: `calc(${pos(i.b)} - ${pos(i.a)})`, bd: sel ? 'var(--acc)' : delayed ? 'var(--warn)' : planned ? 'var(--ink3)' : 'var(--ink2)', bg: delayed ? 'var(--warnSoft)' : planned ? 'transparent' : sel ? 'var(--acc)' : 'var(--ink2)', fg: delayed || planned ? 'var(--ink)' : 'var(--surf)', onClick: () => trx && this.upd({ sel: { ...s.sel, [t.id]: trx.id } }) }; }) }));
-    const bTicks = []; for (let v = Math.ceil(X0 / 360) * 360; v <= X1; v += 360) bTicks.push({ x: pos(v), label: D.tm(v, tz, { tz: false, date: v % 1440 === 0 }) });
+    const bTicks = []; for (let v = D.grid(X0, 360, tz); v <= X1; v += 360) bTicks.push({ x: pos(v), label: D.tm(v, tz, { tz: false, date: D.clockMin(v, tz) === 0 }) });
     const canAct = ctx.perm.act && tr.active;
     return {
       ...base,

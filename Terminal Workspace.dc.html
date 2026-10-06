@@ -383,6 +383,7 @@ class Component extends DCLogic {
     const related = new Set(); if (selTrObj) { related.add(selTrObj.dst); (selTrObj.srcs || [[selTrObj.src]]).forEach(([x]) => related.add(x)); }
 
     const tz = t.tz;
+    const settled = k => { const last = D.TRANSFERS.filter(x => x.term === k.term && x.dst === k.id && x.state === 'Completed').sort((a, b) => b.end - a.end)[0]; return (last ? `${last.type.includes('blend') ? 'Blend' : 'Receipt'} ${last.id} completed ${D.tm(last.end, tz)}. ` : '') + 'Awaiting laboratory results before release.'; };
     // transfer chips
     const trChips = active.map(tr => {
       const p = D.prod(tr.code), sel = selIds.includes(tr.id);
@@ -442,7 +443,7 @@ class Component extends DCLogic {
       ];
       const meas = [
         this.val(D.fmt(st.level), 'M', 'mm', `Radar gauge LT-1${n}`, 'Liquid level'),
-        tempOk ? this.val(D.fmt(k.temp, 1), 'M', '°C', `Multi-point average TT-1${n}`, 'Temperature') : { ...this.val(null, 'U', '°C', `Probe TT-1${n} fault since 03:10 ${tz}. Manual dip ${k.manualTemp} °C at ${D.tm(k.manualAt, tz)} is used for volume correction.`, 'Temperature'), },
+        tempOk ? this.val(D.fmt(k.temp, 1), 'M', '°C', `Multi-point average TT-1${n}`, 'Temperature') : { ...this.val(null, 'U', '°C', `Probe TT-1${n} fault since ${D.tm(190, tz)}. Manual dip ${k.manualTemp} °C at ${D.tm(k.manualAt, tz)} is used for volume correction.`, 'Temperature'), },
         this.val(D.fmt(k.dens15, 1), 'L', 'kg/m³', `Reference basis 15 °C · laboratory result for batch ${k.batch || '—'}`, 'Density @ 15 °C'),
         this.val(k.water != null ? D.fmt(k.water) : null, 'M', 'mm', k.water != null ? `Water interface probe WI-1${n}` : 'No water-bottom reading available for this tank', 'Water bottom'),
         { ...this.val(gov != null ? D.fmt(gov) : null, tempOk ? 'C' : 'X', `kL @ ${tUse} °C`, tempOk ? 'At tank temperature · VCF Table 54B' : 'Based on manual dip temperature', 'Observed volume (GOV)') },
@@ -463,7 +464,7 @@ class Component extends DCLogic {
         batch: k.batch || '—', q: k.q, qIcon: I.st[k.q === 'Released' ? 'ok' : k.q === 'On hold' ? 'hold' : 'pending'], sample: sample ? `${sample.id} · ${sample.status}` : 'No open sample',
         openQuality: () => this.props.go('quality', { terminalId: t.id, focus: sample ? { type: 'sample', id: sample.id } : { type: 'batch', id: k.batch } }),
         actTitle: act ? `${recv ? 'Receiving' : 'Dispatching'} · ${act.id}` : (k.status === 'Out of service' ? 'Out of service' : k.status === 'Settling' ? 'Settling after receipt' : 'No active movement'),
-        actSub: act ? `${act.type} · ${act.state} · ${act.flow ? (act.truck ? D.flowText(act) : D.fmt(recv ? act.flow : act.flow * (act.srcs ? act.srcs.find(x => x[0] === k.id)[1] : 1)) + ' kL/h') : 'flow unavailable'} · ${recv ? 'from ' + (act.marine ? act.vessel + ' / ' + act.berth : act.src) : 'to ' + act.dst}` : (k.note || (k.status === 'Settling' ? 'Receipt TRF-PLM-26-0412 completed 02:40. Awaiting laboratory results before release.' : 'Inlet and outlet valves closed.')),
+        actSub: act ? `${act.type} · ${act.state} · ${act.flow ? (act.truck ? D.flowText(act) : D.fmt(recv ? act.flow : act.flow * (act.srcs ? act.srcs.find(x => x[0] === k.id)[1] : 1)) + ' kL/h') : 'flow unavailable'} · ${recv ? 'from ' + (act.marine ? act.vessel + ' / ' + act.berth : act.src) : 'to ' + act.dst}` : (k.note || (k.status === 'Settling' ? settled(k) : 'Inlet and outlet valves closed.')),
         chartL, chartT,
         sensors: [sen('Radar level gauge', 'LT-1' + n, 'OK'), sen('Multi-point temperature', 'TT-1' + n, tempOk ? 'OK' : 'Fault'), sen('Independent high-level switch', 'LSHH-1' + n, 'OK'), sen('Water interface probe', 'WI-1' + n, k.water != null ? 'OK' : 'Not fitted'), sen('Inlet valve', 'MOV-1' + n, recv ? 'Open' : 'Closed'), sen('Outlet valve', 'MOV-2' + n, disp ? 'Open' : 'Closed')],
         config: [{ k: 'Roof type', v: k.roof }, { k: 'Shell', v: k.material }, { k: 'Lining', v: k.coating }, { k: 'Dimensions', v: `Ø ${k.diam} m × ${k.height} m` }, { k: 'Product assignment', v: p.label }],

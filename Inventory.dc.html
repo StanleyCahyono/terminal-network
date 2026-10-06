@@ -31,7 +31,7 @@
     <div style="padding:28px 22px;background:var(--surf);border:1px solid var(--pBd);display:flex;flex-direction:column;gap:8px;align-items:flex-start">
       <span style="color:var(--ink3)">{{ I.inventory }}</span>
       <div style="font-weight:600;font-size:15px">No reconciliation available for {{ rangeName }}</div>
-      <div style="color:var(--ink2)">Balances before 04 Oct 14:20 WIB are archived. Choose Current shift, Today or Last 24 h in the time range selector.</div>
+      <div style="color:var(--ink2)">Balances before {{ archivedBefore }} are archived. Choose Current shift, Today or Last 24 h in the time range selector.</div>
     </div>
   </sc-if>
 
@@ -106,10 +106,9 @@ class Component extends DCLogic {
     const I = ctx.I, s = this.state, prods = ctx.products, has = c => !prods.length || prods.includes(c);
     const net = (s.scopeLocal || (ctx.scope === 'network' ? 'network' : 'terminal')) === 'network';
     const t = D.term(ctx.terminalId);
-    const shifts = { A: [360, 840], B: [840, D.NOW], C: [-120, 360] };
-    const per = { 'Current shift': shifts[ctx.shift] || shifts.B, Today: [0, D.NOW], 'Last 24 h': [D.NOW - 1440, D.NOW] }[ctx.range];
+    const per = { 'Current shift': D.shiftSpan(ctx.shift), Today: [D.dayStart(0), D.NOW], 'Last 24 h': [D.NOW - 1440, D.NOW] }[ctx.range];
     const base = { ready: true, I, scopeOpts: [['terminal', t.name], ['network', 'Network · by terminal']].map(([id, label]) => ({ label, onClick: () => this.upd({ scopeLocal: id }), bg: (net ? 'network' : 'terminal') === id ? 'var(--ink)' : 'var(--surf)', fg: (net ? 'network' : 'terminal') === id ? 'var(--surf)' : 'var(--ink)' })), basis: s.basis, onBasis: e => this.upd({ basis: e.target.value }) };
-    if (!per) return { ...base, unavailable: true, available: false, rangeName: ctx.range.toLowerCase(), periodText: `${ctx.range} · archived` };
+    if (!per) return { ...base, unavailable: true, available: false, rangeName: ctx.range.toLowerCase(), archivedBefore: D.tm(D.NOW - 1440, 'WIB', { date: true }), periodText: `${ctx.range} · archived` };
     const [a, b] = per;
     const mass = s.basis === 'mass';
     const f = k => mass ? k.dens15 / 1000 : 1;

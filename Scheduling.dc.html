@@ -87,7 +87,7 @@ class Component extends DCLogic {
     const I = ctx.I, s = this.state;
     const t = D.term(ctx.terminalId), tz = t.tz;
     const sch = D.scheduleFor(t.id);
-    const X0 = 0, X1 = 2880;
+    const X0 = D.dayStart(0, tz), X1 = X0 + 2880;
     const pos = v => (Math.max(0, Math.min(1, (v - X0) / (X1 - X0))) * 100).toFixed(3) + '%';
     const types = { Receipt: ['var(--ink)', 'none', 'var(--surf)'], Dispatch: ['var(--surf3)', '1px solid var(--ink3)', 'var(--ink)'], Transfer: ['var(--ink3)', 'none', 'var(--surf)'], Blending: ['var(--accSoft)', '1px solid var(--acc)', 'var(--ink)'], Maintenance: ['repeating-linear-gradient(135deg, var(--surf3) 0 4px, var(--surf) 4px 8px)', '1px solid var(--ink4)', 'var(--ink)'], Quality: ['var(--surf)', '1px dashed var(--ink3)', 'var(--ink)'] };
     const inConf = new Set(); const confOf = {}; sch.conflicts.forEach(c => c.items.forEach(i => { inConf.add(i); confOf[i] = c.id; }));
@@ -99,7 +99,7 @@ class Component extends DCLogic {
       const ov = new Map(); its.forEach((i, ix) => { const o = its.filter((j, jx) => jx < ix && j.a < i.b && j.b > i.a).length; ov.set(i.id, o); });
       return { name, kind: laneKind(name), ff: /^[TP]-|BS-/.test(name) ? 'var(--fnum)' : 'var(--fsans)', items: its.map(i => { const ty = types[i.type] || types.Transfer; const c = inConf.has(i.id); const hi = hiItems.includes(i.id) || s.sel === i.id; const o = ov.get(i.id); return { label: i.label, title: `${i.type} · ${i.label} · ${D.tm(i.a, tz, { date: true })} → ${D.tm(i.b, tz, { date: true })}${c ? ' · CONFLICT' : ''}`, x: pos(i.a), w: `calc(${pos(i.b)} - ${pos(i.a)})`, top: o ? '20px' : '5px', h: o ? '15px' : (its.some((j) => j !== i && j.a < i.b && j.b > i.a) ? '14px' : '29px'), bg: ty[0], bd: c ? '1.5px solid var(--crit)' : ty[1], fg: ty[2], sh: hi ? '0 0 0 3px oklch(0.6 0.15 258 / .35)' : 'none', z: hi ? 2 : 1, icon: c ? I.st.critical : null, onClick: () => this.upd({ sel: i.id, cf: confOf[i.id] || null }) }; }) };
     });
-    const ticks = []; for (let v = 0; v <= 2880; v += 360) ticks.push({ x: pos(v), label: D.tm(v, tz, { tz: false, date: v % 1440 === 0 }), fg: 'var(--ink3)', fw: 400 });
+    const ticks = []; for (let v = X0; v <= X1; v += 360) ticks.push({ x: pos(v), label: D.tm(v, tz, { tz: false, date: (v - X0) % 1440 === 0 }), fg: 'var(--ink3)', fw: 400 });
     const conflicts = sch.conflicts.map(c => ({ kind: c.kind, text: c.text, fix: c.fix, icon: I.st.critical, bg: s.cf === c.id ? 'var(--critSoft)' : 'transparent', onClick: () => this.upd({ cf: s.cf === c.id ? null : c.id, sel: c.items[0] }) }));
     const it = sch.items.find(i => i.id === s.sel);
     let det = { title: 'No activity selected', rows: [{ k: 'Horizon', v: `${D.tm(X0, tz, { date: true })} → ${D.tm(X1, tz, { date: true })}`, ff: 'var(--fnum)' }, { k: 'Activities', v: String(sch.items.filter(i => i.b > X0 && i.a < X1).length), ff: 'var(--fnum)' }, { k: 'Conflicts', v: String(sch.conflicts.length), ff: 'var(--fnum)' }], link: null };

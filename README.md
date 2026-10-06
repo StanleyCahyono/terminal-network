@@ -29,8 +29,19 @@ Operations console for the fuel terminal network: network overview, terminal and
 | `support.js` | Runtime |
 | `assets/logo.png` | Logo |
 
+## Live clock
+
+The console runs on the real date and time (WIB, WITA and WIT per terminal). The fictional scenario in `data.js` is pinned to the moment you open the console, shifted by whole hours. Every 3 seconds `tick()` moves it forward with the real clock:
+
+- Transfers pump at their flow rates, tank levels rise and fall, and completion estimates count down.
+- Blends progress through their components.
+- Transfers and blends finish on their own, and the operator gets a notice when they do.
+- Shifts, "Today" and the chart time axes follow the real calendar.
+
+Reopening the console within 6 hours continues the same run. After that it starts a fresh one. The header shows **Live · simulated data**: values move in real time but are not plant telemetry.
+
 ## Connecting live data
 
-All readings come from `data.js`. Replace its contents with values from the terminal data service (same shapes: terminals → tanks, transfers, samples, exceptions) when the sensor feed is available.
+All readings come from `data.js`. Replace its contents with values from the terminal data service (same shapes: terminals → tanks, transfers, samples, exceptions) when the sensor feed is available. Then drop the simulation in `tick()` and change the header label back.
 
 Open the files through a web server (GitHub Pages, or `npx serve` locally). Opening them directly from disk blocks the module loading some browsers require.

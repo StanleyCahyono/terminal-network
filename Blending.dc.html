@@ -333,29 +333,19 @@
 class Component extends DCLogic {
   constructor(p) {
     super(p);
-    this.state = { ...(p.d ? p.d.ui.load('bld', { sel: {} }) : {}), drafts: {}, sim: {}, playing: true, dev: false, hover: null };
+    this.state = { ...(p.d ? p.d.ui.load('bld', { sel: {} }) : {}), drafts: {}, dev: false, hover: null };
     this.barRef = React.createRef();
   }
   componentDidMount() {
     this.applyFocus();
-    this.timer = setInterval(() => this.tick(), 1000);
     this.onMove = e => this.drag(e); this.onUp = () => { this.dragI = null; };
     window.addEventListener('pointermove', this.onMove); window.addEventListener('pointerup', this.onUp);
   }
-  componentWillUnmount() { clearInterval(this.timer); window.removeEventListener('pointermove', this.onMove); window.removeEventListener('pointerup', this.onUp); }
+  componentWillUnmount() { window.removeEventListener('pointermove', this.onMove); window.removeEventListener('pointerup', this.onUp); }
   componentDidUpdate() { this.applyFocus(); }
   applyFocus() { const f = this.props.ctx && this.props.ctx.focus; if (!f || f.n === this.lf) return; this.lf = f.n; if (f.type === 'blend') this.upd({ sel: { ...this.state.sel, [this.props.ctx.terminalId]: f.id } }); }
   upd(p) { this.setState(p, () => this.props.d.ui.save('bld', { sel: this.state.sel })); }
   bump() { this.props.ctx.bump && this.props.ctx.bump(); }
-  tick() {
-    const D = this.props.d; if (!D || !this.state.playing) return;
-    const b = D.BLENDS.find(x => x.state === 'In progress' && x.term === this.props.ctx.terminalId); if (!b) return;
-    const sim = this.state.sim[b.id] || { min: 0 };
-    const total = b.comps.reduce((a, c) => a + (c.done || 0), 0);
-    const rem = b.target - total - sim.min / 60 * b.rate;
-    if (rem <= 0) { b.state = 'Awaiting test results'; b.end = D.NOW + sim.min; b.comps.forEach(c => c.done = c.qty); this.setState({ sim: { ...this.state.sim, [b.id]: { min: 0 } } }); this.props.toast && this.props.toast(`${b.id} complete. Batch is awaiting test results — not released.`); this.bump(); return; }
-    this.setState({ sim: { ...this.state.sim, [b.id]: { min: sim.min + 1 / 60 } } });
-  }
   plan(b) {
     const d = this.state.drafts[b.id];
     if (d) return d;
@@ -457,7 +447,7 @@ class Component extends DCLogic {
       return { ...out, barRef: this.barRef, pl: { code: pl.code, mode: pl.mode, target: pl.target, targetText: D.fmt(pl.target), dst: pl.dst, dstRx: dS ? D.fmt(dS.rx) + ' kL' : '—', dstAfter: dS ? D.fmt(dS.rx - total) + ' kL headroom' : '—', dstAfterFg: dS && dS.rx - total < 0 ? 'var(--critInk)' : 'var(--ink)', recipeText: R.comps.map(([c, v]) => `${D.prod(c).short} ${v} %`).join(' / '), tol: R.tol, total: D.fmt(total), diffText: total === pl.target ? 'Matches target quantity' : `${D.sgn(total - pl.target)} kL vs target`, diffFg: total === pl.target ? 'var(--ink3)' : 'var(--warnInk)', showFix: total !== pl.target, note: R.note, feasText: fails ? `${fails} blocking · ${warns} to review` : warns ? `${warns} to review` : 'Feasible', feasFg: fails ? 'var(--critInk)' : warns ? 'var(--warnInk)' : 'var(--ink)', route: routeStr, rate: pl.rate, startKey: pl.startKey, duration: D.dur(durMin), window: `${D.tm(start, tz, { date: true })} → ${D.tm(end, tz, { date: true })}` },
         prodOpts: t.blend.products.map(c => ({ code: c, label: D.prod(c).label })), modeOpts: [t.blend.mode], dstOpts, segs, handles, recipeMarks, compRows, checks, propRows: props, reqs,
         compCols: 'minmax(0,1.5fr) 140px minmax(0,0.8fr) minmax(0,0.6fr) minmax(0,0.7fr) 110px minmax(0,0.8fr) minmax(0,1.2fr)',
-        startOpts: [{ v: 'a', label: `In 2 h · ${D.tm(starts.a, tz, { tz: false })}` }, { v: 'b', label: `06 Oct ${D.tm(starts.b, tz, { tz: false })}` }, { v: 'c', label: `06 Oct ${D.tm(starts.c, tz, { tz: false })}` }],
+        startOpts: [{ v: 'a', label: `In 2 h · ${D.tm(starts.a, tz, { tz: false })}` }, { v: 'b', label: D.tm(starts.b, tz, { tz: false, date: true }) }, { v: 'c', label: D.tm(starts.c, tz, { tz: false, date: true }) }],
         onProd: e => { const code = e.target.value; const R2 = D.RECIPES[code]; const comps = R2.comps.map(([c, pct]) => { const src = t.tanks.find(k => k.code === c && k.q === 'Released') || t.tanks.find(k => k.code === c); return { c, tank: src ? src.id : '', qty: Math.round(pl.target * pct / 100) }; }); const dst = t.tanks.find(k => k.code === code && k.status !== 'Out of service'); this.setPlan(b, { code, comps, dst: dst ? dst.id : '' }); b.code = code; },
         onMode: e => this.setPlan(b, { mode: e.target.value }),
         onTarget: e => { const v = Math.max(0, Math.round(+e.target.value || 0)); this.setPlan(b, { target: v }); },
@@ -475,20 +465,19 @@ class Component extends DCLogic {
         backToDraft: () => { b.state = 'Draft'; this.bump(); this.forceUpdate(); } };
     }
     if (view.monitor) {
-      const sim = s.sim[b.id] || { min: 0 };
       const R = D.RECIPES[b.code];
       const doneBase = b.comps.reduce((a, c) => a + (c.done || 0), 0);
       const flows = b.comps.map((c, i) => { let f = c.flow || Math.round(b.rate * c.qty / b.target); if (s.dev && i === b.comps.length - 1) f = Math.round(f * 1.025); if (s.dev && i === 0) f = Math.round(f * 0.985); return f; });
       const fsum = flows.reduce((a, v) => a + v, 0);
-      const dones = b.comps.map((c, i) => (c.done || 0) + flows[i] * sim.min / 60);
+      const dones = b.comps.map(c => c.done || 0);
       const done = dones.reduce((a, v) => a + v, 0);
-      const elapsed = D.NOW + sim.min - b.start;
-      const eta = D.NOW + sim.min + (b.target - done) / fsum * 60;
+      const elapsed = D.NOW - b.start;
+      const eta = D.NOW + (b.target - done) / fsum * 60;
       const rows = b.comps.map((c, i) => { const P = D.prod(c.c); const target = c.qty / b.target * 100; const cum = dones[i] / done * 100; const cur = flows[i] / fsum * 100; const dev = cur - target; const out = Math.abs(dev) > R.tol; const lo = Math.max(0, target - 6), hi = Math.min(100, target + 6); const sc = v => ((v - lo) / (hi - lo) * 100).toFixed(1) + '%';
         return { label: P.label, tank: c.tank, sw: P.sw, swBd: P.kind === 'component' ? P.color : 'transparent', target: target.toFixed(1) + ' %', cum: cum.toFixed(2) + ' %', cur: cur.toFixed(2) + ' %', dev: D.sgn(dev, 2) + ' pp', devFg: out ? 'var(--critInk)' : 'var(--ink)', flow: D.fmt(flows[i]), done: D.fmt(dones[i]), bandL: sc(target - R.tol), bandW: `calc(${sc(target + R.tol)} - ${sc(target - R.tol)})`, tX: sc(target), cX: sc(Math.max(lo, Math.min(hi, cur))), dotBg: out ? 'var(--crit)' : 'var(--ink)', outOf: out, devv: dev }; });
       const last = b.comps.length - 1; const tgt = b.comps[last].qty / b.target * 100;
-      const pts = []; let seed = 7; for (let x = b.start; x <= D.NOW + sim.min; x += 10) { seed = (seed * 9301 + 49297) % 233280; const ramp = Math.min(1, (x - b.start) / 20); const v = tgt + (seed / 233280 - 0.5) * 0.35 + (s.dev && x > D.NOW + sim.min - 30 ? (rows[last].devv) * Math.min(1, (x - (D.NOW + sim.min - 30)) / 20) : 0); pts.push({ t: x, v: ramp < 1 ? tgt - (1 - ramp) * 1.5 : v }); }
-      const xt = []; for (let x = Math.ceil(b.start / 120) * 120; x <= D.NOW + sim.min; x += 120) xt.push({ t: x, label: D.tm(x, tz, { tz: false }) });
+      const pts = []; let seed = 7; for (let x = b.start; x <= D.NOW; x += 10) { seed = (seed * 9301 + 49297) % 233280; const ramp = Math.min(1, (x - b.start) / 20); const v = tgt + (seed / 233280 - 0.5) * 0.35 + (s.dev && x > D.NOW - 30 ? (rows[last].devv) * Math.min(1, (x - (D.NOW - 30)) / 20) : 0); pts.push({ t: x, v: ramp < 1 ? tgt - (1 - ramp) * 1.5 : v }); }
+      const xt = []; for (let x = D.grid(b.start, 120, tz); x <= D.NOW; x += 120) xt.push({ t: x, label: D.tm(x, tz, { tz: false }) });
       const chart = D.lineChart(h, { w: 720, h: 170, ydp: 1, series: [{ pts, color: 'var(--ink)', label: D.prod(b.comps[last].c).short + ' ratio', unit: '%v/v', dp: 2 }], y0: tgt - 2, y1: tgt + 2, refs: [{ v: tgt + R.tol, label: '+' + R.tol + ' pp', color: 'var(--ok)' }, { v: tgt - R.tol, label: '−' + R.tol + ' pp', color: 'var(--ok)' }, { v: tgt, label: 'Target ' + tgt.toFixed(1) + ' %', color: 'var(--ink3)' }], xTicks: xt, hover: s.hover, onHover: v => this.setState({ hover: v }), tz, aria: 'Ratio trend' });
       const anyOut = rows.some(r => r.outOf);
       const ex = [];
@@ -496,11 +485,11 @@ class Component extends DCLogic {
       const tankEx = D.EXCEPTIONS.filter(e => e.term === t.id && e.status !== 'Resolved' && b.comps.concat([{ tank: b.dst }]).some(c => e.asset.includes(c.tank)));
       tankEx.forEach(e => ex.push({ icon: I.st[e.sev], title: e.what, text: `${e.asset} · ${e.status}` }));
       if (!ex.length) ex.push({ icon: I.st.ok, title: 'No exceptions on this batch', text: 'Sources, skid and destination are reporting normally.' });
-      return { ...out, mo: { speed: '4 min per second', playIcon: s.playing ? I.pause : I.play, playLabel: s.playing ? 'Pause playback' : 'Resume playback', devLabel: s.dev ? 'Clear simulated deviation' : 'Simulate FAME flow deviation', done: D.fmt(done), target: D.fmt(b.target), pct: (done / b.target * 100).toFixed(1) + ' %', flow: D.fmt(fsum), elapsed: D.dur(elapsed), start: D.tm(b.start, tz), eta: D.tm(eta, tz), tol: R.tol,
+      return { ...out, mo: { devLabel: s.dev ? 'Clear simulated deviation' : 'Simulate FAME flow deviation', done: D.fmt(done), target: D.fmt(b.target), pct: (done / b.target * 100).toFixed(1) + ' %', flow: D.fmt(fsum), elapsed: D.dur(elapsed), start: D.tm(b.start, tz), eta: D.tm(eta, tz), tol: R.tol,
         progSegs: [...b.comps.map((c, i) => ({ w: (dones[i] / b.target * 100) + '%', bg: D.prod(c.c).kind === 'component' ? `repeating-linear-gradient(135deg, ${D.prod(c.c).color} 0 5px, color-mix(in oklch, ${D.prod(c.c).color} 75%, white) 5px 10px)` : D.prod(c.c).color }))],
         rows, chart, trendTitle: `${D.prod(b.comps[last].c).label} ratio`, ex, dst: b.dst, sample: b.sample || 'to be taken at 50 %',
-        facts: [{ k: 'Mode', v: `${b.mode} · ratio control`, ff: 'var(--fsans)' }, { k: 'Route', v: `${b.comps.map(c => c.tank).join(' + ')} → P-04 → BS-1 → ${b.dst}`, ff: 'var(--fnum)' }, { k: 'Batch state', v: 'In progress', ff: 'var(--fsans)' }, { k: 'Inventory', v: 'Tank figures show the 14:20 snapshot; playback does not change them', ff: 'var(--fsans)' }] },
-        togglePlay: () => this.setState({ playing: !s.playing }), toggleDev: () => this.setState({ dev: !s.dev }) };
+        facts: [{ k: 'Mode', v: `${b.mode} · ratio control`, ff: 'var(--fsans)' }, { k: 'Route', v: `${b.comps.map(c => c.tank).join(' + ')} → P-04 → BS-1 → ${b.dst}`, ff: 'var(--fnum)' }, { k: 'Batch state', v: 'In progress', ff: 'var(--fsans)' }, { k: 'Inventory', v: 'Tank figures update live as the batch runs', ff: 'var(--fsans)' }] },
+        toggleDev: () => this.setState({ dev: !s.dev }) };
     }
     // release view
     const smp = D.SAMPLES.find(x => x.id === b.sample) || D.SAMPLES.find(x => x.batch === b.id);

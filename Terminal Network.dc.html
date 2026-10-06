@@ -347,10 +347,10 @@ class Component extends DCLogic {
     try { s = JSON.parse(localStorage.getItem('tnops:shell')) || {}; } catch (e) {}
     this.state = {
       ready: false, screen: s.screen || 'network', terminalId: s.terminalId || 'PLM', scope: s.scope || 'network',
-      products: s.products || [], range: s.range || 'Today', shift: s.shift || 'B', role: s.role || p.role || 'supervisor',
+      products: s.products || [], range: s.range || 'Today', shift: s.shift || null, role: s.role || p.role || 'supervisor',
       theme: 'light', motion: s.motion || 'on', demo: p.demoState || 'normal', railOpen: s.railOpen ?? false,
       scopeOpen: false, rangeOpen: false, prodOpen: false, userOpen: false, alarmsOpen: false, searchOpen: false, q: '', hi: 0,
-      alarmTab: 'active', alarmScope: 'network', resolving: null, resNote: '', focus: null, toastMsg: null, rev: 0, vw: window.innerWidth, switching: false, t0: Date.now(), tick: 0,
+      alarmTab: 'active', alarmScope: 'network', resolving: null, resNote: '', focus: null, toastMsg: null, rev: 0, vw: window.innerWidth, switching: false, tick: 0,
     };
     this.searchRef = React.createRef();
   }
@@ -358,7 +358,7 @@ class Component extends DCLogic {
     import(new URL('./data.js', document.baseURI).href).then(m => { this.D = m; this.I = m.icons(React.createElement); this.idx = m.searchIndex(); this.setState({ ready: true }); });
     this.onResize = () => this.setState({ vw: window.innerWidth });
     window.addEventListener('resize', this.onResize);
-    this.timer = setInterval(() => this.setState(s => ({ tick: s.tick + 1 })), 5000);
+    this.timer = setInterval(() => { const ev = this.D ? this.D.tick() : []; if (ev.length) this.toast(ev.slice(0, 2).join(' ') + (ev.length > 2 ? ` +${ev.length - 2} more` : '')); this.setState(s => ({ tick: s.tick + 1 })); }, 3000);
     this.onKey = e => {
       if (e.key === '/' && !/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) { e.preventDefault(); this.searchRef.current && this.searchRef.current.focus(); }
       if (e.key === 'Escape') this.closeMenus();
@@ -406,10 +406,10 @@ class Component extends DCLogic {
     const role = roles[s.role] || roles.supervisor;
     const disc = s.demo === 'disconnected';
     const perm = disc ? { act: false, ack: role.perm.ack, resolve: false, release: false, config: false } : role.perm;
-    const elapsed = (Date.now() - s.t0) / 60000;
+    const shift = s.shift || D.shiftNow();
     const upd = (s.scope === 'network' && s.screen === 'network') ? 0.4 : t.upd;
     const stale = s.demo === 'stale' || (upd > 10 && s.scope === 'terminal');
-    const ctx = { screen: s.screen, terminalId: s.terminalId, scope: s.scope, products: s.products, range: s.range, shift: s.shift, role: s.role, roleLabel: role.label, user: role.name, perm, demo: s.demo, stale, focus: s.focus, vw: s.vw, mobile, tablet, theme: s.theme, rev: s.rev, bump: this.bump, I, now: D.NOW + elapsed };
+    const ctx = { screen: s.screen, terminalId: s.terminalId, scope: s.scope, products: s.products, range: s.range, shift, role: s.role, roleLabel: role.label, user: role.name, perm, demo: s.demo, stale, focus: s.focus, vw: s.vw, mobile, tablet, theme: s.theme, rev: s.rev, bump: this.bump, I, now: D.NOW };
 
     const prim = [['network', 'Network', 'Network', I.network], ['terminal', 'Terminals & Tanks', 'Terminals', I.tank], ['transfers', 'Transfers', 'Transfers', I.transfer], ['blending', 'Blending', 'Blending', I.blend], ['quality', 'Quality', 'Quality', I.quality], ['schedule', 'Scheduling', 'Schedule', I.schedule], ['inventory', 'Inventory & Reconciliation', 'Inventory', I.inventory]];
     const navItems = prim.map(([id, label, short, icon]) => {
@@ -429,8 +429,8 @@ class Component extends DCLogic {
     results = results.map((r, i) => ({ ...r, bg: i === s.hi ? 'var(--surf2)' : 'transparent', onClick: () => this.go(r.go[0], r.go[1]), onHover: () => this.setState({ hi: i }) }));
     this.results = results;
 
-    const ranges = { 'Current shift': 'Shift ' + s.shift, Today: '00:00 → now', 'Last 24 h': '24 h → now', 'Last 7 days': '7 d → now' };
-    const shifts = [['A', '06:00 – 14:00'], ['B', '14:00 – 22:00 · current'], ['C', '22:00 – 06:00']];
+    const ranges = { 'Current shift': 'Shift ' + shift, Today: '00:00 → now', 'Last 24 h': '24 h → now', 'Last 7 days': '7 d → now' };
+    const shifts = [['A', '06:00 – 14:00'], ['B', '14:00 – 22:00'], ['C', '22:00 – 06:00']].map(([id, sub]) => [id, id === D.shiftNow() ? sub + ' · current' : sub]);
     const sel = (on) => ({ bd: on ? 'var(--ink)' : 'var(--line)', bg: on ? 'var(--ink)' : 'transparent', fg: on ? 'var(--surf)' : 'var(--ink)' });
 
     const prodOptions = D.PRODUCTS.map(p => { const on = s.products.includes(p.code); return { label: p.label, short: p.short, color: p.color, on: on ? 'true' : 'false', check: on ? I.check : null, cbBd: on ? 'var(--ink)' : 'var(--line)', cbBg: on ? 'var(--ink)' : 'transparent', onClick: () => { const list = on ? s.products.filter(c => c !== p.code) : [...s.products, p.code]; this.set({ products: list }); } }; });
@@ -438,9 +438,9 @@ class Component extends DCLogic {
 
     // freshness
     const tz = net ? 'WIB' : t.tz;
-    const localNow = D.tm(D.NOW + elapsed, tz);
-    let freshLabel = 'Online · synced', freshSub = `Last sync ${D.tm(D.NOW + elapsed, tz)}`, freshFg = 'var(--ink)', freshBg = 'var(--surf)', freshBd = 'var(--line)', freshIcon = I.st.ok;
-    if (stale) { const m = s.demo === 'stale' ? 22 : t.upd; freshLabel = 'Online · sync delayed'; freshSub = `Last sync ${D.tm(D.NOW - m, tz)} · ${Math.round(m + elapsed)} min ago`; freshFg = 'var(--warnInk)'; freshBg = 'var(--warnSoft)'; freshBd = 'var(--warn)'; freshIcon = I.st.attention; }
+    const localNow = D.tm(D.NOW, tz);
+    let freshLabel = 'Live · simulated data', freshSub = `Last update ${D.tm(D.NOW, tz)}`, freshFg = 'var(--ink)', freshBg = 'var(--surf)', freshBd = 'var(--line)', freshIcon = I.st.ok;
+    if (stale) { const m = s.demo === 'stale' ? 22 : t.upd; freshLabel = 'Online · sync delayed'; freshSub = `Last sync ${D.tm(D.NOW - m, tz)} · ${Math.round(m)} min ago`; freshFg = 'var(--warnInk)'; freshBg = 'var(--warnSoft)'; freshBd = 'var(--warn)'; freshIcon = I.st.attention; }
     if (disc) { freshLabel = 'Disconnected'; freshSub = `Last received ${D.tm(D.NOW - 22, tz)}`; freshFg = 'var(--critInk)'; freshBg = 'var(--critSoft)'; freshBd = 'var(--crit)'; freshIcon = I.unplug; }
 
     // alarms
@@ -461,9 +461,9 @@ class Component extends DCLogic {
         resText: e.res ? `${e.res.by} · ${D.tm(e.res.at, et.tz)} — ${e.res.note}` : 'Open', resFg: e.res ? 'var(--ink)' : 'var(--ink3)',
         canAck: perm.ack && !e.ack && !e.res, canResolve: perm.resolve && !e.res && s.resolving !== e.id, locked: !!lockText && !e.res, lockText,
         resolving: s.resolving === e.id, termShort: et.id,
-        onAck: () => { D.ackEx(e.id, role.name, D.NOW + elapsed); this.toast(`${e.id} acknowledged by ${role.name}. Condition remains open until resolved.`); this.bump(); },
+        onAck: () => { D.ackEx(e.id, role.name, D.NOW); this.toast(`${e.id} acknowledged by ${role.name}. Condition remains open until resolved.`); this.bump(); },
         onResolve: () => this.setState({ resolving: e.id, resNote: '' }),
-        confirmResolve: () => { D.resolveEx(e.id, role.name, D.NOW + elapsed, s.resNote); this.setState({ resolving: null }); this.toast(`${e.id} marked resolved.`); this.bump(); },
+        confirmResolve: () => { D.resolveEx(e.id, role.name, D.NOW, s.resNote); this.setState({ resolving: null }); this.toast(`${e.id} marked resolved.`); this.bump(); },
         onOpen: () => this.go('terminal', { terminalId: e.term, focus: e.asset.startsWith('T-') ? { type: 'tank', id: e.asset.slice(0, 4) } : null }),
       };
     });
@@ -498,7 +498,7 @@ class Component extends DCLogic {
       onSearchKey: e => { if (e.key === 'ArrowDown') { e.preventDefault(); this.setState({ hi: Math.min(s.hi + 1, results.length - 1) }); } if (e.key === 'ArrowUp') { e.preventDefault(); this.setState({ hi: Math.max(0, s.hi - 1) }); } if (e.key === 'Enter' && this.results[s.hi]) this.results[s.hi].onClick(); if (e.key === 'Escape') { this.setState({ searchOpen: false }); e.target.blur(); } },
       showRange: !mobile, rangeLabel: s.range, rangeSub: `${ranges[s.range]} · ${tz}`, rangeOpen: s.rangeOpen, toggleRange: () => this.setState({ rangeOpen: !s.rangeOpen, scopeOpen: false, prodOpen: false, userOpen: false }),
       rangeOptions: Object.keys(ranges).map(r => ({ label: r, onClick: () => this.set({ range: r }), ...sel(s.range === r) })),
-      shiftOptions: shifts.map(([id, sub]) => ({ label: 'Shift ' + id, sub, onClick: () => this.set({ shift: id, range: 'Current shift' }), ...sel(s.shift === id) })),
+      shiftOptions: shifts.map(([id, sub]) => ({ label: 'Shift ' + id, sub, onClick: () => this.set({ shift: id, range: 'Current shift' }), ...sel(shift === id) })),
       showProdFilter: !tablet, prodOpen: s.prodOpen, toggleProd: () => this.setState({ prodOpen: !s.prodOpen, scopeOpen: false, rangeOpen: false, userOpen: false }), prodOptions, prodLabel, clearProd: () => this.set({ products: [] }), prodBd: s.products.length ? 'var(--ink)' : 'var(--line)', prodBg: s.products.length ? 'var(--surf2)' : 'var(--surf)',
       freshLabel, freshSub, freshFg, freshBg, freshBd, freshIcon, freshTitle: `Terminal local time ${localNow}`,
       critN, warnN, hasCrit: critN > 0, alarmBtnBg: critN ? 'var(--critSoft)' : 'var(--surf)', toggleAlarms: () => this.setState({ alarmsOpen: !s.alarmsOpen, resolving: null }), alarmsOpen: s.alarmsOpen, drawerW: mobile ? '100%' : '460px',
