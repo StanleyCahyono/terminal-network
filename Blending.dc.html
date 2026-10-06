@@ -379,7 +379,7 @@ class Component extends DCLogic {
     const batches = list.map(x => { const p = D.prod(x.code), on = x.id === selId; return { id: x.id, state: x.state, icon: I.st[D.statKind(x.state === 'On hold' ? 'hold' : x.state)], color: p.color, sub: `${p.label} · ${D.fmt(x.target)} kL → ${x.dst}`, pressed: on ? 'true' : 'false', bd: on ? 'var(--acc)' : 'var(--line)', bg: on ? 'var(--accSoft)' : 'var(--surf)', sh: on ? 'inset 2px 0 0 var(--acc)' : 'none', onClick: () => this.upd({ sel: { ...s.sel, [t.id]: x.id } }) }; });
     const base = { ready: true, I, t, noBlend: false, hasBlend: true, batches, blendCfg: `${t.blend.mode} blending · ${t.blend.products.map(c => D.prod(c).label).join(', ')}`, listW: ctx.tablet ? '220px' : '260px', planCols: ctx.tablet ? 'minmax(0,1fr)' : 'minmax(0,1fr) 340px',
       noAct: !canAct, actOp: canAct ? 1 : 0.5, actTitle: canAct ? '' : `Planning requires an operator or supervisor role · current: ${ctx.roleLabel}`, newIcon: canAct ? I.plus : I.lock,
-      newBatch: () => { const n = 9 + D.BLENDS.filter(x => x.term === t.id).length; const code = t.blend.products[0]; const R = D.RECIPES[code]; const dst = t.tanks.find(k => k.code === code && k.status !== 'Out of service'); const comps = R.comps.map(([c, pct]) => { const src = t.tanks.find(k => k.code === c); return { c, tank: src ? src.id : '', qty: Math.round(4860 * pct / 100) }; }); const nb = { id: `BLD-${t.id}-2610-0${String(n).padStart(2, '0')}`, term: t.id, code, mode: t.blend.mode, state: 'Draft', target: 4860, dst: dst ? dst.id : '', comps, rate: 548, created: `${ctx.user} · ${D.tm(ctx.now, tz)}` }; D.BLENDS.push(nb); this.upd({ sel: { ...s.sel, [t.id]: nb.id } }); this.props.toast && this.props.toast(`${nb.id} created as Draft.`); } };
+      newBatch: () => { const n = 9 + D.BLENDS.filter(x => x.term === t.id).length; const code = t.blend.products[0]; const R = D.recipeFor(t, code); const dst = t.tanks.find(k => k.code === code && k.status !== 'Out of service'); const comps = R.comps.map(([c, pct]) => { const src = t.tanks.find(k => k.code === c); return { c, tank: src ? src.id : '', qty: Math.round(4860 * pct / 100) }; }); const nb = { id: `BLD-${t.id}-2610-0${String(n).padStart(2, '0')}`, term: t.id, code, mode: t.blend.mode, state: 'Draft', target: 4860, dst: dst ? dst.id : '', comps, rate: 548, created: `${ctx.user} · ${D.tm(ctx.now, tz)}` }; D.BLENDS.push(nb); this.upd({ sel: { ...s.sel, [t.id]: nb.id } }); this.props.toast && this.props.toast(`${nb.id} created as Draft.`); } };
     if (!b) return { ...base, b: {}, steps: [], view: {} };
     const p = D.prod(b.code);
     const stepIdx = { Draft: 3, Scheduled: 4, 'In progress': 5, 'Awaiting test results': 6, 'On hold': 6, Released: 7 }[b.state];
@@ -394,7 +394,7 @@ class Component extends DCLogic {
     const commit = {}; D.BLENDS.filter(x => x.term === t.id && x.state === 'In progress' && x.id !== b.id).forEach(x => x.comps.forEach(c => { commit[c.tank] = (commit[c.tank] || 0) + Math.max(0, c.qty - (c.done || 0)); }));
 
     if (view.plan) {
-      const pl = this.plan(b); const R = D.RECIPES[pl.code];
+      const pl = this.plan(b); const R = D.recipeFor(t, pl.code);
       const total = pl.comps.reduce((a, c) => a + (+c.qty || 0), 0);
       const dstT = t.tanks.find(k => k.id === pl.dst); const dS = dstT ? D.stock(dstT) : null;
       const segs = pl.comps.map((c, i) => { const P = D.prod(c.c); return { short: P.short, pct: total ? (c.qty / total * 100).toFixed(1) + '%' : '—', qty: D.fmt(c.qty), w: total ? (c.qty / total * 100) + '%' : (100 / pl.comps.length) + '%', bg: P.kind === 'component' ? `repeating-linear-gradient(135deg, ${P.color} 0 6px, color-mix(in oklch, ${P.color} 80%, white) 6px 12px)` : P.color, fg: '#15171a' }; });
@@ -438,7 +438,7 @@ class Component extends DCLogic {
       ck(tankC.length ? 'attention' : 'ok', 'Route and tank availability', tankC.length ? `${dstT.id}: ${tankC[0].label} ${D.tm(tankC[0].a, tz, { date: true })}–${D.tm(tankC[0].b, tz, { tz: false })} overlaps. A tank cannot dispatch and receive at once.` : 'Route and destination free in the planned window.');
       const fails = checks.filter(c => c.kind === 'critical').length, warns = checks.filter(c => c.kind === 'attention').length;
       const props = R.props.map(([prop, unit, kind]) => {
-        if (kind === 'calc') { const share = pl.comps.filter(c => ['FAME', 'HEFA'].includes(c.c)).reduce((a, c) => a + c.qty, 0); return { prop, v: total ? (share / total * 100).toFixed(1) + ' ' + unit : '—', basis: 'Calculated from recipe volumes — not a prediction', fs: 'normal', vf: 'var(--ink)' }; }
+        if (kind === 'calc') { const share = pl.comps.reduce((a, c) => a + c.qty * D.bioShare(c.c) / 100, 0); return { prop, v: total ? (share / total * 100).toFixed(1) + ' ' + unit : '—', basis: 'Calculated from recipe volumes — not a prediction', fs: 'normal', vf: 'var(--ink)' }; }
         return { prop, v: 'Prediction unavailable', basis: pl.code.startsWith('R') && prop.includes('octane') ? 'No validated octane blending model configured. RON is not a weighted average.' : 'No validated prediction model configured', fs: 'italic', vf: 'var(--ink3)' };
       });
       const reqs = (p.fam === 'Aviation' ? ['Component certificate for each synthetic component batch', 'Conventional jet refinery certificate for base component', 'Upper / middle / lower tank samples after settling', 'Full specification test on blended batch at laboratory', 'Blend certificate of analysis and release certificate', 'Release by quality officer — not by recipe share'] : p.fam === 'Diesel' ? ['In-process line sample at 50 % of batch', 'Upper / middle / lower samples after 2 h settling', 'FAME content, density, water and oxidation stability tests', 'Release by quality officer after results are recorded'] : ['Upper / middle / lower samples after settling', 'RON, density, RVP and distillation tests at laboratory', 'Release by quality officer after results are recorded']).map(text => ({ icon: I.st.pending, text }));
@@ -448,7 +448,7 @@ class Component extends DCLogic {
         prodOpts: t.blend.products.map(c => ({ code: c, label: D.prod(c).label })), modeOpts: [t.blend.mode], dstOpts, segs, handles, recipeMarks, compRows, checks, propRows: props, reqs,
         compCols: 'minmax(0,1.5fr) 140px minmax(0,0.8fr) minmax(0,0.6fr) minmax(0,0.7fr) 110px minmax(0,0.8fr) minmax(0,1.2fr)',
         startOpts: [{ v: 'a', label: `In 2 h · ${D.tm(starts.a, tz, { tz: false })}` }, { v: 'b', label: D.tm(starts.b, tz, { tz: false, date: true }) }, { v: 'c', label: D.tm(starts.c, tz, { tz: false, date: true }) }],
-        onProd: e => { const code = e.target.value; const R2 = D.RECIPES[code]; const comps = R2.comps.map(([c, pct]) => { const src = t.tanks.find(k => k.code === c && k.q === 'Released') || t.tanks.find(k => k.code === c); return { c, tank: src ? src.id : '', qty: Math.round(pl.target * pct / 100) }; }); const dst = t.tanks.find(k => k.code === code && k.status !== 'Out of service'); this.setPlan(b, { code, comps, dst: dst ? dst.id : '' }); b.code = code; },
+        onProd: e => { const code = e.target.value; const R2 = D.recipeFor(t, code); const comps = R2.comps.map(([c, pct]) => { const src = t.tanks.find(k => k.code === c && k.q === 'Released') || t.tanks.find(k => k.code === c); return { c, tank: src ? src.id : '', qty: Math.round(pl.target * pct / 100) }; }); const dst = t.tanks.find(k => k.code === code && k.status !== 'Out of service'); this.setPlan(b, { code, comps, dst: dst ? dst.id : '' }); b.code = code; },
         onMode: e => this.setPlan(b, { mode: e.target.value }),
         onTarget: e => { const v = Math.max(0, Math.round(+e.target.value || 0)); this.setPlan(b, { target: v }); },
         onDst: e => this.setPlan(b, { dst: e.target.value }), onRate: e => this.setPlan(b, { rate: Math.max(50, +e.target.value || 50) }), onStart: e => this.setPlan(b, { startKey: e.target.value }),
@@ -465,7 +465,7 @@ class Component extends DCLogic {
         backToDraft: () => { b.state = 'Draft'; this.bump(); this.forceUpdate(); } };
     }
     if (view.monitor) {
-      const R = D.RECIPES[b.code];
+      const R = D.recipeFor(t, b.code);
       const doneBase = b.comps.reduce((a, c) => a + (c.done || 0), 0);
       const flows = b.comps.map((c, i) => { let f = c.flow || Math.round(b.rate * c.qty / b.target); if (s.dev && i === b.comps.length - 1) f = Math.round(f * 1.025); if (s.dev && i === 0) f = Math.round(f * 0.985); return f; });
       const fsum = flows.reduce((a, v) => a + v, 0);

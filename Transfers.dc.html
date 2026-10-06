@@ -9,11 +9,70 @@
 <x-dc>
 <div style="position:absolute;inset:0;display:flex;background:var(--bg);overflow:hidden">
 <sc-if value="{{ ready }}" hint-placeholder-val="{{ true }}">
+  <sc-if value="{{ allView }}" hint-placeholder-val="{{ false }}">
+    <div style="flex:1;min-width:0;overflow:auto">
+      <div style="padding:22px 28px 40px;display:flex;flex-direction:column;gap:16px;min-width:0">
+        <div style="display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap">
+          <div style="flex:1;min-width:260px">
+            <div style="font-size:22px;font-weight:600">All ongoing transfers</div>
+            <div style="font-size:13px;color:var(--ink2);margin-top:2px">{{ bsub }}</div>
+          </div>
+          <div role="group" aria-label="Transfers view" style="display:flex">
+          <sc-for list="{{ viewOpts }}" as="v" hint-placeholder-count="2"><button onClick="{{ v.onClick }}" aria-pressed="{{ v.pressed }}" style="flex:1;height:28px;padding:0 12px;border:1px solid {{ v.bd }};margin-left:-1px;border-radius:0;background:{{ v.bg }};color:{{ v.fg }};font-size:12px;white-space:nowrap">{{ v.label }}</button></sc-for>
+        </div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));background:var(--surf);border:1px solid var(--pBd)">
+          <sc-for list="{{ kpis }}" as="k" hint-placeholder-count="6">
+            <div style="padding:12px 16px;border-right:1px solid var(--line2);min-width:0">
+              <div style="font-size:12px;color:var(--ink3)">{{ k.k }}</div>
+              <div style="font-family:var(--fnum);font-size:22px;font-weight:600;margin-top:2px;white-space:nowrap">{{ k.v }}<span style="font-size:12px;font-weight:400;color:var(--ink3);margin-left:5px">{{ k.unit }}</span></div>
+              <div style="font-size:12px;color:var(--ink2);margin-top:2px">{{ k.sub }}</div>
+            </div>
+          </sc-for>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+          <sc-for list="{{ stateChips }}" as="c" hint-placeholder-count="4">
+            <button onClick="{{ c.onClick }}" aria-pressed="{{ c.pressed }}" style="height:30px;padding:0 10px;border:1px solid {{ c.bd }};border-radius:0;background:{{ c.bg }};color:{{ c.fg }};display:flex;align-items:center;gap:6px;font-size:12px;white-space:nowrap">{{ c.icon }}{{ c.label }}<span style="font-family:var(--fnum);font-size:11px;opacity:.75">{{ c.n }}</span></button>
+          </sc-for>
+          <span style="flex:1"></span>
+          <select value="{{ typeVal }}" onChange="{{ onType }}" aria-label="Transfer type" style="height:30px;border:1px solid var(--line);border-radius:0;background:var(--surf);padding:0 8px;font-size:12.5px">
+            <sc-for list="{{ typeOpts }}" as="o" hint-placeholder-count="6"><option value="{{ o }}">{{ o }}</option></sc-for>
+          </select>
+          <select value="{{ sortVal }}" onChange="{{ onSort }}" aria-label="Sort transfers" style="height:30px;border:1px solid var(--line);border-radius:0;background:var(--surf);padding:0 8px;font-size:12.5px">
+            <sc-for list="{{ sortOpts }}" as="o" hint-placeholder-count="4"><option value="{{ o }}">{{ o }}</option></sc-for>
+          </select>
+        </div>
+        <section aria-label="Ongoing transfers across all terminals" style="background:var(--surf);border:1px solid var(--pBd);overflow:auto">
+          <div style="display:grid;grid-template-columns:{{ cols }};column-gap:12px;min-width:1180px;padding:8px 14px;font-size:12.5px;color:var(--ink3);border-bottom:1px solid var(--line)">
+            <span>Terminal</span><span>Transfer</span><span>Product</span><span>Route</span><span>Progress</span><span style="text-align:right">kL done / planned</span><span style="text-align:right">kL/h</span><span>Finish · start</span><span>State</span>
+          </div>
+          <sc-if value="{{ noRows }}" hint-placeholder-val="{{ false }}"><div style="padding:18px 14px;font-size:13px;color:var(--ink3)">No transfers match these filters.</div></sc-if>
+          <sc-for list="{{ rows }}" as="r" hint-placeholder-count="10">
+            <button onClick="{{ r.onClick }}" style="width:100%;display:grid;grid-template-columns:{{ cols }};column-gap:12px;min-width:1180px;align-items:center;padding:8px 14px;border:0;border-top:{{ r.bt }};border-bottom:1px solid var(--line2);background:transparent;text-align:left" style-hover="background:var(--surf2)">
+              <span style="min-width:0"><span style="display:block;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.term }}</span><span style="display:block;font-size:11.5px;color:var(--ink3)">{{ r.termSub }}</span></span>
+              <span style="min-width:0"><span style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.title }}</span><span style="display:block;font-family:var(--fid);font-size:11px;letter-spacing:-.02em;color:var(--ink3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.sub }}</span></span>
+              <span style="display:flex;align-items:center;gap:6px;white-space:nowrap"><span style="width:9px;height:9px;flex:none;background:{{ r.color }}"></span>{{ r.prod }}</span>
+              <span style="font-family:var(--fnum);font-size:11.5px;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.route }}</span>
+              <span style="display:flex;align-items:center;gap:8px"><span style="flex:1;height:4px;background:var(--surf3)"><span style="display:block;height:4px;width:{{ r.pctW }};background:{{ r.barBg }}"></span></span><span style="font-family:var(--fnum);font-size:11px;width:34px;text-align:right">{{ r.pct }}</span></span>
+              <span style="font-family:var(--fnum);font-size:12px;text-align:right;white-space:nowrap">{{ r.qty }}</span>
+              <span style="font-family:var(--fnum);font-size:12px;text-align:right">{{ r.flow }}</span>
+              <span style="min-width:0"><span style="display:block;font-family:var(--fnum);font-size:12px;white-space:nowrap">{{ r.when }}</span><span style="display:block;font-size:11.5px;color:var(--ink3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.whenSub }}</span></span>
+              <span style="display:flex;align-items:center;gap:5px;font-size:12.5px;white-space:nowrap">{{ r.icon }}{{ r.state }}</span>
+            </button>
+          </sc-for>
+        </section>
+      </div>
+    </div>
+  </sc-if>
+  <sc-if value="{{ termView }}" hint-placeholder-val="{{ true }}">
   <sc-if value="{{ showList }}" hint-placeholder-val="{{ true }}">
     <aside aria-label="Transfers at terminal" style="width:{{ listW }};flex:none;border-right:1px solid var(--line);background:var(--surf);display:flex;flex-direction:column;min-height:0">
       <div style="padding:18px 18px 14px;border-bottom:1px solid var(--line)">
         <div style="font-size:18px;font-weight:600">Transfers</div>
         <div style="font-size:13px;color:var(--ink2);margin-top:2px">{{ t.name }}</div>
+        <div role="group" aria-label="Transfers view" style="display:flex;margin-top:12px">
+          <sc-for list="{{ viewOpts }}" as="v" hint-placeholder-count="2"><button onClick="{{ v.onClick }}" aria-pressed="{{ v.pressed }}" style="flex:1;height:28px;padding:0 12px;border:1px solid {{ v.bd }};margin-left:-1px;border-radius:0;background:{{ v.bg }};color:{{ v.fg }};font-size:12px;white-space:nowrap">{{ v.label }}</button></sc-for>
+        </div>
       </div>
       <div style="flex:1;overflow:auto">
         <sc-for list="{{ groups }}" as="g" hint-placeholder-count="2">
@@ -35,6 +94,11 @@
   </sc-if>
 
   <div style="flex:1;min-width:0;overflow:auto">
+    <sc-if value="{{ mobileToggle }}" hint-placeholder-val="{{ false }}">
+      <div role="group" aria-label="Transfers view" style="display:flex;padding:12px 16px 0">
+        <sc-for list="{{ viewOpts }}" as="v" hint-placeholder-count="2"><button onClick="{{ v.onClick }}" aria-pressed="{{ v.pressed }}" style="flex:1;height:30px;padding:0 12px;border:1px solid {{ v.bd }};margin-left:-1px;border-radius:0;background:{{ v.bg }};color:{{ v.fg }};font-size:12px;white-space:nowrap">{{ v.label }}</button></sc-for>
+      </div>
+    </sc-if>
     <sc-if value="{{ noneSelected }}" hint-placeholder-val="{{ false }}">
       <div style="padding:48px 40px;max-width:560px;display:flex;flex-direction:column;gap:10px">
         <div style="font-size:22px;font-weight:600">No transfers at this terminal</div>
@@ -197,6 +261,7 @@
     </div>
     </sc-if>
   </div>
+  </sc-if>
 </sc-if>
 </div>
 </x-dc>
@@ -208,7 +273,7 @@ class Component extends DCLogic {
   }
   componentDidMount() { this.applyFocus(); }
   componentDidUpdate() { this.applyFocus(); }
-  applyFocus() { const f = this.props.ctx && this.props.ctx.focus; if (!f || f.n === this.lf) return; this.lf = f.n; if (f.type === 'transfer') this.upd({ sel: { ...this.state.sel, [this.props.ctx.terminalId]: f.id } }); }
+  applyFocus() { const f = this.props.ctx && this.props.ctx.focus; if (!f || f.n === this.lf) return; this.lf = f.n; if (f.type === 'transfer') this.upd({ view: 'term', sel: { ...this.state.sel, [this.props.ctx.terminalId]: f.id } }); }
   upd(p) { this.setState(p, () => { const { hover, logs, ...rest } = this.state; this.props.d.ui.save('trf', rest); }); }
   routeSvg(D, ctx, t, tr, dst, st, p, flow, meterLost, insp) {
     const h = React.createElement, dark = ctx.theme === 'dark';
@@ -291,10 +356,51 @@ class Component extends DCLogic {
     }
     return h('svg', { viewBox: `0 0 ${W} ${H}`, width: '100%', style: { display: 'block', aspectRatio: `${W} / ${H}` }, role: 'img', 'aria-label': 'Transfer route diagram' }, ...K);
   }
+  board(D, ctx, I) {
+    const s = this.state, prods = ctx.products || [], order = new Map(D.TERMINALS.map((t, i) => [t.id, i]));
+    const live = D.TRANSFERS.filter(x => ['In progress', 'Paused', 'Scheduled', 'Delayed'].includes(x.state) && (!prods.length || prods.includes(x.code)));
+    const groups = { All: () => true, 'In progress': x => x.state === 'In progress', Paused: x => x.state === 'Paused', Scheduled: x => x.state === 'Scheduled' || x.state === 'Delayed' };
+    const bs = groups[s.bs] ? s.bs : 'All', types = [...new Set(live.map(x => x.type))].sort(), bt = types.includes(s.bt) ? s.bt : 'All types', sort = s.bsort || 'Terminal';
+    const pct = x => Math.min(100, x.planned ? x.recv / x.planned * 100 : 0);
+    const end = x => x.state === 'In progress' ? (x.etaMin != null ? x.etaMin : 1e9) : x.state === 'Paused' ? 1e9 : x.start;
+    const rank = { 'In progress': 0, Paused: 1, Delayed: 2, Scheduled: 3 };
+    const sorts = { Terminal: (a, b) => order.get(a.term) - order.get(b.term) || rank[a.state] - rank[b.state] || end(a) - end(b), 'Finishing soonest': (a, b) => end(a) - end(b), Progress: (a, b) => pct(b) - pct(a), 'Highest flow': (a, b) => (b.flow || 0) - (a.flow || 0) };
+    const list = live.filter(groups[bs]).filter(x => bt === 'All types' || x.type === bt).sort(sorts[sort] || sorts.Terminal);
+    const rows = list.map((x, i) => {
+      const t = D.term(x.term), p = D.prod(x.code), tz = t.tz, first = sort === 'Terminal' && (i === 0 || list[i - 1].term !== x.term), blend = x.type.includes('blend');
+      const open = (x.pauses || []).find(q => q[1] == null);
+      const when = x.state === 'In progress' ? (x.etaMin ? D.tm(x.etaMin, tz) : 'Unavailable') : x.state === 'Paused' ? `Since ${D.tm(open ? open[0] : D.NOW, tz)}` : D.tm(x.start, tz);
+      const whenSub = x.state === 'In progress' ? (x.etaMin ? D.dur(x.etaMin - D.NOW) + ' left' : 'No flow data') : x.state === 'Paused' ? (open && open[2]) || 'Paused' : x.state === 'Delayed' ? 'Delayed · revised start' : x.vessel && x.arrive > D.NOW ? `Vessel due ${D.tm(x.arrive, tz)}` : 'Planned start';
+      return { term: sort !== 'Terminal' || first ? t.name : '', termSub: sort !== 'Terminal' || first ? `${t.tz} · ${D.tm(D.NOW, tz, { tz: false })}` : '', bt: first && i ? '1px solid var(--line)' : '0',
+        title: x.vessel || x.type, sub: x.vessel ? `${x.type} · ${x.id}` : x.id, prod: p.short, color: p.color, route: `${x.vessel ? x.berth : x.src} → ${x.dst}`,
+        pct: Math.round(pct(x)) + '%', pctW: pct(x).toFixed(1) + '%', barBg: x.state === 'Paused' ? 'var(--warn)' : 'var(--ink2)', qty: `${D.fmt(x.recv)} / ${D.fmt(x.planned)}`,
+        flow: x.state === 'In progress' && x.flow ? D.fmt(x.flow) : '—', when, whenSub, state: x.state, icon: I.st[D.statKind(x.state)],
+        onClick: () => this.props.go(blend ? 'blending' : 'transfers', { terminalId: x.term, focus: { type: blend ? 'blend' : 'transfer', id: x.id } }) };
+    });
+    const moving = live.filter(x => x.state === 'In progress'), isTank = x => D.term(x.term).tanks.some(k => k.id === x.dst);
+    const kind = { rec: x => isTank(x) && !x.type.includes('blend'), dis: x => !isTank(x), bld: x => x.type.includes('blend') };
+    const rate = f => D.fmt(moving.filter(f).reduce((a, x) => a + (x.flow != null ? x.flow : x.lastFlow || 0), 0));
+    const n = f => moving.filter(f).length, sched = live.filter(groups.Scheduled).length;
+    const kpis = [
+      { k: 'Moving now', v: String(moving.length), unit: '', sub: `${live.filter(groups.Paused).length} paused · ${sched} scheduled` },
+      { k: 'Receiving', v: rate(kind.rec), unit: 'kL/h', sub: `${n(kind.rec)} receipts` },
+      { k: 'Dispatching', v: rate(kind.dis), unit: 'kL/h', sub: `${n(kind.dis)} dispatches` },
+      { k: 'Blending', v: rate(kind.bld), unit: 'kL/h', sub: `${n(kind.bld)} batches` },
+      { k: 'Vessels alongside', v: String(live.filter(x => x.vessel && (x.state === 'In progress' || x.state === 'Paused')).length), unit: '', sub: `${live.filter(x => x.vessel && (x.state === 'Scheduled' || x.state === 'Delayed')).length} waiting or due` },
+      { k: 'Terminals active', v: `${new Set(moving.map(x => x.term)).size} / ${D.TERMINALS.length}`, unit: '', sub: 'with product moving' },
+    ];
+    const stateChips = Object.keys(groups).map(g => { const on = g === bs; return { label: g, n: live.filter(groups[g]).length, icon: g === 'All' ? null : I.st[D.statKind(g)], pressed: on ? 'true' : 'false', bd: on ? 'var(--ink)' : 'var(--line)', bg: on ? 'var(--ink)' : 'var(--surf)', fg: on ? 'var(--surf)' : 'var(--ink)', onClick: () => this.upd({ bs: g }) }; });
+    return { rows, noRows: !rows.length, kpis, stateChips, cols: 'minmax(150px,1.15fr) minmax(190px,1.5fr) 80px minmax(140px,1.1fr) 150px 140px 70px 140px 110px',
+      typeOpts: ['All types', ...types], typeVal: bt, onType: e => this.upd({ bt: e.target.value }), sortOpts: Object.keys(sorts), sortVal: sort, onSort: e => this.upd({ bsort: e.target.value }),
+      bsub: `${live.length} live and planned transfers across ${D.TERMINALS.length} terminals${prods.length ? ' · filtered products' : ''} · updates every few seconds` };
+  }
   renderVals() {
     const D = this.props.d, ctx = this.props.ctx;
     if (!D || !ctx) return { ready: false };
     const I = ctx.I, s = this.state, h = React.createElement;
+    const view = s.view === 'term' ? 'term' : 'all';
+    const viewOpts = [['term', 'This terminal'], ['all', 'All terminals']].map(([id, label]) => { const on = view === id; return { label, pressed: on ? 'true' : 'false', bd: on ? 'var(--ink)' : 'var(--line)', bg: on ? 'var(--ink)' : 'var(--surf)', fg: on ? 'var(--surf)' : 'var(--ink)', onClick: () => this.upd({ view: id }) }; });
+    if (view === 'all') return { ready: true, I, viewOpts, allView: true, termView: false, ...this.board(D, ctx, I) };
     const t = D.term(ctx.terminalId), tz = t.tz;
     const all = D.TRANSFERS.filter(tr => tr.term === t.id);
     const marine = all.filter(tr => tr.marine), other = all.filter(tr => !tr.marine);
@@ -304,7 +410,7 @@ class Component extends DCLogic {
     const groups = [{ label: 'Ship-to-shore', items: marine.map(mk), empty: !marine.length, emptyText: t.marine ? 'No vessel transfers in the current schedule.' : 'No marine access configured at this terminal.' }, { label: 'Other transfers', items: other.map(mk), empty: !other.length, emptyText: 'None.' }];
     const marineNote = t.marine ? `Marine access · ${t.marine.join(', ')}` : `No marine access configured. ${t.pipeIn || 'Receipts by pipeline or road'}. Ship-to-shore workspace is unavailable for this terminal.`;
     const tr = all.find(x => x.id === selId);
-    const base = { ready: true, I, t, groups, marineNote, showList: !ctx.mobile, listW: ctx.tablet ? '230px' : '280px', noneSelected: !tr, hasSel: !!tr, goNetwork: () => this.props.go('network') };
+    const base = { ready: true, I, t, groups, marineNote, viewOpts, allView: false, termView: true, mobileToggle: !!ctx.mobile, showList: !ctx.mobile, listW: ctx.tablet ? '230px' : '280px', noneSelected: !tr, hasSel: !!tr, goNetwork: () => this.props.go('network') };
     if (!tr) return base;
 
     const p = D.prod(tr.code), dst = t.tanks.find(k => k.id === tr.dst);

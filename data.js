@@ -64,20 +64,20 @@ export const prod = c => ALL[c] || { code: c, label: c, short: c, color: '#888',
 
 // ── Terminals ──────────────────────────────────────────────────────────
 const TDEF = [
-  { id: 'PLM', name: 'TBBM Plumpang', area: 'Jakarta Utara', tz: 'WIB', lat: -6.1262, lon: 106.8968, kind: 'Fuel terminal', marine: ['Jetty 1', 'Jetty 2'], blend: { mode: 'Inline', products: ['B40'] }, truck: 8, pipeOut: null, hydrant: false, upd: 0.3, spec: 'R92:30,R92:30,R92:30,R92:30|R90:30,R90:30,R90:30,R98:10|B0:30,B0:30,B40:30,B40:30|B40:30,R95:15,R95:15,FAME:10' },
-  { id: 'SBY', name: 'TBBM Surabaya', area: 'Tanjung Perak, Jawa Timur', tz: 'WIB', lat: -7.2046, lon: 112.7322, kind: 'Fuel terminal', marine: ['Berth 1', 'Berth 2'], blend: { mode: 'Inline', products: ['B40'] }, truck: 6, upd: 0.5, spec: 'R92:25,R92:25,R92:25|R90:25,R90:25,R90:25,R98:5|B40:25,B40:25,B40:25|B0:20,FAME:8,R95:10,R95:10' },
-  { id: 'UPG', name: 'TBBM Ujung Pandang', area: 'Makassar, Sulawesi Selatan', tz: 'WITA', lat: -5.113, lon: 119.4124, kind: 'Fuel terminal', marine: ['Berth 1'], truck: 4, upd: 0.8, spec: 'R92:15,R92:15,R92:15|R90:15,R90:15,J2:5|B40:20,B40:20,B40:20,B0:10' },
-  { id: 'BIK', name: 'TBBM Biak', area: 'Biak, Papua', tz: 'WIT', lat: -1.1868, lon: 136.0845, kind: 'Fuel terminal', marine: ['Berth 1'], truck: 2, upd: 1.2, status: 'Restricted', spec: 'R92:5,R92:5,R90:5|B40:5,B40:5,J2:3' },
-  { id: 'BOY', name: 'TBBM Boyolali', area: 'Boyolali, Jawa Tengah', tz: 'WIB', lat: -7.512, lon: 110.656, kind: 'Fuel terminal', marine: null, pipeIn: 'Pipeline receipt', truck: 6, upd: 0.4, spec: 'R92:10,R92:10,R92:10,R90:10|R90:10,B40:10,B40:10,B40:10' },
-  { id: 'SMB', name: 'TBBM Strategis Pulau Sambu', area: 'Pulau Sambu, Kepulauan Riau', tz: 'WIB', lat: 1.1617, lon: 103.8951, kind: 'Strategic storage', marine: ['Berth 1', 'Berth 2'], truck: 0, shipOut: true, upd: 0.6, spec: 'R92:35,R92:35,R92:35,R92:35|R90:35,R90:35,R95:20,R95:20|B0:35,B0:35,B0:35,B40:35' },
+  { id: 'PLM', name: 'TBBM Plumpang', area: 'Jakarta Utara', tz: 'WIB', lat: -6.1262, lon: 106.8968, kind: 'Fuel terminal', marine: ['Jetty 1', 'Jetty 2'], blend: { mode: 'Inline', products: ['B40', 'R95'] }, alt: ['R95'], truck: 8, pipeOut: null, hydrant: false, upd: 0.3, spec: 'R92:30,R92:30,R92:30,R92:30|R90:30,R90:30,R90:30,R98:10|B0:30,B0:30,B40:30,B40:30|B40:30,R95:15,R95:15,FAME:10' },
+  { id: 'SBY', name: 'TBBM Surabaya', area: 'Tanjung Perak, Jawa Timur', tz: 'WIB', lat: -7.2046, lon: 112.7322, kind: 'Fuel terminal', marine: ['Berth 1', 'Berth 2'], blend: { mode: 'Inline', products: ['B40', 'R95'] }, alt: ['R95'], truck: 6, upd: 0.5, spec: 'R92:25,R92:25,R92:25|R90:25,R90:25,R90:25,R98:5|B40:25,B40:25,B40:25|B0:20,FAME:8,R95:10,R95:10' },
+  { id: 'UPG', name: 'TBBM Ujung Pandang', area: 'Makassar, Sulawesi Selatan', tz: 'WITA', lat: -5.113, lon: 119.4124, kind: 'Fuel terminal', marine: ['Berth 1'], blend: { mode: 'Inline', products: ['B40'] }, truck: 4, upd: 0.8, spec: 'R92:15,R92:15,R92:15|R90:15,R90:15,J2:5|B40:20,B40:20,B40:20,B0:10|FAME:6' },
+  { id: 'BIK', name: 'TBBM Biak', area: 'Biak, Papua', tz: 'WIT', lat: -1.1868, lon: 136.0845, kind: 'Fuel terminal', marine: ['Berth 1'], truck: 2, upd: 1.2, status: 'Restricted', blend: { mode: 'Inline', products: ['B40'] }, spec: 'R92:5,R92:5,R90:5|B40:5,B40:5,J2:3,B0:5,FAME:3' },
+  { id: 'BOY', name: 'TBBM Boyolali', area: 'Boyolali, Jawa Tengah', tz: 'WIB', lat: -7.512, lon: 110.656, kind: 'Fuel terminal', marine: null, pipeIn: 'Pipeline receipt', blend: { mode: 'Inline', products: ['B40'] }, truck: 6, upd: 0.4, spec: 'R92:10,R92:10,R92:10,R90:10|R90:10,B40:10,B40:10,B40:10,B0:8,FAME:5' },
+  { id: 'SMB', name: 'TBBM Strategis Pulau Sambu', area: 'Pulau Sambu, Kepulauan Riau', tz: 'WIB', lat: 1.1617, lon: 103.8951, kind: 'Strategic storage', marine: ['Berth 1', 'Berth 2'], truck: 0, shipOut: true, blend: { mode: 'Inline', products: ['B40'] }, upd: 0.6, spec: 'R92:35,R92:35,R92:35,R92:35|R90:35,R90:35,R95:20,R95:20|B0:35,B0:35,B0:35,B40:35|FAME:12' },
   { id: 'PLJ', name: 'TBBM Plaju', area: 'Palembang, Sumatera Selatan', tz: 'WIB', lat: -3.0003, lon: 104.8262, kind: 'Fuel terminal', marine: ['River berth 1'], blend: { mode: 'Batch', products: ['R92', 'R95', 'R98'] }, truck: 6, upd: 0.7, spec: 'R90:20,R90:20,R92:20,R98:5|R92:20,R92:20,R95:10,R95:10|HOMC:10,NAP:10,B40:15,B40:15' },
-  { id: 'PNJ', name: 'TBBM Lampung - Panjang', area: 'Panjang, Lampung', tz: 'WIB', lat: -5.4679, lon: 105.3197, kind: 'Fuel terminal', marine: ['Berth 1'], truck: 4, upd: 0.5, spec: 'R92:15,R92:15,R92:15|R90:15,R90:15,B0:10|B40:20,B40:20,B40:20' },
-  { id: 'JUA', name: 'AFT Juanda', area: 'Sidoarjo, Jawa Timur', tz: 'WIB', lat: -7.3798, lon: 112.7873, kind: 'Aviation fuel terminal', marine: null, pipeIn: 'Pipeline from TBBM Surabaya', hydrant: true, truck: 0, upd: 0.4, spec: 'J2:3,J2:3|J2:3,J2:3' },
-  { id: 'CGK', name: 'AFT soetta CGK', area: 'Tangerang, Banten', tz: 'WIB', lat: -6.1192, lon: 106.6667, kind: 'Aviation fuel terminal', marine: null, pipeIn: 'Pipeline receipt', hydrant: true, truck: 0, upd: 0.7, spec: 'J2:8,J2:8,J2:8|J2:8,J53:8,J53:8' },
-  { id: 'DPS', name: 'AFT Ngurah Rai DPS', area: 'Badung, Bali', tz: 'WITA', lat: -8.7467, lon: 115.17, kind: 'Aviation fuel terminal', marine: null, pipeIn: 'Pipeline receipt', hydrant: true, truck: 0, upd: 0.9, spec: 'J2:5,J2:5,J2:5|J53:5,J53:5' },
-  { id: 'KNO', name: 'AFT Kualanamu KNO', area: 'Deli Serdang, Sumatera Utara', tz: 'WIB', lat: 3.6433, lon: 98.885, kind: 'Aviation fuel terminal', marine: null, pipeIn: 'Road receipt', hydrant: true, truck: 0, upd: 0.6, spec: 'J2:4,J2:4|J2:4,J2:4' },
+  { id: 'PNJ', name: 'TBBM Lampung - Panjang', area: 'Panjang, Lampung', tz: 'WIB', lat: -5.4679, lon: 105.3197, kind: 'Fuel terminal', marine: ['Berth 1'], blend: { mode: 'Inline', products: ['B40'] }, truck: 4, upd: 0.5, spec: 'R92:15,R92:15,R92:15|R90:15,R90:15,B0:10|B40:20,B40:20,B40:20|FAME:6' },
+  { id: 'JUA', name: 'AFT Juanda', area: 'Sidoarjo, Jawa Timur', tz: 'WIB', lat: -7.3798, lon: 112.7873, kind: 'Aviation fuel terminal', marine: null, pipeIn: 'Pipeline from TBBM Surabaya', hydrant: true, blend: { mode: 'Batch', products: ['J53'] }, alt: ['J53'], truck: 0, upd: 0.4, spec: 'J2:3,J2:3|J2:3,J2:3,J53:3,HEFA:2' },
+  { id: 'CGK', name: 'AFT soetta CGK', area: 'Tangerang, Banten', tz: 'WIB', lat: -6.1192, lon: 106.6667, kind: 'Aviation fuel terminal', marine: null, pipeIn: 'Pipeline receipt', hydrant: true, blend: { mode: 'Batch', products: ['J53'] }, alt: ['J53'], truck: 0, upd: 0.7, spec: 'J2:8,J2:8,J2:8|J2:8,J53:8,J53:8,HEFA:3' },
+  { id: 'DPS', name: 'AFT Ngurah Rai DPS', area: 'Badung, Bali', tz: 'WITA', lat: -8.7467, lon: 115.17, kind: 'Aviation fuel terminal', marine: null, pipeIn: 'Pipeline receipt', hydrant: true, blend: { mode: 'Batch', products: ['J53'] }, alt: ['J53'], truck: 0, upd: 0.9, spec: 'J2:5,J2:5,J2:5|J53:5,J53:5,HEFA:2' },
+  { id: 'KNO', name: 'AFT Kualanamu KNO', area: 'Deli Serdang, Sumatera Utara', tz: 'WIB', lat: 3.6433, lon: 98.885, kind: 'Aviation fuel terminal', marine: null, pipeIn: 'Road receipt', hydrant: true, blend: { mode: 'Batch', products: ['J53'] }, alt: ['J53'], truck: 0, upd: 0.6, spec: 'J2:4,J2:4|J2:4,J2:4,J53:4,HEFA:2' },
   { id: 'BLG', name: 'TBBM Strategis (Jet A-1) Avtur Balongan', area: 'Indramayu, Jawa Barat', tz: 'WIB', lat: -6.3832, lon: 108.382, kind: 'Strategic aviation storage', marine: ['Berth 1'], blend: { mode: 'Batch', products: ['J2', 'J53'] }, pipeOut: 'Pipeline to AFT soetta CGK', truck: 0, upd: 0.5, spec: 'J2:20,J2:20,J2:20|J53:20,J53:20,HEFA:5|JFC:20,JFC:20' },
-  { id: 'VPK', name: 'Vopak Terminal Jakarta', area: 'Tanjung Priok, Jakarta', tz: 'WIB', lat: -6.0982, lon: 106.8805, kind: 'Third-party storage', marine: ['Berth 1', 'Berth 2', 'Berth 3'], truck: 6, upd: 0.8, spec: 'R92:20,R92:20,R92:20,R92:20|R95:10,R95:10,R98:10,R98:10|B0:20,B0:20,B0:20,B40:20|J2:15,J2:15' },
+  { id: 'VPK', name: 'Vopak Terminal Jakarta', area: 'Tanjung Priok, Jakarta', tz: 'WIB', lat: -6.0982, lon: 106.8805, kind: 'Third-party storage', marine: ['Berth 1', 'Berth 2', 'Berth 3'], blend: { mode: 'Inline', products: ['B40', 'R95'] }, alt: ['R95'], truck: 6, upd: 0.8, spec: 'R92:20,R92:20,R92:20,R92:20|R95:10,R95:10,R98:10,R98:10|B0:20,B0:20,B0:20,B40:20|J2:15,J2:15,FAME:8' },
 ];
 
 function roofFor(code) { if (['FAME', 'B0', 'B40'].includes(code)) return 'Fixed cone roof'; if (['HOMC', 'NAP'].includes(code)) return 'External floating roof'; return 'Internal floating roof'; }
@@ -295,6 +295,14 @@ export const RECIPES = {
   J2: { comps: [['JFC', 97.96], ['HEFA', 2.04]], tol: 0.1, note: 'Synthetic component share is a recipe quantity only. Release depends on component certificates, blend certificate and laboratory results.', props: [['Synthetic component share', '%v/v', 'calc'], ['Density @ 15 °C', 'kg/m³', null], ['Freezing point', '°C', null], ['Flash point', '°C', null], ['Thermal stability (JFTOT)', '—', null]] },
   J53: { comps: [['JFC', 94.62], ['HEFA', 5.38]], tol: 0.1, note: 'Synthetic component share is a recipe quantity only. Release depends on component certificates, blend certificate and laboratory results.', props: [['Synthetic component share', '%v/v', 'calc'], ['Density @ 15 °C', 'kg/m³', null], ['Freezing point', '°C', null], ['Flash point', '°C', null], ['Thermal stability (JFTOT)', '—', null]] },
 };
+// recipes that use finished grades as blend stock, for terminals without refinery components
+const ALT = {
+  R95: { ...RECIPES.R95, comps: [['R92', 50.0], ['R98', 50.0]] },
+  J53: { ...RECIPES.J53, comps: [['J2', 96.6], ['HEFA', 3.4]] }, // Jet A-1 2 % bio topped up with HEFA to ≈ 5.3 %
+};
+export const recipeFor = (t, code) => ((t.alt || []).includes(code) && ALT[code]) || RECIPES[code];
+const BIO = { FAME: 100, HEFA: 100, B40: 40.4, J2: 2.04, J53: 5.38 };
+export const bioShare = code => BIO[code] || 0; // bio or synthetic share of a blend stock, % v/v
 export const BLENDS = [
   { id: 'BLD-PLM-2610-008', term: 'PLM', code: 'B40', mode: 'Inline', state: 'Draft', target: 5840, dst: 'T-11', comps: [{ c: 'B0', tank: 'T-09', qty: 3481 }, { c: 'FAME', tank: 'T-16', qty: 2359 }], rate: 554, created: `R. Hakim · ${tm(785, 'WIB', { date: true })}` },
   { id: 'BLD-PLM-2610-007', term: 'PLM', code: 'B40', mode: 'Inline', state: 'In progress', target: 6120, dst: 'T-12', comps: [{ c: 'B0', tank: 'T-09', qty: 3648, done: 2394, flow: 331 }, { c: 'FAME', tank: 'T-16', qty: 2472, done: 1617, flow: 223 }], rate: 554, start: 431, sample: 'S-PLM-261005-036' },
@@ -485,7 +493,7 @@ function begin(tr, ev) {
 }
 function blendTransfer(b) {
   const done = b.comps.reduce((a, c) => a + (c.done || 0), 0), t = term(b.term);
-  const tr = { id: b.id, term: b.term, type: b.mode + ' blend', code: b.code, src: b.comps.map(c => c.tank).join(' + '), srcs: b.comps.map(c => [c.tank, c.qty / b.target]), dst: b.dst, pump: 'P-04', planned: b.target, recv: Math.round(done), qty: done, flow: b.rate, flow0: b.rate, start: b.start, pauses: [], state: 'In progress', gen: b.gen };
+  const tr = { id: b.id, term: b.term, type: b.mode + ' blend', code: b.code, src: b.comps.map(c => c.tank).join(' + '), srcs: b.comps.map(c => [c.tank, c.qty / b.target]), dst: b.dst, pump: 'P-0' + (t.kind.startsWith('Aviation') ? 2 : t.tanks.length > 10 ? 4 : 3), planned: b.target, recv: Math.round(done), qty: done, flow: b.rate, flow0: b.rate, start: b.start, pauses: [], state: 'In progress', gen: b.gen };
   const k = t.tanks.find(x => x.id === b.dst); if (k) { k.batch = b.id; k.q = 'Awaiting test results'; }
   TRANSFERS.push(tr); derive(tr); mark(tr);
 }
@@ -553,9 +561,10 @@ function decide(smp, s, ev) {
 }
 
 // ── Generators ─────────────────────────────────────────────────────────
-function genVessel(t, s, r, berth) {
+function genVessel(t, s, r, berth, after) {
   const bi = t.marine.indexOf(berth) + 1, vessel = pick(r, VESSELS.filter(v => !TRANSFERS.some(x => x.vessel === v && x.state !== 'Completed'))); if (!vessel) return;
-  const arrive = s + between(r, 30, 180, 5), base = { id: trfId(t, s), term: t.id, vessel, voyage: 'V.' + between(r, 1000, 9999), berth, arm: 'MLA-' + bi, meter: 'FM-0' + bi, comp: pick(r, COTS), arrive, start: arrive + between(r, 45, 120, 5), state: 'Scheduled', flow: null };
+  const arrive = Math.max(s + between(r, 20, 120, 5), after - between(r, 30, 90, 5)), start = Math.max(arrive + between(r, 30, 75, 5), Math.ceil(after / 5) * 5);
+  const base = { id: trfId(t, s), term: t.id, vessel, voyage: 'V.' + between(r, 1000, 9999), berth, arm: 'MLA-' + bi, meter: 'FM-0' + bi, comp: pick(r, COTS), arrive, start, state: 'Scheduled', flow: null };
   if (t.shipOut && fill(t) > 0.55 && r() < 0.6) { // strategic storage also loads vessels out
     const k = t.tanks.filter(x => x.kind === 'product' && free(t, x) && spare(x) >= 6000).sort((a, b) => spare(b) - spare(a))[0]; if (!k) return;
     add({ ...base, type: 'Ship loading', code: k.code, src: k.id, dst: `${berth} · ${vessel}`, node: 'ship', pump: 'P-01', planned: Math.min(Math.round(spare(k)), between(r, 8000, 20000)), flow0: between(r, 1200, 2000, 10), batch: k.batch });
@@ -564,40 +573,46 @@ function genVessel(t, s, r, berth) {
   const ks = t.tanks.filter(k => k.code !== 'FAME' && free(t, k) && room(k) >= Math.max(800, k.nominal * 0.3)).sort((a, b) => room(b) / b.nominal - room(a) / a.nominal);
   const k = pick(r, ks.slice(0, 3)); if (!k) return;
   const p = prod(k.code), planned = Math.min(30000, between(r, room(k) * 0.55, room(k) * 0.85));
-  add({ ...base, type: 'Ship-to-shore', code: k.code, dst: k.id, planned, flow0: Math.max(250, between(r, planned / 13, planned / 8, 10)), temp: +(30 + r() * 2).toFixed(1), dens: +(p.dens + (r() - 0.5) * 2).toFixed(1), batch: `${t.id}-${p.short.replace(/[^A-Z0-9.]/gi, '')}-${ymd(s).slice(0, 4)}-${pad(30 + seq('B' + t.id, [], /$^/))}` });
+  add({ ...base, type: 'Ship-to-shore', code: k.code, dst: k.id, planned, flow0: Math.max(300, between(r, planned / 9, planned / 5, 10)), temp: +(30 + r() * 2).toFixed(1), dens: +(p.dens + (r() - 0.5) * 2).toFixed(1), batch: `${t.id}-${p.short.replace(/[^A-Z0-9.]/gi, '')}-${ymd(s).slice(0, 4)}-${pad(30 + seq('B' + t.id, [], /$^/))}` });
 }
 function genTruck(t, s, r) {
   const sod = ((s % 1440) + 1440) % 1440; if (sod < 360 || sod > 1260) return; // inside the loading window
   const used = new Set();
   TRANSFERS.filter(x => x.term === t.id && x.active && x.node === 'gantry').forEach(x => (x.dst.match(/\d+(?:\s*[–-]\s*\d+)?/g) || []).forEach(g => { const [a, b] = g.split(/[–-]/).map(Number); for (let i = a; i <= (b || a); i++) used.add(i); }));
+  EXCEPTIONS.forEach(e => { const m = e.term === t.id && e.status !== 'Resolved' && /Gantry bay (\d+)/.exec(e.asset); if (m) used.add(+m[1]); });
   const k = pick(r, t.tanks.filter(x => x.kind === 'product' && free(t, x) && spare(x) >= 1500).sort((a, b) => spare(b) - spare(a)).slice(0, 4)); if (!k) return;
-  const truck = /^B/.test(k.code) ? 32 : t.truck <= 4 ? 16 : 24, flow0 = between(r, 80, 170), n = Math.max(1, Math.min(4, Math.round(flow0 / 45)));
+  const truck = /^B/.test(k.code) ? 32 : t.truck <= 4 ? 16 : 24, flow0 = between(r, 80, 170), n = flow0 > 135 ? 2 : 1;
   let a = 0; for (let i = 1; i + n - 1 <= t.truck && !a; i++) { let ok = true; for (let j = i; j < i + n; j++) if (used.has(j)) ok = false; if (ok) a = i; }
-  const planned = Math.floor(Math.min(between(r, 1200, 2600), spare(k), flow0 * (1320 - sod) / 60) / truck) * truck;
-  if (!a || planned < truck * 15) return;
+  const planned = Math.floor(Math.min(between(r, 600, 1800), spare(k), flow0 * (1320 - sod) / 60) / truck) * truck;
+  if (!a || planned < truck * 8) return;
   add({ id: trfId(t, s), term: t.id, type: 'Truck dispatch', truck, code: k.code, src: k.id, dst: n === 1 ? `Gantry bay ${a}` : `Gantry bays ${a}–${a + n - 1}`, node: 'gantry', pump: pick(r, ['P-01', 'P-02']), planned, flow: flow0, flow0, start: s, state: 'In progress' });
 }
-function genFeed(t, s, r, node) { // hydrant or outbound pipeline, run back to back
-  const k = t.tanks.filter(x => x.kind === 'product' && free(t, x) && spare(x) >= 800).sort((a, b) => spare(b) - spare(a))[0]; if (!k) return;
+function genFeed(t, s, r, node) { // hydrant or outbound pipeline, run back to back, rotating across tanks
+  const k = pick(r, t.tanks.filter(x => x.kind === 'product' && free(t, x) && spare(x) >= 600).sort((a, b) => spare(b) - spare(a)).slice(0, 3)); if (!k) return;
   const size = Math.min(1, t.tanks.reduce((a, x) => a + x.nominal, 0) / 30000); // small airport depots draw less
   const flow0 = node === 'hydrant' ? Math.round(between(r, 150, 420) * size) : between(r, 280, 420);
-  add({ id: trfId(t, s), term: t.id, type: node === 'hydrant' ? 'Hydrant dispatch' : 'Pipeline dispatch', code: k.code, src: k.id, dst: node === 'hydrant' ? 'Hydrant network' : t.pipeOut, node, pump: node === 'hydrant' ? 'P-01' : 'P-02', planned: Math.min(Math.round(spare(k)), between(r, 1500, 4500)), flow: flow0, flow0, start: s, state: 'In progress' });
+  add({ id: trfId(t, s), term: t.id, type: node === 'hydrant' ? 'Hydrant dispatch' : 'Pipeline dispatch', code: k.code, src: k.id, dst: node === 'hydrant' ? 'Hydrant network' : t.pipeOut, node, pump: node === 'hydrant' ? 'P-01' : 'P-02', planned: Math.min(Math.round(spare(k)), between(r, 800, 2500)), flow: flow0, flow0, start: s, state: 'In progress' });
 }
-function genInflow(t, s, r, type, fame) { // pipeline or road receipt into the emptiest tank
-  const k = t.tanks.filter(x => (fame ? x.code === 'FAME' : x.kind === 'product') && free(t, x) && room(x) >= Math.max(500, x.nominal * 0.25)).sort((a, b) => a.vol / a.nominal - b.vol / b.nominal)[0]; if (!k) return;
-  const flow0 = fame ? between(r, 60, 120) : between(r, 200, 350);
+function genInflow(t, s, r, type, comp) { // pipeline or road receipt into the emptiest tank; comp: bio components by road
+  const k = t.tanks.filter(x => (comp ? x.code === comp : x.kind === 'product') && free(t, x) && room(x) >= (comp ? 400 : Math.max(300, x.nominal * 0.25))).sort((a, b) => a.vol / a.nominal - b.vol / b.nominal)[0]; if (!k) return;
+  const flow0 = comp ? between(r, 150, 300) : between(r, 250, 450); // components unload from several road tankers at once
   add({ id: trfId(t, s), term: t.id, type, code: k.code, src: type === 'Road receipt' ? 'Road tankers' : 'Pipeline', dst: k.id, planned: between(r, room(k) * 0.5, room(k) * 0.85), flow: flow0, flow0, start: s, state: 'In progress' });
 }
 function genBlend(t, s, r, ev) {
   if (BLENDS.some(b => b.term === t.id && (b.state === 'Scheduled' || b.state === 'In progress'))) return; // one batch on the skid at a time
-  const code = pick(r, t.blend.products), rec = RECIPES[code]; if (!rec) return;
-  const dst = t.tanks.filter(k => k.code === code && free(t, k) && room(k) >= 1500).sort((a, b) => room(b) - room(a))[0]; if (!dst) return;
-  const src = rec.comps.map(([c, pct]) => ({ c, pct, k: t.tanks.filter(k => k.code === c && free(t, k) && spare(k) > 500).sort((a, b) => spare(b) - spare(a))[0] }));
-  if (src.some(x => !x.k)) return;
-  const target = Math.floor(Math.min(room(dst) * 0.9, t.blend.mode === 'Inline' ? 6500 : 4500, ...src.map(x => spare(x.k) / x.pct * 100)) / 10) * 10; if (target < 1500) return;
+  let code, dst, src, target = 0;
+  for (const c of [...t.blend.products].sort(() => r() - 0.5)) {
+    const rec = recipeFor(t, c); if (!rec) continue;
+    dst = t.tanks.filter(k => k.code === c && free(t, k) && room(k) >= Math.min(1000, k.nominal * 0.25)).sort((a, b) => room(b) - room(a))[0]; if (!dst) continue; // small depots run small batches
+    src = rec.comps.map(([cc, pct]) => ({ c: cc, pct, k: t.tanks.filter(k => k.code === cc && free(t, k) && spare(k) > 300).sort((a, b) => spare(b) - spare(a))[0] }));
+    if (src.some(x => !x.k)) continue;
+    target = Math.floor(Math.min(room(dst) * 0.9, between(r, 1800, t.blend.mode === 'Inline' ? 4000 : 3200), ...src.map(x => spare(x.k) / x.pct * 100)) / 10) * 10;
+    if (target >= Math.min(1000, dst.nominal * 0.25)) { code = c; break; }
+  }
+  if (!code) return;
   const comps = src.map(x => ({ c: x.c, tank: x.k.id, qty: Math.round(target * x.pct / 100) })); comps[0].qty += target - comps.reduce((a, c) => a + c.qty, 0);
-  const id = `BLD-${t.id}-${ymd(s).slice(0, 4)}-${String(seq('BLD' + t.id, BLENDS, new RegExp(`^BLD-${t.id}-\\d{4}-(\\d+)$`))).padStart(3, '0')}`, start = s + between(r, 30, 90, 5);
-  const b = { id, term: t.id, code, mode: t.blend.mode, state: 'Scheduled', target, dst: dst.id, comps, rate: t.blend.mode === 'Inline' ? between(r, 500, 600, 2) : between(r, 550, 900, 10), start, created: `${t.id === 'PLM' ? 'R. Hakim' : 'Shift supervisor · ' + t.id} · ${tm(s, t.tz, { date: true })}`, gen: true };
+  const id = `BLD-${t.id}-${ymd(s).slice(0, 4)}-${String(seq('BLD' + t.id, BLENDS, new RegExp(`^BLD-${t.id}-\\d{4}-(\\d+)$`))).padStart(3, '0')}`, start = s + between(r, 15, 45, 5);
+  const b = { id, term: t.id, code, mode: t.blend.mode, state: 'Scheduled', target, dst: dst.id, comps, rate: t.blend.mode === 'Inline' ? between(r, 550, 850, 2) : between(r, 600, 1000, 10), start, created: `${t.id === 'PLM' ? 'R. Hakim' : 'Shift supervisor · ' + t.id} · ${tm(s, t.tz, { date: true })}`, gen: true };
   if (prod(code).fam === 'Aviation') { b.certs = [[`HEFA-SPK component certificate · lot HS-${ymd(s).slice(0, 4)}-${between(r, 10, 99)}`, 'Received', `DOC-${t.id}-${between(r, 5000, 9999)}`], [`Conventional jet refinery certificate · JFC batch ${ymd(s).slice(0, 4)}-${between(r, 10, 99)}`, 'Received', `DOC-${t.id}-${between(r, 5000, 9999)}`], ['Blended batch certificate of analysis', 'Pending', null], ['Release certificate (RCQ)', 'Not issued', null]]; b.pathway = 'HEFA-SPK synthetic blending component · pathway per terminal procedure'; }
   BLENDS.push(b);
   TRACE[id] = { product: code, tank: dst.id, comps: src.map(x => ({ c: x.c, tank: x.k.id, batch: x.k.batch || '—', share: x.pct, src: 'Released tank stock', docs: [] })), docs: [`Blend order ${id}`] };
@@ -608,6 +623,13 @@ function trip(tr, s, r, ev) { // vessel cargo pump trip pauses the discharge for
   tr.state = 'Paused'; tr.flow = 0; tr.pauses.push([s, null, 'Vessel cargo pump trip (vessel side)']); tr.resumeAt = s + between(r, 20, 60, 5); tr.trip = id;
   EXCEPTIONS.unshift({ id, sev: 'attention', term: tr.term, asset: tr.vessel, what: 'Vessel cargo pump trip — transfer paused', since: s, op: tr.id, owner: `Loading master · ${tr.berth}`, status: 'Open', ack: null, res: null, gen: true });
   mark(tr); ev.push(`${id} · ${tr.vessel} cargo pump trip, ${tr.id} paused.`);
+}
+function bayFault(t, s, r, ev) { // a loading arm fault isolates one gantry bay for a while
+  const out = new Set(EXCEPTIONS.filter(e => e.term === t.id && e.status !== 'Resolved' && /Gantry bay/.test(e.asset)).map(e => e.asset));
+  const bay = 1 + Math.floor(r() * t.truck); if (out.has('Gantry bay ' + bay)) return;
+  const e = { id: 'EX-' + seq('EX', EXCEPTIONS, /^EX-(\d+)$/), sev: 'attention', term: t.id, asset: 'Gantry bay ' + bay, what: 'Loading arm fault — bay isolated', since: s, op: 'Truck loading continues on the remaining bays', owner: 'Maintenance technician on call', status: 'Open', ack: null, res: null, gen: true };
+  EXCEPTIONS.unshift(e); ev.push(`${e.id} · ${t.name} gantry bay ${bay} isolated, loading arm fault.`);
+  QUEUE.push({ at: s + between(r, 30, 120, 5), run: at => { if (e.status === 'Resolved') return; e.status = 'Resolved'; e.ack = e.ack || { by: 'Maintenance technician', at: s + 5 }; e.res = { by: 'Maintenance technician', at, note: 'Loading arm repaired; bay returned to service.' }; } });
 }
 // story alarms that clear on their own: swell at Biak eases, the Sambu meter comes back
 const CLEARS = [
@@ -626,7 +648,7 @@ function generate(s, ev) {
       else { tr.state = 'Scheduled'; tr.start = Math.max(tr.start, Math.ceil(s / 15) * 15 + 60); ev.push(`${tr.vessel} cleared to berth at ${term(tr.term).name} · discharge from ${tm(tr.start, term(tr.term).tz)}.`); }
     }
     if (tr.state === 'Paused' && tr.resumeAt == null) tr.resumeAt = Math.max(s + 30, (tr.pauses.find(p => p[1] == null) || [s])[0] + between(R('rs' + tr.id), 150, 300, 5));
-    if (tr.marine && tr.state === 'In progress' && tr.meterLost == null) { const r = R(`trip|${tr.id}|${s}`); if (r() < 0.002) trip(tr, s, r, ev); }
+    if (tr.marine && tr.state === 'In progress' && tr.meterLost == null) { const r = R(`trip|${tr.id}|${s}`); if (r() < 0.004) trip(tr, s, r, ev); }
   });
   SAMPLES.forEach(smp => {
     if (smp.decision !== 'Pending') return;
@@ -634,18 +656,19 @@ function generate(s, ev) {
     else if ((smp.status === 'Passed' || smp.status === 'Failed') && s >= (smp.decAt ?? 0)) decide(smp, s, ev);
   });
   TERMINALS.forEach(t => {
-    const r = R(`${t.id}|${s}`), act = node => TRANSFERS.some(x => x.term === t.id && x.active && x.node === node);
-    (t.marine || []).forEach(berth => {
-      if (TRANSFERS.some(x => x.term === t.id && x.berth === berth && LIVE.includes(x.state))) return;
+    const r = R(`${t.id}|${s}`), running = f => TRANSFERS.filter(x => x.term === t.id && x.active && f(x)).length;
+    (t.marine || []).forEach(berth => { // one vessel alongside and one waiting per berth
       if (EXCEPTIONS.some(e => e.term === t.id && e.status !== 'Resolved' && e.asset === berth)) return; // berth closed
-      if (r() < 0.12) genVessel(t, s, r, berth);
+      const on = TRANSFERS.filter(x => x.term === t.id && x.berth === berth && LIVE.includes(x.state));
+      if (on.length < 2 && r() < (on.length ? 0.15 : 0.4)) genVessel(t, s, r, berth, on.length ? Math.max(...on.map(x => x.etaMin || x.start + 480)) + 30 : s);
     });
-    if (t.truck && TRANSFERS.filter(x => x.term === t.id && x.active && x.node === 'gantry').length < Math.max(1, Math.min(3, Math.floor(t.truck / 2.5))) && r() < 0.25) genTruck(t, s, r);
-    if (t.hydrant && !act('hydrant') && r() < 0.35) genFeed(t, s, r, 'hydrant');
-    if (t.pipeOut && !act('pipeout') && r() < 0.35) genFeed(t, s, r, 'pipeout');
-    if (t.pipeIn) { const type = /^Road/.test(t.pipeIn) ? 'Road receipt' : 'Pipeline receipt'; if (!TRANSFERS.some(x => x.term === t.id && x.active && x.type === type) && r() < 0.12) genInflow(t, s, r, type, false); }
-    if (t.tanks.some(k => k.code === 'FAME') && !TRANSFERS.some(x => x.term === t.id && x.active && x.code === 'FAME' && x.type === 'Road receipt') && r() < 0.05) genInflow(t, s, r, 'Road receipt', true);
-    if (t.blend && r() < 0.06) genBlend(t, s, r, ev);
+    if (t.truck) for (let i = 0; i < 2; i++) if (running(x => x.node === 'gantry') < Math.max(2, Math.ceil(t.truck * 0.6)) && r() < 0.6) genTruck(t, s, r);
+    if (t.hydrant && running(x => x.node === 'hydrant') < (t.tanks.length >= 7 ? 2 : 1) && r() < 0.6) genFeed(t, s, r, 'hydrant');
+    if (t.pipeOut && !running(x => x.node === 'pipeout') && r() < 0.6) genFeed(t, s, r, 'pipeout');
+    if (t.pipeIn) { const type = /^Road/.test(t.pipeIn) ? 'Road receipt' : 'Pipeline receipt'; if (running(x => x.type === type && !['FAME', 'HEFA'].includes(x.code)) < (t.tanks.length >= 7 ? 2 : 1) && r() < 0.35) genInflow(t, s, r, type, false); }
+    ['FAME', 'HEFA'].forEach(c => { if (t.tanks.some(k => k.code === c) && !running(x => x.type === 'Road receipt' && x.code === c) && r() < 0.4) genInflow(t, s, r, 'Road receipt', c); });
+    if (t.blend && r() < 0.3) genBlend(t, s, r, ev);
+    if (t.truck && r() < 0.003) bayFault(t, s, r, ev);
   });
   prune(TRANSFERS, x => x.state === 'Completed' && x.end < s - 2880);
   prune(BLENDS, x => x.state === 'Released' && x.end != null && x.end < s - 4320);

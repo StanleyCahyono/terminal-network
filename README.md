@@ -35,15 +35,27 @@ The console runs on the real date and time (WIB, WITA and WIT per terminal). The
 
 - Transfers pump at their flow rates, tank levels rise and fall, and completion estimates count down.
 - New activity is generated continuously in 5-minute steps:
-  - vessels (made-up names) are nominated, berth and discharge;
-  - trucks load inside the gantry loading windows;
-  - airport depots run hydrant supply and pipeline receipts, and FAME arrives by road;
-  - blend skids schedule and run new batches.
+  - vessels (made-up names) are nominated, berth and discharge, with a second ship waiting at busy berths;
+  - trucks load in parallel inside the gantry loading windows;
+  - airport depots run hydrant supply and pipeline receipts, and FAME and HEFA arrive by road;
+  - every terminal's blend skid schedules and runs new batches.
 - Completed receipts and blends are sampled, lab results arrive a few hours later, and batches are released (or held if a test fails).
-- Story alarms clear over time (the Biak swell, the Sambu meter), and vessel pump trips occasionally pause a discharge.
+- Story alarms clear over time (the Biak swell, the Sambu meter). Vessel pump trips occasionally pause a discharge, and loading arm faults take a gantry bay out of service for a while.
 - Shifts, "Today", the scheduling horizon and chart time axes follow the real calendar.
 
-Terminal names, tanks and the starting story are unchanged. A run plays out the same however often the page refreshes, and reopening within 24 hours continues the same run. The header shows **Live · simulated data**: values move in real time but are not plant telemetry.
+Terminal names and the starting story are unchanged.
+
+## Blending at every terminal
+
+Every terminal has a blend skid. Terminals that had no blend components got component tanks, appended so that existing tanks keep their numbers and values:
+
+- **Diesel B40 (B0 + FAME):** a FAME tank at Ujung Pandang, Pulau Sambu, Panjang and Vopak; B0 and FAME tanks at Biak and Boyolali.
+- **Jet A-1 (5.3% bio):** made at the airport depots from Jet A-1 (2% bio) topped up with HEFA, 96.6% / 3.4%. Juanda, Soetta CGK, Ngurah Rai and Kualanamu got a HEFA tank, and Juanda and Kualanamu also got a Jet A-1 (5.3%) tank.
+- **RON 95:** Plumpang, Surabaya and Vopak can also make RON 95 from RON 92 and RON 98, 50 / 50.
+
+## All ongoing transfers
+
+**Transfers → All terminals** lists every running, paused and scheduled transfer across the network on one live board. It shows progress, quantities, flow, finish or start time and state. You can filter it by state or type and sort it by terminal, finish time, progress or flow. Click a row to open that transfer, or that blend on the Blending screen. A run plays out the same however often the page refreshes, and reopening within 24 hours continues the same run. The header shows **Live · simulated data**: values move in real time but are not plant telemetry.
 
 ## Connecting live data
 
