@@ -37,7 +37,7 @@ Operations console for the fuel terminal network and the lubricant superhub: net
 
 ## Live clock
 
-The console runs on the real date and time (WIB, WITA and WIT per terminal). The fictional scenario in `data.js` starts from the moment you open the console, shifted by whole hours. From there `tick()` keeps the network running in real time, refreshing every 3 seconds:
+The console runs on the real date and time (WIB, WITA and WIT per terminal). The fictional scenario in `data.js` runs in twelve-hour runs that start at 05:20 and 17:20 WIB. The start depends only on the clock, so every phone and computer shows the same network at the same moment; a page left open reloads by itself when a new run starts. From there `tick()` keeps the network running in real time, refreshing every 3 seconds:
 
 - Transfers pump at their flow rates, tank levels rise and fall, and completion estimates count down.
 - New activity is generated continuously in 5-minute steps:
@@ -48,6 +48,8 @@ The console runs on the real date and time (WIB, WITA and WIT per terminal). The
 - Completed receipts and blends are sampled, lab results arrive a few hours later, and batches are released (or held if a test fails).
 - Story alarms clear over time (the swell at FT Biak, the meter at FT Pulau Sambu). Vessel pump trips occasionally pause a discharge, and loading arm faults take a gantry bay out of service for a while.
 - Shifts, "Today", the scheduling horizon and chart time axes follow the real calendar.
+
+What one person does (acknowledging or resolving an alarm, releasing or holding a batch) changes only their own browser: there is no server to share it, so other devices do not see it, and it is cleared at the next run. Sharing actions between devices needs a small backend, such as a hosted database.
 
 The starting story is unchanged.
 

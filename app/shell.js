@@ -76,6 +76,7 @@ export function App({ D, ses, onSignOut }) {
   const seen = useRef(null);
   const step = useCallback(() => {
     if (!session()) { onSignOut(); return; } // signed out in the console or another tab, or the session ended
+    if (D.runChanged()) { location.reload(); return; } // a new run started at 05:20 or 17:20 WIB: join it with every other device
     const ev = D.tick();
     if (ev && ev.length) setEvents(list => [...ev.slice(0, 6).map((text, i) => ({ id: D.NOW + ':' + i + ':' + text.length, at: D.NOW, text })), ...list].slice(0, 60));
     if (!seen.current) seen.current = new Set(D.EXCEPTIONS.map(e => e.id));

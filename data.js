@@ -3,16 +3,20 @@ import * as SH from './superhub.js';
 // Times are scenario minutes. Minute REF is the moment the data below describes; it is pinned to the
 // real clock when the console opens, and tick() runs transfers, blends and tank levels forward in real time.
 const REF = 860;
-const KEEP_H = 24; // reopening within this many hours continues the same run instead of starting a fresh one
+const RUN_H = 12, RUN_START = 5 * 60 + 20; // every device runs the same scenario: a run starts at 05:20 and 17:20 WIB
 const OFF = { WIB: 420, WITA: 480, WIT: 540 }; // minutes ahead of UTC
 const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const pad = n => String(n).padStart(2, '0');
-function anchor() { // shift the scenario by whole hours so planned times keep their minutes (08:00 stays on the hour)
-  const now = Date.now(); let a = (REF + Math.floor((now / 60000 - REF) / 60) * 60) * 60000;
-  try { const s = +localStorage.getItem('tnops:anchor'); if (s && now >= s && now - s < KEEP_H * 3600000) a = s; else localStorage.setItem('tnops:anchor', String(a)); } catch (e) {}
-  return a;
+// The run's start depends only on the clock, so phones and computers show the same network at the same moment. Starts fall
+// on the scenario's own minute past the hour (:20), so planned times keep their minutes (08:00 stays on the hour).
+function anchor(now = Date.now()) {
+  const first = RUN_START - OFF.WIB, len = RUN_H * 60; // UTC minute of day of a run start
+  return (first + Math.floor((now / 60000 - first) / len) * len) * 60000;
 }
-const BASE = anchor() / 60000 - REF; // real UTC minute at scenario minute 0
+const ANCHOR = anchor();
+const BASE = ANCHOR / 60000 - REF; // real UTC minute at scenario minute 0
+// true once a new run has started on the clock; open pages reload then so they stay in step with every other device
+export const runChanged = () => anchor() !== ANCHOR;
 export let NOW = REF; // scenario minute now, advanced by tick()
 export let SNAPSHOT = '';
 const zone = tz => OFF[tz] ?? OFF.WIB;
