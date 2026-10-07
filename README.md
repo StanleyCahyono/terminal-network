@@ -38,8 +38,8 @@ The console runs on the real date and time (WIB, WITA and WIT per terminal). The
 
 - Transfers pump at their flow rates, tank levels rise and fall, and completion estimates count down.
 - New activity is generated continuously in 5-minute steps:
-  - vessels (made-up names) are nominated, berth and discharge, with a second ship waiting at busy berths;
-  - trucks load in parallel inside the gantry loading windows;
+  - vessels (made-up names) are nominated, berth and discharge, with up to two more ships waiting at every berth;
+  - every gantry bay loads trucks, round the clock;
   - airport depots run hydrant supply and pipeline receipts, and FAME and HEFA arrive by road;
   - every terminal's blend skid schedules and runs new batches.
 - Completed receipts and blends are sampled, lab results arrive a few hours later, and batches are released (or held if a test fails).
@@ -64,15 +64,17 @@ Every terminal has a blend skid. Terminals that had no blend components got comp
 
 **TBBM Terminal Lubricant Superhub Maiza Lubrika** (Kendal, Jawa Tengah) is a simulated lubricant plant. Choose it in the terminal selector, or on the Network map, to open its own workspace instead of the tank schematic. Blending and Quality also open the superhub tabs for this terminal.
 
-**Plant.** 2.0 Mt per year nameplate and a plan of 4,380 t a day. It makes 84 products in 169 grades and 13 families, from engine oils to turbine, hydraulic and gear oils and greases. Everything is blended in house:
+**Plant.** 2.0 Mt per year nameplate, planned at full capacity (5,479 t a day). It makes 84 products in 169 grades and 13 families, from engine oils to turbine, hydraulic and gear oils and greases. Everything is blended in house. The site is also a base-oil hub: about 5,000 t a day of base oil is re-exported by tanker, barge, ISO tank and road tanker, and about 2,000 t a day of packed lubricants from other plants passes through its cross-dock.
 
-- 9 jetties, for import and coastal tankers, an additive berth, barges and two container-feeder quays;
+The site has:
+
+- 9 jetties, for import, coastal and re-export tankers, an additive berth, barges and two container-feeder quays;
 - base-oil, additive and finished-product tank farms with 153 tanks;
 - 3 in-line blenders, 10 automated and 10 simple batch blenders, and a grease plant with contactors, kettles and hoppers;
 - 18 packaging lines, 14 drum-filling lines and 2 IBC lines (34 in all), with blow moulding for bottles and cans;
 - a high-bay warehouse and a drum store, 140 truck bays and a gate with a 220-truck park;
-- 18 ISO-tank crane positions and a 250-slot ISO yard with heating points; every ISO tank is an IMO T11 portable tank coded SJIU with a random serial and its ISO 6346 check digit;
-- 4 rail cranes on three tracks, a container yard and a container-stuffing hall;
+- 18 ISO-tank crane positions, 4 wash bays and a 250-slot ISO yard with heating points; every ISO tank is an IMO T11 portable tank coded SJIU with a random serial and its ISO 6346 check digit;
+- 4 rail cranes on three tracks and five trains a day (two Jakarta and two Surabaya liners and a base-oil ISO shuttle), a container yard and a container-stuffing hall;
 - a QC laboratory with 24 test streams.
 
 **Simulation.** Input and output run around the clock in 5-minute steps:
@@ -81,7 +83,7 @@ Every terminal has a blend skid. Terminals that had no blend components got comp
 - receipts are sampled and released;
 - blends start when stock runs low, pass in-process and release tests, and fill dedicated tanks or swing tanks;
 - filling lines run work orders by warehouse cover, with changeovers, breaks, jams and faults;
-- product leaves by road, rail, feeder and coastal tanker.
+- product and re-exported base oil leave by road, rail, feeder, coastal tanker and barge, seven days a week.
 
 Weather, grid outages and equipment faults raise alarms in the alarm centre. The run is deterministic: the plant is in the same state however often the page refreshes.
 

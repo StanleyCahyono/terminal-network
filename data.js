@@ -516,7 +516,8 @@ function settle(tr, end, ev) {
   tr.state = 'Completed'; tr.end = end; tr.flow = 0; tr.qty = tr.recv = tr.planned; tr.active = false;
   t.tanks.forEach(k => { if (k.activity && k.activity.ref === tr.id) { k.activity = null; k.status = k.id === tr.dst && (blend || tr.marine) ? 'Settling' : 'Idle'; if (k.id === tr.dst && blend) k.q = 'Awaiting test results'; } });
   const b = BLENDS.find(x => x.id === tr.id); if (b) { b.state = 'Awaiting test results'; b.end = end; b.comps.forEach(c => { c.done = c.qty; }); }
-  if (!blend && !tr.vessel) return; // routine truck, pipeline and hydrant runs finish quietly
+  if (tr.node === 'gantry') { ev.push(`${Math.round(tr.planned / tr.truck)} trucks loaded at ${t.name} ${tr.dst} · ${fmt(tr.planned)} kL ${prod(tr.code).label}.`); return; }
+  if (!blend && !tr.vessel) return; // routine pipeline and hydrant runs finish quietly
   ev.push(`${tr.id} completed · ${fmt(tr.planned)} kL ${t.tanks.some(k => k.id === tr.dst) ? 'received' : 'loaded'}${blend ? '. Batch awaiting test results — not released' : ''}.`);
   if (blend || tr.marine) { const k = t.tanks.find(x => x.id === tr.dst); QUEUE.push({ at: end + between(R('q' + tr.id), 20, 60, 5), run: at => takeSample(t, at, b ? b.id : k && k.batch, b ? { type: 'blend', id: b.id } : { type: 'tank', id: tr.dst }, tr.code, tr) }); }
 }
@@ -592,15 +593,14 @@ function genVessel(t, s, r, berth, after) {
   add({ ...base, type: 'Ship-to-shore', code: k.code, dst: k.id, planned, flow0: Math.max(300, between(r, planned / 9, planned / 5, 10)), temp: +(30 + r() * 2).toFixed(1), dens: +(p.dens + (r() - 0.5) * 2).toFixed(1), batch: `${t.id}-${p.short.replace(/[^A-Z0-9.]/gi, '')}-${ymd(s).slice(0, 4)}-${pad(30 + seq('B' + t.id, [], /$^/))}` });
 }
 function genTruck(t, s, r) {
-  const sod = ((s % 1440) + 1440) % 1440; if (sod < 360 || sod > 1260) return; // inside the loading window
   const used = new Set();
   TRANSFERS.filter(x => x.term === t.id && x.active && x.node === 'gantry').forEach(x => (x.dst.match(/\d+(?:\s*[–-]\s*\d+)?/g) || []).forEach(g => { const [a, b] = g.split(/[–-]/).map(Number); for (let i = a; i <= (b || a); i++) used.add(i); }));
   EXCEPTIONS.forEach(e => { const m = e.term === t.id && e.status !== 'Resolved' && /Gantry bay (\d+)/.exec(e.asset); if (m) used.add(+m[1]); });
   const k = pick(r, t.tanks.filter(x => x.kind === 'product' && free(t, x) && spare(x) >= 1500).sort((a, b) => spare(b) - spare(a)).slice(0, 4)); if (!k) return;
   const truck = /^B/.test(k.code) ? 32 : t.truck <= 4 ? 16 : 24, flow0 = between(r, 80, 170), n = flow0 > 135 ? 2 : 1;
   let a = 0; for (let i = 1; i + n - 1 <= t.truck && !a; i++) { let ok = true; for (let j = i; j < i + n; j++) if (used.has(j)) ok = false; if (ok) a = i; }
-  const planned = Math.floor(Math.min(between(r, 600, 1800), spare(k), flow0 * (1320 - sod) / 60) / truck) * truck;
-  if (!a || planned < truck * 8) return;
+  const planned = Math.floor(Math.min(between(r, 240, 720), spare(k)) / truck) * truck; // a run of trucks off one tank, so tanks rotate between loading and receiving
+  if (!a || planned < truck * 6) return;
   add({ id: trfId(t, s), term: t.id, type: 'Truck dispatch', truck, code: k.code, src: k.id, dst: n === 1 ? `Gantry bay ${a}` : `Gantry bays ${a}–${a + n - 1}`, node: 'gantry', pump: pick(r, ['P-01', 'P-02']), planned, flow: flow0, flow0, start: s, state: 'In progress' });
 }
 function genFeed(t, s, r, node) { // hydrant or outbound pipeline, run back to back, rotating across tanks
@@ -675,17 +675,17 @@ function generate(s, ev) {
   TERMINALS.forEach(t => {
     if (t.superhub) return; // the superhub generates its own activity below
     const r = R(`${t.id}|${s}`), running = f => TRANSFERS.filter(x => x.term === t.id && x.active && f(x)).length;
-    (t.marine || []).forEach(berth => { // one vessel alongside and one waiting per berth
+    (t.marine || []).forEach(berth => { // one vessel alongside and up to two more waiting at every berth
       if (EXCEPTIONS.some(e => e.term === t.id && e.status !== 'Resolved' && e.asset === berth)) return; // berth closed
       const on = TRANSFERS.filter(x => x.term === t.id && x.berth === berth && LIVE.includes(x.state));
-      if (on.length < 2 && r() < (on.length ? 0.15 : 0.4)) genVessel(t, s, r, berth, on.length ? Math.max(...on.map(x => x.etaMin || x.start + 480)) + 30 : s);
+      if (on.length < 3 && r() < [0.75, 0.4, 0.2][on.length]) genVessel(t, s, r, berth, on.length ? Math.max(...on.map(x => x.etaMin || x.start + 480)) + 30 : s);
     });
-    if (t.truck) for (let i = 0; i < 2; i++) if (running(x => x.node === 'gantry') < Math.max(2, Math.ceil(t.truck * 0.6)) && r() < 0.6) genTruck(t, s, r);
-    if (t.hydrant && running(x => x.node === 'hydrant') < (t.tanks.length >= 7 ? 2 : 1) && r() < 0.6) genFeed(t, s, r, 'hydrant');
-    if (t.pipeOut && !running(x => x.node === 'pipeout') && r() < 0.6) genFeed(t, s, r, 'pipeout');
-    if (t.pipeIn) { const type = /^Road/.test(t.pipeIn) ? 'Road receipt' : 'Pipeline receipt'; if (running(x => x.type === type && !['FAME', 'HEFA'].includes(x.code)) < (t.tanks.length >= 7 ? 2 : 1) && r() < 0.35) genInflow(t, s, r, type, false); }
-    ['FAME', 'HEFA'].forEach(c => { if (t.tanks.some(k => k.code === c) && !running(x => x.type === 'Road receipt' && x.code === c) && r() < 0.4) genInflow(t, s, r, 'Road receipt', c); });
-    if (t.blend && r() < 0.3) genBlend(t, s, r, ev);
+    if (t.truck) for (let i = 0; i < 3; i++) if (running(x => x.node === 'gantry') < t.truck && r() < 0.85) genTruck(t, s, r); // every gantry bay loading, round the clock
+    if (t.hydrant && running(x => x.node === 'hydrant') < (t.tanks.length >= 7 ? 3 : 2) && r() < 0.75) genFeed(t, s, r, 'hydrant');
+    if (t.pipeOut && running(x => x.node === 'pipeout') < 2 && r() < 0.75) genFeed(t, s, r, 'pipeout');
+    if (t.pipeIn) { const type = /^Road/.test(t.pipeIn) ? 'Road receipt' : 'Pipeline receipt'; if (running(x => x.type === type && !['FAME', 'HEFA'].includes(x.code)) < (t.tanks.length >= 7 ? 3 : 2) && r() < 0.6) genInflow(t, s, r, type, false); }
+    ['FAME', 'HEFA'].forEach(c => { if (t.tanks.some(k => k.code === c) && running(x => x.type === 'Road receipt' && x.code === c) < 2 && r() < 0.6) genInflow(t, s, r, 'Road receipt', c); });
+    if (t.blend && r() < 0.7) genBlend(t, s, r, ev);
     if (t.truck && r() < 0.003) bayFault(t, s, r, ev);
   });
   HUB.generate(s, ev);

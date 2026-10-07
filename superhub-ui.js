@@ -71,6 +71,8 @@ function section(title, right, kids, o = {}) {
     div({ padding: o.pad != null ? o.pad : '10px 12px', minWidth: 0, display: 'flex', flexDirection: 'column', gap: o.gap != null ? o.gap : 8, ...(o.body || {}) }, ...(Array.isArray(kids) ? kids : [kids])));
 }
 function grid(min, kids, gap = 10) { return div({ display: 'grid', gridTemplateColumns: `repeat(auto-fill, minmax(min(${min}px, 100%), 1fr))`, gap, minWidth: 0 }, ...kids); }
+// stock cover in days: a hub turning its tanks every few days is short below 3.5 days and critical below 2
+const covInk = d => d < 2 ? 'var(--critInk)' : d < 3.5 ? 'var(--warnInk)' : 'var(--ink)';
 function seg(list, cur, onPick, aria) {
   return h('div', { role: 'group', 'aria-label': aria, style: { display: 'flex', border: '1px solid var(--line)', flexWrap: 'wrap', minWidth: 0 } },
     ...list.map(([id, label], i) => h('button', { key: id, onClick: () => onPick(id), 'aria-pressed': cur === id ? 'true' : 'false', className: 'sh-seg', style: { height: 28, padding: '0 10px', border: 0, borderLeft: i ? '1px solid var(--line)' : 0, background: cur === id ? 'var(--ink)' : 'var(--surf)', color: cur === id ? 'var(--surf)' : 'var(--ink)', fontSize: 12.5, whiteSpace: 'nowrap', cursor: 'pointer' } }, label)));
@@ -138,8 +140,8 @@ function stateSq(x, y, w, hh, t, frac, title, o = {}) {
   return h('g', { key: o.key || k() }, ...kids);
 }
 const BUND_LABEL = { 'BOT-A': 'A · SN150/500', 'BOT-B': 'B · SN500', 'BOT-C': 'C · BS150', 'BOT-D': 'D · 150N/600N', 'BOT-E': 'E · Group III', 'BOT-F': 'F · specialty' };
-const VW = { IMP: 70, CST: 56, ADD: 54, FBC: 48, SPOB: 34, FDR: 84 };
-const VC = { IMP: 'oklch(0.55 0.10 230)', CST: 'oklch(0.62 0.09 75)', ADD: 'oklch(0.58 0.11 310)', FBC: 'oklch(0.60 0.10 150)', SPOB: 'oklch(0.62 0.08 190)', FDR: 'oklch(0.55 0.04 260)' };
+const VW = { IMP: 70, CST: 56, ADD: 54, FBC: 48, SPOB: 34, FDR: 84, BXP: 60, BXB: 38 };
+const VC = { IMP: 'oklch(0.55 0.10 230)', CST: 'oklch(0.62 0.09 75)', ADD: 'oklch(0.58 0.11 310)', FBC: 'oklch(0.60 0.10 150)', SPOB: 'oklch(0.62 0.08 190)', FDR: 'oklch(0.55 0.04 260)', BXP: 'oklch(0.52 0.12 25)', BXB: 'oklch(0.60 0.11 350)' };
 function plan() {
   P = PAL[ctx.theme === 'dark' ? 'dark' : 'light'];
   const K = S.kpi, kids = [];
@@ -243,7 +245,8 @@ function plan() {
     for (let i = 0; i < 50; i++) { const slot = bi * 50 + i, x = bySlot[slot], row = i >> 1, tier = i % 2; isoK.push(rect(bx + tier * 15, 206 + row * 10.6, 14, 9.6, { fill: x ? CAT[x.cat] : P.tank, stroke: slot >= 150 && slot < 180 ? 'var(--warn)' : P.tankBd, strokeWidth: slot >= 150 && slot < 180 ? .9 : .4 }, { key: 'y' + slot, title: x ? `${x.id} · ${x.type || 'T11'} · ${x.cat} · ${x.loc}${x.code ? ' · ' + shortOf(x.code) : ''}` : `Slot ${slot + 1} · free` })); }
   });
   const bc = S.iso.byCat; [['EC', 'Clean empty'], ['ED', 'Dirty empty'], ['FO', 'Full out'], ['IF', 'Inbound full'], ['ER', 'To return'], ['RP', 'Repair']].forEach(([c, lab], i) => { const x = 764 + (i % 3) * 62, y = 486 + Math.floor(i / 3) * 18; isoK.push(rect(x, y, 9, 9, { fill: CAT[c] }), txt(x + 13, y + 9, `${c} ${bc[c] || 0}`, { fs: 11, mono: true })); });
-  S.iso.wash.forEach((w, i) => isoK.push(stateSq(764 + i * 52, 528, 46, 14, w.iso ? 'run' : 'idle', null, `${w.id} · ${w.iso ? 'washing ' + w.iso.id : 'free'}`, { key: 'tw' + i }), txt(764 + i * 52 + 23, 556, w.id, { fs: 10.5, c: P.mute, a: 'middle', mono: true })));
+  S.iso.wash.forEach((w, i) => isoK.push(stateSq(764 + i * 24, 528, 20, 14, w.iso ? 'run' : 'idle', null, `${w.id} · ${w.iso ? 'washing ' + w.iso.id : 'free'}`, { key: 'tw' + i })));
+  isoK.push(txt(764, 556, `Wash ${S.iso.wash.filter(w => w.iso).length}/${S.iso.wash.length}`, { fs: 11, c: P.mute }));
   isoK.push(txt(870, 539, `Heating ${S.iso.heatUsed}/30`, { fs: 11, c: P.mute }), txt(870, 556, `Orders ${S.iso.orders.length}`, { fs: 11, c: P.mute }));
   kids.push(zoneG('iso', [754, 116, 200, 490], 'ISO station & yard', `${S.iso.occ}/250`, isoK));
   // ── container stuffing ──
@@ -345,11 +348,11 @@ function flowStrip() {
     span({ fontSize: 12.5, fontWeight: 600 }, title),
     ...rows.map(([l, v]) => div({ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8, minWidth: 0, fontSize: 12.5 }, span({ ...ell, color: 'var(--ink2)' }, l), span({ fontFamily: 'var(--fnum)', flex: 'none' }, v))));
   const st = [
-    stage('Received', [['By sea', T0(K.rec.sea)], ['Rail ISO tanks', T0(K.rec.rail)], ['Road & feeder ISO', T0(K.rec.road + K.rec.iso)]], 'var(--ink3)', 'marine'),
-    stage('In stock', [['Base oils', T0(base)], ['Additives', T0(add)], ['Finished, released', T0(K.fin.rel)]], 'var(--ink3)', 'tanks'),
-    stage('Blended', [['Liquid blends', T0(K.blend.t)], ['Grease', T0(K.grease.t, 1)], ['Batches started', D.fmt(K.blend.batches)]], 'var(--acc)', 'blend'),
-    stage('Filled', [['Packed', T0(K.out.pkg)], ['Units', D.fmt(X.units)], ['Bulk & ISO loaded', T0(K.out.bulk)]], 'var(--acc)', 'fill'),
-    stage('Shipped', [['Road', T0(K.disp.road)], ['Rail', T0(K.disp.rail)], ['Sea', T0(K.disp.sea)]], 'var(--ok)', 'wh'),
+    stage('Received', [['By sea', T0(K.rec.sea)], ['Rail ISO tanks', T0(K.rec.rail)], ['Road & feeder ISO', T0(K.rec.road + K.rec.iso)], ['Cross-dock pallets', T0(K.hub.xd)]], 'var(--ink3)', 'marine'),
+    stage('In stock', [['Base oils', T0(base)], ['Additives', T0(add)], ['Finished, released', T0(K.fin.rel)], ['Cross-dock floor', T0(K.hub.xdStock)]], 'var(--ink3)', 'tanks'),
+    stage('Blended', [['Liquid blends', T0(K.blend.t)], ['Grease', T0(K.grease.t, 1)], ['Batches started', D.fmt(K.blend.batches)], ['Blenders busy', `${K.blend.inProcess}/23`]], 'var(--acc)', 'blend'),
+    stage('Filled', [['Packed', T0(K.out.pkg)], ['Units', D.fmt(X.units)], ['Bulk & ISO loaded', T0(K.out.bulk)], ['Lines running', `${K.lines.running}/34`]], 'var(--acc)', 'fill'),
+    stage('Shipped', [['Road', T0(K.disp.road)], ['Rail', T0(K.disp.rail)], ['Sea', T0(K.disp.sea)], ['Base oil re-exported', T0(K.hub.reexp)]], 'var(--ok)', 'wh'),
   ];
   const arrow = i => span({ key: 'fa' + i, alignSelf: 'center', textAlign: 'center', color: 'var(--ink4)', fontSize: 16 }, '→');
   const body = ctx.tablet ? grid(170, st, 8) : div({ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 16px minmax(0,1fr) 16px minmax(0,1fr) 16px minmax(0,1fr) 16px minmax(0,1fr)', gap: 6, alignItems: 'stretch', minWidth: 0 }, ...st.flatMap((x, i) => i ? [arrow(i), x] : [x]));
@@ -368,7 +371,7 @@ function planTab() {
     flowStrip(),
     div({ display: 'grid', gridTemplateColumns: ctx.tablet ? 'minmax(0,1fr)' : 'minmax(0,1.2fr) minmax(0,1fr)', gap: 12, minWidth: 0 },
       section('Output, last 24 h', span({ fontSize: 12, color: 'var(--ink3)' }, 'packaged + bulk, t/h'), [hourly('out', 24, 'var(--acc)', 'Output')], { key: 'outc' }),
-      section('Dispatch today by mode', span({ fontSize: 12, color: 'var(--ink3)', fontFamily: 'var(--fnum)' }, `${T0(K.disp.road + K.disp.rail + K.disp.sea)} shipped`), [...disp, kv('Receipts by sea', T0(K.rec.sea)), kv('Receipts by rail ISO', T0(K.rec.rail)), kv('Receipts by road and feeder ISO', T0(K.rec.road + K.rec.iso), { last: true })], { key: 'dispc' })),
+      section('Dispatch today by mode', span({ fontSize: 12, color: 'var(--ink3)', fontFamily: 'var(--fnum)' }, `${T0(K.disp.road + K.disp.rail + K.disp.sea)} shipped`), [...disp, kv('Base-oil re-export', `${T0(K.hub.reexp)} of ${T0(K.hub.plan)} plan`), kv('Re-export by sea · ISO · road', `${T0(K.hub.sea)} · ${T0(K.hub.iso)} · ${T0(K.hub.road)}`), kv('Cross-dock pallets received', T0(K.hub.xd)), kv('Receipts by sea', T0(K.rec.sea)), kv('Receipts by rail ISO', T0(K.rec.rail)), kv('Receipts by road and feeder ISO', T0(K.rec.road + K.rec.iso), { last: true })], { key: 'dispc' })),
     section('Latest events', btn('All events', () => A.tab('log')), ev.length ? ev : [empty('No events yet.')], { key: 'evc' }));
 }
 
@@ -383,7 +386,7 @@ function marineTab() {
   const jet = S.jetties.map(j => { const v = j.vessel ? S.vessels.find(x => x.id === j.vessel) : null; return v ? vesselCard(v) : tile({ key: 'j' + j.id, id: j.id, state: j.closed ? 'Closed' : 'Free', tone: 'idle', line1: j.role, line2: `${j.loa} m LOA · ${j.draft} m draft`, onClick: () => A.zone('marine') }); });
   return div({ display: 'flex', flexDirection: 'column', gap: 12, minWidth: 0 },
     grid(170, [kpi('Berths in use', `${K.berths.busy}/9`), kpi('At anchorage', String(K.berths.anchorage), null, K.berths.anchorage > 2 ? 'warn' : null), kpi('Due in 72 h', String(K.berths.expected72)), kpi('Received by sea today', T0(K.rec.sea)), kpi('Loaded to ships today', T0(S.today.sea))], 8),
-    section('Jetties', span({ fontSize: 12, color: 'var(--ink3)' }, 'J1–J2 import · J3–J4 coastal · J5 additives · J6–J7 barges · J8–J9 feeders'), [grid(250, jet, 8)]),
+    section('Jetties', span({ fontSize: 12, color: 'var(--ink3)' }, 'J1–J4 base oil in & re-export · J5 additives · J6–J7 barges · J8–J9 feeders'), [grid(250, jet, 8)]),
     section('Line-up · next 10 days', span({ fontSize: 12, color: 'var(--ink3)' }, `${vs.length} vessels`), [table([
       { label: 'ETA', w: '118px', f: v => TM(v.ata || v.eta), mono: true }, { label: 'Vessel', w: 'minmax(140px,1.4fr)', f: v => [span({ width: 8, height: 8, display: 'inline-block', background: VC[v.cls], flex: 'none' }), span({ ...ell }, v.name)] },
       { label: 'Type', w: 'minmax(110px,1fr)', f: v => v.label }, { label: 'Cargo', w: 'minmax(140px,1.4fr)', f: v => v.cls === 'FDR' ? 'Containers and ISO tanks' : v.parcels.map(p => `${shortOf(p.code)} ${D.fmt(p.t)}`).join(' · ') },
@@ -401,9 +404,9 @@ function tanksTab() {
   let body = [];
   if (v === 'bot' || v === 'add') {
     const list = v === 'bot' ? K.base : K.add;
-    body.push(section(v === 'bot' ? 'Base-oil stocks' : 'Additive stocks', span({ fontSize: 12, color: 'var(--ink3)' }, 'cover = stock above heel ÷ use at plan'), [table([
+    body.push(section(v === 'bot' ? 'Base-oil stocks' : 'Additive stocks', span({ fontSize: 12, color: 'var(--ink3)' }, 'cover = stock above heel ÷ blending and re-export use'), [table([
       { label: 'Stock', w: 'minmax(150px,2fr)', f: b => [sw(HUB.info.COMP[b.code].color, true), span({ ...ell }, HUB.info.COMP[b.code].label)] }, { label: 'Tonnes', w: '96px', f: b => T0(b.t), mono: true, align: 'right' },
-      { label: 'Cover', w: '76px', f: b => DAYS(b.days), mono: true, align: 'right', color: b => b.days < 3 ? 'var(--critInk)' : b.days < 6 ? 'var(--warnInk)' : 'var(--ink)' }, { label: 'Fill', w: 'minmax(80px,1fr)', f: b => div({ flex: 1, minWidth: 40 }, bar(b.pct, 'var(--ink3)', 6)) }], list.filter(b => b.t > 0 || v === 'bot'), { scroll: true, minW: 420 })], { pad: 0 }));
+      { label: 'Cover', w: '76px', f: b => DAYS(b.days), mono: true, align: 'right', color: b => covInk(b.days) }, { label: 'Fill', w: 'minmax(80px,1fr)', f: b => div({ flex: 1, minWidth: 40 }, bar(b.pct, 'var(--ink3)', 6)) }], list.filter(b => b.t > 0 || v === 'bot'), { scroll: true, minW: 420 })], { pad: 0 }));
     if (v === 'add') { const st = HUB.store(); body.push(section('Drum, IBC and bag store', null, [table([{ label: 'Material', w: 'minmax(160px,2fr)', f: r => HUB.info.COMP[r[0]].label }, { label: 'Stock', w: '96px', f: r => T0(r[1], 1), mono: true, align: 'right' }, { label: 'Store', w: '110px', f: r => /^(LIOH|12HSA|AZA|CASUL|MOS2)$/.test(r[0]) ? 'Bag store' : 'Drum/IBC store' }], Object.entries(st), {})], { pad: 0 })); }
   }
   const tanks = S._tanks[v === 'bot' ? 'BOT' : v === 'add' ? 'ADD' : v === 'fpt' ? 'FPT' : 'AUX'];
@@ -483,7 +486,7 @@ function batchTable(rows, o = {}) {
 function blendTab() {
   const K = S.kpi, B = S.blenders, bf = ST.bf || 'live';
   const fills = S._tanks.FPT.filter(k => k.fill).sort((a, b) => (b.fill.flowing - a.fill.flowing) || ((a.vol - a.heel) / a.nominal - (b.vol - b.heel) / b.nominal));
-  const halls = [['North hall', 'ILB-1, ILB-2 in-line · ABB-01..04 automated batch, 60 m³'], ['South hall', 'ILB-3 in-line · ABB-05..10 automated batch, 20–40 m³'], ['Kettle hall', 'SBB-01..10 simple batch kettles, 10–25 m³']];
+  const halls = [['North hall', 'ILB-1, ILB-2 in-line, 100 m³/h · ABB-01..04 automated batch, 70 m³'], ['South hall', 'ILB-3 in-line, 80 m³/h · ABB-05..10 automated batch, 25–50 m³'], ['Kettle hall', 'SBB-01..10 simple batch kettles, 10–30 m³']];
   const camp = HUB.campaigns();
   let rows = S.batches;
   if (bf === 'live') rows = rows.filter(b => b.state === 'In progress');
@@ -573,11 +576,13 @@ function fillTab() {
 }
 
 // ── warehouse, docks and gate ──
-const TRUCK_CLS = { PKG: 'Packaged', BLK: 'Bulk tanker', MAT: 'Materials', UNL: 'Discharge', ISO: 'ISO tank', BOX: 'Empty box' };
+const TRUCK_CLS = { PKG: 'Packaged', BLK: 'Bulk tanker', MAT: 'Materials', UNL: 'Discharge', ISO: 'ISO tank', BOX: 'Empty box', XDK: 'Cross-dock' };
+const truckType = x => x.cls === 'BLK' && x.base ? 'Re-export' : TRUCK_CLS[x.cls] || x.cls;
 function truckTone(x) { return x.state === 'At bay' || x.state === 'Gate-in' || x.state === 'Weigh-out' || x.state === 'Gate-out' || x.state === 'Yard' ? 'run' : x.state === 'Queue' && D.NOW - x.arr > 60 ? 'warn' : 'idle'; }
 function cargoOf(x) {
   if (x.cls === 'PKG') return x.palGot ? `${Math.round(x.palGot)} pallets · ${T0(x.t, 1)}` : `${x.pallets} pallets booked`;
-  if (x.cls === 'BLK') return `${shortOf(x.code)} · ${T0(x.done || 0, 1)} of ${T0(x.payload, 1)}`;
+  if (x.cls === 'BLK') return `${shortOf(x.code)} · ${T0(x.done || 0, 1)} of ${T0(x.payload, 1)}${x.base ? ' · base-oil re-export' : ''}`;
+  if (x.cls === 'XDK') return `${x.pallets} pallets · ${T0(x.t, 1)} from ${x.from}`;
   if (x.cls === 'UNL') return `${shortOf(x.code)} · ${T0(x.done || 0, 1)} of ${T0(x.payload, 1)}${x.iso ? ' · ISO' : ''}`;
   if (x.cls === 'MAT') { const L = x.load || {}; return L.store ? `${shortOf(L.store)} · ${T0(L.t, 1)}` : L.mat && S.materials[L.mat] ? `${S.materials[L.mat].label} · ${D.fmt(L.qty)}` : 'Delivery'; }
   if (x.cls === 'ISO') return x.note || ((x.job || {}).drop ? 'Dropping a clean empty ISO' : 'Collecting an ISO tank');
@@ -611,13 +616,13 @@ function whTab() {
     ], 8),
     div({ display: 'grid', gridTemplateColumns: ctx.tablet ? 'minmax(0,1fr)' : 'minmax(0,1fr) minmax(0,1fr)', gap: 12, minWidth: 0 },
       section('Stores', note('automated high-bay with 10 stacker cranes; block-stacked drum and IBC store'), [
-        store('High-bay store · small packs and pails', W.hbw, K.wh.coverHBW, 8), store('Drum & IBC store', W.drm, K.wh.coverDRM, 5.5),
+        store('High-bay store · small packs and pails', W.hbw, K.wh.coverHBW, 8), store('Drum & IBC store', W.drm, K.wh.coverDRM, 4.8),
         div({ display: 'flex', gap: 6, flexWrap: 'wrap' }, ...W.cranes.map(c => chip(`${c.id} ${c.fault ? 'Fault' : 'OK'}`, c.fault ? 'crit' : 'ok', `Stacker crane ${c.id}`))),
       ], { key: 'stores' }),
       section('Gate', note('6 in-lanes, 6 out-lanes, 8 weighbridges, 220-truck park'), [
         kv('Queue outside', `${G_.queue} trucks`, { color: G_.queue >= 20 ? 'var(--warnInk)' : 'var(--ink)' }), kv('In the park', `${G_.park.occ} of 220`), kv('On site', `${G_.onSite} trucks`),
         kv('Gate system', G_.outage ? 'Outage · manual check-in' : 'Normal', { f: 'sans', color: G_.outage ? 'var(--warnInk)' : 'var(--ink)' }),
-        kv('Turnaround · packaged', ta('PKG'), { f: 'sans' }), kv('Turnaround · bulk', ta('BLK'), { f: 'sans' }), kv('Turnaround · materials', ta('MAT'), { f: 'sans' }), kv('Turnaround · discharge', ta('UNL'), { f: 'sans', last: true }),
+        kv('Turnaround · packaged', ta('PKG'), { f: 'sans' }), kv('Turnaround · bulk', ta('BLK'), { f: 'sans' }), kv('Turnaround · cross-dock', ta('XDK'), { f: 'sans' }), kv('Turnaround · materials', ta('MAT'), { f: 'sans' }), kv('Turnaround · discharge', ta('UNL'), { f: 'sans', last: true }),
       ], { key: 'gate' })),
     div({ display: 'grid', gridTemplateColumns: ctx.tablet ? 'minmax(0,1fr)' : 'minmax(0,1fr) minmax(0,1fr)', gap: 12, minWidth: 0 },
       trend('Store fill, last 48 h', [{ key: 'whHBW', label: 'High-bay store', color: 'var(--acc)' }, { key: 'whDRM', label: 'Drum & IBC store', color: 'oklch(0.62 0.10 60)' }], { hours: 48, unit: '%', y1: 100, sub: '% of pallet places' }),
@@ -628,10 +633,10 @@ function whTab() {
         div({ display: 'flex', justifyContent: 'space-between', gap: 8, fontSize: 12.5, minWidth: 0, flexWrap: 'wrap' }, span({ fontWeight: 600 }, label), span({ color: 'var(--ink3)', fontFamily: 'var(--fnum)' }, `${ids} · ${busy}/${list.length} in use`)),
         div({ display: 'grid', gridTemplateColumns: `repeat(auto-fill, minmax(${ctx.mobile ? 34 : 38}px, 1fr))`, gap: 4, minWidth: 0 }, ...list.map(bayCell)));
     }), { key: 'bays' }),
-    section('Trucks on site', seg([['all', 'All'], ['PKG', 'Packaged'], ['BLK', 'Bulk'], ['MAT', 'Materials'], ['UNL', 'Discharge'], ['ISO', 'ISO']], tf, x => A.set({ tf: x }), 'Truck filter'), [table([
+    section('Trucks on site', seg([['all', 'All'], ['PKG', 'Packaged'], ['XDK', 'Cross-dock'], ['BLK', 'Bulk'], ['MAT', 'Materials'], ['UNL', 'Discharge'], ['ISO', 'ISO']], tf, x => A.set({ tf: x }), 'Truck filter'), [table([
       { label: 'Plate', w: '104px', f: x => x.plate, mono: true },
       { label: 'Haulier', w: 'minmax(140px,1.3fr)', f: x => x.carrier.replace(/^PT /, '') },
-      { label: 'Type', w: '96px', f: x => TRUCK_CLS[x.cls] || x.cls },
+      { label: 'Type', w: '96px', f: x => truckType(x) },
       { label: 'Cargo', w: 'minmax(170px,1.8fr)', f: x => cargoOf(x) },
       { label: 'Bay', w: '62px', f: x => x.bay || '—', mono: true },
       { label: 'On site', w: '84px', f: x => D.dur(D.NOW - x.arr), mono: true, align: 'right' },
@@ -720,7 +725,7 @@ function isoTab() {
       { label: 'Status', w: 'minmax(150px,1.3fr)', f: x => x.cat === 'IF' ? isoInbound(x) : x.cat === 'FO' ? `${({ road: 'Road', rail: 'Rail', sea: 'Feeder' })[x.mode] || ''} · due ${hh(x.due)}` : x.cat === 'RP' ? (x.repairUntil ? `Back ${hh(x.repairUntil)}` : 'Repair') : '—' },
     ], inYard, { onRow: x => A.sel('iso', x.id), selected: x => isSel('iso', x.id), key: x => x.id, scroll: true, minW: 820, max: 420, sticky: true, empty: 'No ISO tanks in this category.' })], { key: 'isos', pad: 0 }),
     div({ display: 'grid', gridTemplateColumns: ctx.tablet ? 'minmax(0,1fr)' : 'minmax(0,1.4fr) minmax(0,1fr)', gap: 12, minWidth: 0 },
-      section('Trains', note('JKT liner daily 03:30 · SUB liner daily 13:00 · ISO shuttle every second day 21:00'), [table([
+      section('Trains', note('every day · SUB liners 01:00 and 13:00 · JKT liners 03:30 and 15:30 · ISO shuttle 21:00'), [table([
         { label: 'Train', w: '78px', f: t => t.id, mono: true },
         { label: 'Service', w: 'minmax(130px,1.3fr)', f: t => svc[t.service] || t.name },
         { label: 'Due', w: '96px', f: t => hh(t.ata || t.eta), mono: true, color: t => t.eta - t.sched > 120 && !t.ata ? 'var(--warnInk)' : 'var(--ink)' },
@@ -947,7 +952,7 @@ function dSample(x) {
   ];
 }
 function dTruck(x) {
-  return [dl([['Plate', x.plate], ['Haulier', x.carrier, { f: 'sans' }], ['Type', TRUCK_CLS[x.cls] || x.cls, { f: 'sans' }], ['Cargo', cargoOf(x), { f: 'sans', wrap: true }], ['State', x.state, { f: 'sans' }], x.bay ? ['Bay', link(x.bay, () => A.sel('bay', x.bay)), { f: 'sans' }] : null,
+  return [dl([['Plate', x.plate], ['Haulier', x.carrier, { f: 'sans' }], ['Type', truckType(x), { f: 'sans' }], ['Cargo', cargoOf(x), { f: 'sans', wrap: true }], ['State', x.state, { f: 'sans' }], x.bay ? ['Bay', link(x.bay, () => A.sel('bay', x.bay)), { f: 'sans' }] : null,
     ['Arrived', TM(x.arr)], x.gin ? ['Gate-in', TM(x.gin)] : null, x.bayAt ? ['At bay since', TM(x.bayAt)] : null, x.until && x.state !== 'Gone' ? ['Next step', TM(x.until)] : null, ['On site', D.dur((x.gout || D.NOW) - x.arr)], x.note ? ['Note', x.note, { f: 'sans', wrap: true, color: 'var(--warnInk)' }] : null])];
 }
 function dBay(b) {
@@ -989,8 +994,8 @@ function zoneBody(id) {
   switch (id) {
     case 'marine': return [dl([['Berths in use', `${K.berths.busy} of 9`], ['At anchorage', String(K.berths.anchorage)], ['Due in 72 h', String(K.berths.expected72)], ['Received by sea today', T0(K.rec.sea)], ['Loaded today', T0(S.today.sea)]]),
       sub('Jetties', ...S.jetties.map(j => { const v = j.vessel ? S.vessels.find(x => x.id === j.vessel) : null; return itemRow({ key: j.id, id: j.id, label: v ? v.name : j.role, right: v ? (v.pause ? 'Paused' : v.state) : 'Free', tone: v ? (v.pause ? 'warn' : 'run') : 'idle', on: v && isSel('vessel', v.id), onClick: () => v ? A.sel('vessel', v.id) : A.tab('marine') }); })), open('marine')];
-    case 'bot': return [dl(K.base.map(b => [b.label, `${T0(b.t)} · ${DAYS(b.days)}`, { color: b.days < 3 ? 'var(--critInk)' : b.days < 6 ? 'var(--warnInk)' : 'var(--ink)' }])), sub('Tanks', ...tankRows(S._tanks.BOT)), open('tanks', { tv: 'bot' })];
-    case 'add': return [dl(K.add.map(b => [HUB.info.COMP[b.code].label, `${T0(b.t)} · ${DAYS(b.days)}`, { color: b.days < 3 ? 'var(--critInk)' : b.days < 5 ? 'var(--warnInk)' : 'var(--ink)' }])), sub('Tanks', ...tankRows(S._tanks.ADD)), open('tanks', { tv: 'add' })];
+    case 'bot': return [dl(K.base.map(b => [b.label, `${T0(b.t)} · ${DAYS(b.days)}`, { color: covInk(b.days) }])), sub('Tanks', ...tankRows(S._tanks.BOT)), open('tanks', { tv: 'bot' })];
+    case 'add': return [dl(K.add.map(b => [HUB.info.COMP[b.code].label, `${T0(b.t)} · ${DAYS(b.days)}`, { color: covInk(b.days) }])), sub('Tanks', ...tankRows(S._tanks.ADD)), open('tanks', { tv: 'add' })];
     case 'fpt': { const fp = S._tanks.FPT, by = {}; fp.forEach(t => { const x = t.free ? 'Free' : t.state; by[x] = (by[x] || 0) + 1; }); return [dl([['Released stock', `${T0(K.fin.rel)} · ${DAYS(K.fin.days)}`], ['In quality hold', T0(K.fin.qc)], ...Object.entries(by).map(([x, n]) => [x, String(n)])]), sub('Being filled or tested', ...tankRows(fp.filter(t => t.fill || t.state === 'QC hold' || t.state === 'Blending' || t.state === 'Adjusting'))), open('tanks', { tv: 'fpt' })]; }
     case 'blend': return [dl([['Blended today', T0(K.blend.t)], ['Busy', `${K.blend.inProcess} of 23`], ['Right first time', K.blend.rft == null ? '—' : PCT(K.blend.rft, 1)]]), sub('Blenders', ...S.blenders.map(b => itemRow({ key: b.id, id: b.id, label: b.batch ? `${shortOf(b.batch.code)} · ${T0(b.batch.t, 1)}` : sizeOf(b), right: blenderState(b), tone: blenderTone(b), on: isSel('blender', b.id), onClick: () => A.sel('blender', b.id) }))), open('blend')];
     case 'grease': return [dl([['Made today', T0(K.grease.t, 1)], ['Units busy', String(K.grease.inProcess)], ['In hoppers', T0(K.grease.hoppers, 1)]]), sub('Units', ...S.grease.units.map(u => itemRow({ key: u.id, id: u.id, label: u.batch ? shortOf(u.batch.code) : u.kind, right: unitState(u), tone: unitTone(u), onClick: () => A.sel('gunit', u.id) }))), sub('Hoppers', ...S.grease.hoppers.map(hp => itemRow({ key: hp.id, id: hp.id, label: hp.code ? `${shortOf(hp.code)} · ${D.fmt(hp.t, 1)} t` : 'Empty', right: hp.q, tone: !hp.code ? 'idle' : hp.q === 'Released' ? 'ok' : 'warn', onClick: () => A.sel('hopper', hp.id) }))), open('blend')];
@@ -1046,7 +1051,7 @@ function drawer() {
       case 'line': title = o.id; subT = `${HUB.info.HALLS[o.hall]} · ${FMT_LABEL[o.fmt]}`; t = lineTone(o); body = dLine(o); break;
       case 'blow': title = o.id; subT = o.makes === 'bottles' ? '1 L bottle blow moulder' : '4/5 L can blow moulder'; t = o.fault ? 'crit' : o.state === 'Running' ? 'run' : 'warn'; body = [dl([['State', o.fault ? 'Fault' : o.state, { f: 'sans' }], ['Rate', `${D.fmt(o.rate)} per hour`], ['Buffer', `${D.fmt(S.materials[o.makes].stock)} pcs · ${HRS(S.materials[o.makes].coverH * 60)}`], o.fault ? ['Back in production', TM(o.fault.until)] : null])]; break;
       case 'sample': title = o.id.replace('S-MLB-', ''); subT = `${o.type} · ${shortOf(o.code)}`; t = smpTone(o); body = dSample(o); break;
-      case 'truck': title = o.plate; subT = `${TRUCK_CLS[o.cls] || o.cls} · ${o.carrier}`; t = truckTone(o); body = dTruck(o); break;
+      case 'truck': title = o.plate; subT = `${truckType(o)} · ${o.carrier}`; t = truckTone(o); body = dTruck(o); break;
       case 'bay': title = o.id; subT = HUB.info.BAY_CLASSES[o.cls]; t = o.fault ? 'crit' : o.state === 'Free' ? 'idle' : 'run'; body = dBay(o); break;
       case 'box': title = o.id; subT = `${o.size} container`; t = o.state === 'Staged' ? 'ok' : 'run'; body = dBox(o); break;
       case 'crane': title = o.id; subT = `ISO station bay ${o.bay}`; t = craneTone(o); body = dCrane(o); break;
