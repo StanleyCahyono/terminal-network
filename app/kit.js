@@ -77,7 +77,7 @@ export const fmt = (v, dp = 0) => v == null || !isFinite(v) ? '—' : D.fmt(v, d
 export const kL = (v, dp = 0) => v == null || !isFinite(v) ? '—' : D.fmt(v, dp) + NB + 'kL';
 export const tn = (v, dp = 0) => v == null || !isFinite(v) ? '—' : D.fmt(v, dp) + NB + 't';
 export const pct = (v, dp = 0) => v == null || !isFinite(v) ? '—' : (v * 100).toFixed(dp) + NB + '%';
-export const big = v => { if (v == null || !isFinite(v)) return '—'; const a = Math.abs(v); return a >= 1e6 ? (v / 1e6).toFixed(a >= 1e7 ? 1 : 2) + 'M' : a >= 1e4 ? Math.round(v / 1000) + 'k' : a >= 1000 ? (v / 1000).toFixed(1) + 'k' : String(Math.round(v)); };
+export const big = v => { if (v == null || !isFinite(v)) return '—'; const a = Math.abs(v); return a >= 1e6 ? (v / 1e6).toFixed(a >= 1e7 ? 1 : 2) + 'M' : a >= 1e4 ? Math.round(v / 1000) + 'k' : D.fmt(v); }; // abbreviated only from 10,000
 const p2 = n => String(n).padStart(2, '0');
 export const hm = (m, tz = 'WIB') => { if (m == null || !isFinite(m)) return '—'; const c = Math.round(D.clockMin(Math.round(m), tz)) % 1440; return p2(Math.floor(c / 60)) + ':' + p2(c % 60); }; // clock time only
 export const when = (m, tz = 'WIB') => m == null || !isFinite(m) ? '—' : D.tm(m, tz, { tz: false }) + (tz !== 'WIB' ? ' ' + tz : ''); // clock time, with the date when not today
@@ -85,6 +85,8 @@ export const today = () => { try { return new Intl.DateTimeFormat('en-GB', { wee
 export const ago = m => { if (m == null) return '—'; const d = Math.max(0, D.NOW - m); return d < 1 ? 'now' : d < 60 ? Math.round(d) + ' min ago' : d < 1440 ? Math.floor(d / 60) + ' h ' + (Math.round(d % 60) ? Math.round(d % 60) + ' min ' : '') + 'ago' : Math.floor(d / 1440) + ' d ago'; };
 export const durS = m => { if (m == null || !isFinite(m)) return '—'; m = Math.max(0, Math.round(m)); const hh = Math.floor(m / 60), mm = m % 60; return hh >= 48 ? Math.round(hh / 24) + ' d' : hh ? `${hh} h ${mm} min` : `${mm} min`; };
 export const prod = c => D.prod(c);
+// product name for tight spaces: keeps the part that tells grades apart ("Jet A-1 · 5.3% bio")
+export const plabel = c => { const p = D.prod(c) || {}; return String(p.label || c).replace(/\s*\((\d+(?:\.\d+)?)\s?%\s?bio(?:fuel)?\)/i, ' · $1% bio'); };
 export const swatch = c => (D.prod(c) || {}).color || 'var(--ink4)';
 export const plural = (n, a, b) => `${fmt(n)} ${n === 1 ? a : (b || a + 's')}`;
 
@@ -105,7 +107,9 @@ export const haptic = (ms = 8) => { try { if (navigator.vibrate) navigator.vibra
 
 // ── primitives ──
 export function Pill({ t, children, title }) { return h('span', { className: 'pill t-' + (t || 'idle'), title }, h('i'), h('span', null, children)); }
-export const Dot = ({ t, pulse }) => h('span', { className: cx('dot', 'd-' + (t === 'hold' ? 'idle' : t || 'idle'), pulse && 'pulse'), 'aria-hidden': true });
+export const Dot = ({ t, ring }) => h('span', { className: cx('dot', 'd-' + (t === 'hold' ? 'warn' : t || 'idle'), ring && 'ring'), 'aria-hidden': true });
+// state shown as text with a leading dot, for list rows where a pill would crowd the title
+export const StateText = ({ t, children }) => h('span', { className: 'st-t t' + (t || 'idle') }, h(Dot, { t }), h('span', null, children));
 export const Sw = ({ c, title }) => h('span', { className: 'sw', style: { background: swatch(c) }, title, 'aria-hidden': !title });
 export function Bar({ v, color, cls }) { return h('div', { className: cx('bar', cls), role: 'progressbar', 'aria-valuenow': Math.round((v || 0) * 100), 'aria-valuemin': 0, 'aria-valuemax': 100 }, h('i', { style: { width: Math.max(0, Math.min(1, v || 0)) * 100 + '%', background: color || 'var(--acc)' } })); }
 export function StackBar({ parts }) { const tot = parts.reduce((a, p) => a + Math.max(0, p.v), 0) || 1; return h('div', { className: 'stackbar', 'aria-hidden': true }, ...parts.filter(p => p.v > 0).map((p, i) => h('i', { key: i, style: { flexGrow: p.v / tot, background: p.c } }))); }
@@ -150,7 +154,7 @@ export const Group = ({ children, style }) => h('div', { className: 'grp', style
 export function Row({ icon, iconBg, iconSoft, lead, title, strong, sub, sub2, value, valueSub, plainValue, chevron, onPress, compact, tall, mono, right, label, two }) {
   const hasIc = !!(icon || lead);
   const body = [
-    icon ? h('span', { key: 'ic', className: cx('row-ic', iconSoft && 'soft'), style: iconBg ? { background: iconBg } : null }, ic(icon, 18, { w: 2 })) : lead ? h('span', { key: 'ld', style: { flex: 'none', display: 'flex' } }, lead) : null,
+    icon ? h('span', { key: 'ic', className: cx('row-ic', iconSoft && 'soft'), style: iconBg ? { background: iconBg } : null }, ic(icon, 18, { w: 2 })) : lead ? h('span', { key: 'ld', className: 'row-lead' }, lead) : null,
     h('span', { key: 'm', className: 'row-main' }, h('span', { className: cx('row-t', strong && 'strong', 'ell', mono && 'mono') }, title), sub ? h('span', { className: cx('row-s', two ? 'two' : 'ell') }, sub) : null, sub2 ? h('span', { className: 'row-s ell' }, sub2) : null),
     right ? h('span', { key: 'r', style: { flex: 'none', display: 'flex', alignItems: 'center', gap: 8 } }, right) : null,
     value != null || valueSub != null ? h('span', { key: 'v', className: 'row-v' }, value != null ? h('b', { className: 'num' }, value) : null, valueSub != null ? h('span', null, valueSub) : null) : null,
@@ -164,7 +168,7 @@ export function KV({ rows }) { return h('dl', { className: 'grp', style: { margi
 
 // ── figures ──
 export function Stat({ label, icon, value, unit, sub, t, onPress, ellSub }) {
-  const kids = [h('div', { key: 'l', className: 'stat-l' }, icon ? ic(icon, 16, { w: 2 }) : null, h('span', { className: 'ell' }, label)), h('div', { key: 'v', className: 'stat-v num' }, value, unit ? h('small', null, unit) : null), sub ? h('div', { key: 's', className: cx('stat-s', ellSub && 'ell') }, sub) : null, t && t !== 'idle' ? h('span', { key: 't', className: 'tone-dot' }, h(Dot, { t, pulse: t === 'run' })) : null];
+  const kids = [h('div', { key: 'l', className: 'stat-l' }, icon ? ic(icon, 16, { w: 2 }) : null, h('span', { className: 'ell' }, label)), h('div', { key: 'v', className: 'stat-v num' }, value, unit ? h('small', null, unit) : null), sub ? h('div', { key: 's', className: cx('stat-s', ellSub && 'ell') }, sub) : null, t === 'warn' || t === 'crit' ? h('span', { key: 't', className: 'tone-dot' }, h(Dot, { t })) : null];
   return onPress ? h(Press, { className: 'stat press', onPress }, ...kids) : h('div', { className: 'stat' }, ...kids);
 }
 export function Fig({ l, v, u }) { return h('div', { className: 'fig' }, h('div', { className: 'fig-l ell' }, l), h('div', { className: 'fig-v num' }, v, u ? h('small', null, u) : null)); }

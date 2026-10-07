@@ -195,7 +195,8 @@ export function App({ D }) {
     layers.push({ e: A.from, i: stack.length, under: true, cls: 'a-out-r', gone: true });
   } else layers.push({ e: top, i: stack.length - 1, cls: A && A.type === 'fade' && A.to.k === top.k ? 'a-fade' : null });
 
-  const alarmsOpen = D.EXCEPTIONS.filter(e => e.status !== 'Resolved' && !e.ack).length;
+  const alarmsOpen = D.EXCEPTIONS.filter(e => e.status !== 'Resolved' && !e.ack).length, toRelease = role.perm.release ? D.SAMPLES.filter(x => x.decision === 'Pending' && x.status === 'Passed').length : 0;
+  const badges = { alarms: [alarmsOpen, 'unacknowledged'], more: [toRelease, 'samples ready to release'] };
   return h(Ctx.Provider, { value: app },
     h('div', { className: 'app', onTouchStart, onTouchMove, onTouchEnd, onTouchCancel: onTouchEnd },
       h(HoldDefs),
@@ -204,7 +205,7 @@ export function App({ D }) {
         return h(ScreenCtx.Provider, { key: L.e.k, value: { ...c, under: !!L.under, layerCls: L.cls, layerStyle: L.style, shade: L.shade } }, h(Comp, { p: L.e.p || [], app }));
       })),
       h('nav', { className: 'tabbar', role: 'tablist', 'aria-label': 'Sections' }, ...TABS.map(t => h('button', { key: t.id, className: 'tab', role: 'tab', 'aria-selected': nav.tab === t.id ? 'true' : 'false', onClick: () => switchTab(t.id) },
-        h('span', { className: 'tab-ic' }, ic(t.icon, 25, { w: nav.tab === t.id ? 2.1 : 1.8 }), t.id === 'alarms' && alarmsOpen ? h('span', { className: 'badge num', 'aria-label': `${alarmsOpen} unacknowledged` }, alarmsOpen > 99 ? '99+' : alarmsOpen) : null),
+        h('span', { className: 'tab-ic' }, ic(t.icon, 25, { w: nav.tab === t.id ? 2.1 : 1.8 }), badges[t.id] && badges[t.id][0] ? h('span', { className: 'badge num', 'aria-label': `${badges[t.id][0]} ${badges[t.id][1]}` }, badges[t.id][0] > 99 ? '99+' : badges[t.id][0]) : null),
         h('span', null, t.label)))),
       sheet ? h(Sheet, { key: sheet.id, spec: sheet, onClose: closeSheet, onGone: () => setSheet(s => s && s.out ? null : s) }) : null,
       banner ? h(Banner, { key: banner.e.id, b: banner, onTap: () => { const e = banner.e; setBanner(b => b && { ...b, out: true }); goTab(null, 'alarm', [e.id]); }, onGone: () => setBanner(b => b && b.out ? null : b), onDismiss: () => setBanner(b => b && { ...b, out: true }) }) : null,
@@ -229,7 +230,7 @@ export function Screen({ title, large, kicker, sub, right, children, onRefresh, 
     onRefresh ? h('div', { className: 'ptr', 'aria-hidden': true }, h('div', { className: cx('ptr-ic', (pull > 8 || busy) && 'on', busy && 'busy'), style: !busy && pull ? { transform: `rotate(${pull * 3}deg)` } : null }, ic('refresh', 18, { w: 2.2 }))) : null,
     h('div', { ref, className: 'scr-scroll', onScroll, onTouchStart: ts, onTouchMove: tm, onTouchEnd: te },
       h('div', { className: 'pull', style: !app.ios && (pull || busy) ? { transform: `translate3d(0,${busy ? 48 : pull}px,0)`, transition: pr.current ? 'none' : 'transform .3s cubic-bezier(.2,.8,.2,1)' } : null },
-        large ? h('div', { className: 'lt' }, kicker ? h('div', { className: 'lt-kicker' }, kicker) : null, h('h1', null, title), sub ? h('div', { className: 'lt-sub' }, sub) : null) : null,
+        large ? h('div', { className: 'lt' }, kicker ? h('div', { className: 'lt-kicker' }, kicker) : null, h('h1', { className: String(title).length > 24 ? 'long' : null }, title), sub ? h('div', { className: 'lt-sub' }, sub) : null) : null,
         children)),
     foot ? h('div', { className: 'foot' }, foot) : null,
     h('div', { className: 'scr-shade', style: sc.shade != null ? { opacity: sc.shade } : null }));

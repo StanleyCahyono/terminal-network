@@ -1203,3 +1203,8 @@ export function resolve(D_, id) {
   if (S2.isos.some(t => t.id === id)) return { kind: 'iso', id };
   return null;
 }
+// plain helpers for hosts that draw their own screens (the mobile app): labels and tones as the console shows them
+export function info(D_) {
+  D = D_; HUB = D_.HUB; S = HUB && HUB.state;
+  return { truckType, truckTone, cargoOf, lineTone, FMT: FMT_LABEL, HALLS: HUB.info.HALLS, VCLS: HUB.info.VCLS, grade: c => GRD(c) || HUB.info.COMP[c] || { label: shortOf(c) } };
+}

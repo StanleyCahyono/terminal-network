@@ -1,6 +1,6 @@
 // Superhub screens for the mobile app: the site at a glance, one screen per area, and asset details. Asset details reuse the
 // console's superhub detail content (superhub-ui.js detail()) inside native screens, so both apps show the same facts.
-import { h, useState, useMemo, ic, fmt, tn, pct, big, hm, when, ago, prod, swatch, toneOf, Pill, Dot, Sw, Bar, Ring, TankGlyph, Press, Section, Group, Row, Stat, Fig, Seg, Chips, Empty, cx } from './kit.js';
+import { h, useState, useMemo, Fragment, ic, fmt, tn, pct, big, hm, when, ago, durS, prod, swatch, toneOf, Pill, Dot, StateText, Sw, Bar, Ring, TankGlyph, Press, Section, Group, Row, KV, Stat, Fig, Seg, Chips, Empty, TrendChart, cx } from './kit.js';
 import { Screen } from './shell.js';
 import { useMem, AlarmRow } from './screens.js';
 import * as SU from '../superhub-ui.js';
@@ -14,10 +14,10 @@ const ZONE_AREA = { marine: 'marine', bot: 'tanks', add: 'tanks', fpt: 'tanks', 
 const TAB_AREA = { plan: null, marine: 'marine', tanks: 'tanks', blend: 'blend', fill: 'fill', wh: 'wh', iso: 'iso', lab: 'lab', products: null, log: 'events' };
 const KIND_LABEL = { vessel: 'Vessel', tank: 'Tank', blender: 'Blender', gunit: 'Grease unit', hopper: 'Hopper', batch: 'Batch', line: 'Line', blow: 'Blow moulder', sample: 'Sample', truck: 'Truck', bay: 'Bay', box: 'Container', crane: 'ISO crane', iso: 'ISO tank', train: 'Train', rmg: 'Rail crane', grade: 'Product', sc: 'Stacker crane', wash: 'Wash bay', jetty: 'Jetty', track: 'Track', slot: 'Yard slot', gaux: 'Equipment', instr: 'Instrument' };
 export const hubRoute = (D, id) => SU.resolve(D, id);
-export function hubTitle(D, e) { const p = e.p || []; return e.s === 'hub' ? 'Superhub' : e.s === 'hubArea' ? (AREA[p[0]] || [0, 'Area'])[1] : e.s === 'hubItem' ? p[1] : null; }
+export function hubTitle(D, e) { const p = e.p || []; return e.s === 'hub' ? 'Maiza Lubrika' : e.s === 'hubArea' ? (AREA[p[0]] || [0, 'Area'])[1] : e.s === 'hubItem' ? p[1] : null; }
 const tone = s => { const t = SU.tone(s); return t === 'off' ? 'idle' : t; };
 const ready = D => D.HUB && D.HUB.state && D.HUB.state.ready;
-const Loading = () => h(Screen, { title: 'Superhub' }, h(Empty, { icon: 'factory', title: 'Starting the superhub…' }));
+const Loading = () => h(Screen, { title: 'Maiza Lubrika' }, h(Empty, { icon: 'factory', title: 'Starting the superhub…' }));
 
 // ── superhub at a glance ──
 function Hub({ app }) {
@@ -31,19 +31,19 @@ function Hub({ app }) {
     wh: `${S.gate.onSite} trucks on site · ${S.gate.queue} at the gate`, iso: `${S.iso.occ} of 250 ISO tanks · ${trainsW} train${trainsW === 1 ? '' : 's'} working`,
     lab: `${K.lab.queue} queued · ${K.lab.inTest} in test`, util: `Steam ${S.utilities.steam.demand.toFixed(1)} t/h · ${S.utilities.power.mw.toFixed(1)} MW`, events: `${S.events.length} recent events`,
   };
-  return h(Screen, { title: 'Maiza Lubrika', navTitle: 'Superhub', large: true, kicker: h(React.Fragment, null, h(Pill, { t: 'ok' }, 'Operating'), h('span', null, 'Lubricant superhub')), sub: 'Kendal, Jawa Tengah · 2.0 Mt/y' },
+  return h(Screen, { title: 'Maiza Lubrika', large: true, kicker: h(React.Fragment, null, h(Pill, { t: 'ok' }, 'Operating'), h('span', null, 'Lubricant superhub')), sub: 'Kendal, Jawa Tengah · 2.0 Mt/y' },
     h(Section, null, h('div', { className: 'card' }, h('div', { className: 'split', style: { gap: 18 } },
       h(Ring, { v: op || 0, size: 108, w: 10, color: (op || 0) >= .92 ? 'var(--ok)' : (op || 0) >= .85 ? 'var(--warn)' : 'var(--crit)', label: `Output ${pct(op)} of plan to now` }, h('b', { className: 'num', style: { fontSize: 23, letterSpacing: '-.02em' } }, pct(op)), h('span', { style: { fontSize: 11.5, color: 'var(--ink3)' } }, 'of plan')),
       h('div', { className: 'figs' }, h(Fig, { l: 'Output today', v: fmt(K.out.today), u: 't' }), h(Fig, { l: 'Plan per day', v: fmt(plan), u: 't' }), h(Fig, { l: 'Packed', v: fmt(K.out.pkg), u: 't' }), h(Fig, { l: 'Bulk & ISO', v: fmt(K.out.bulk), u: 't' }))))),
-    h(Section, null, h('div', { className: 'grid2' },
-      h(Stat, { label: 'Dispatched', icon: 'truck', value: big(K.disp.road + K.disp.rail + K.disp.sea), unit: 't', sub: `road ${big(K.disp.road)} · rail ${big(K.disp.rail)} · sea ${big(K.disp.sea)}`, onPress: () => app.push('hubArea', ['wh']) }),
-      h(Stat, { label: 'Blended today', icon: 'flask', value: big(K.blend.t), unit: 't', sub: `${K.blend.batches} batches`, t: 'run', onPress: () => app.push('hubArea', ['blend']) }),
-      h(Stat, { label: 'Filling lines', icon: 'box', value: `${K.lines.running}/34`, sub: `OEE ${pct(K.lines.hall.P)} · ${pct(K.lines.hall.D)}`, t: 'run', onPress: () => app.push('hubArea', ['fill']) }),
-      h(Stat, { label: 'Warehouse', icon: 'warehouse', value: pct(K.wh.hbw), sub: `drum store ${pct(K.wh.drm)}`, t: Math.max(K.wh.hbw, K.wh.drm) >= .88 ? 'warn' : null, onPress: () => app.push('hubArea', ['wh']) }),
-      h(Stat, { label: 'ISO yard', icon: 'train', value: `${S.iso.occ}`, unit: '/250', sub: `${K.iso.fills} fills · ${K.iso.disch} discharges`, onPress: () => app.push('hubArea', ['iso']) }),
-      h(Stat, { label: 'Berths', icon: 'ship', value: `${K.berths.busy}/9`, sub: `${K.berths.anchorage} at anchorage · ${K.berths.expected72} due 72 h`, onPress: () => app.push('hubArea', ['marine']) }))),
-    alarms.length ? h(Section, { title: `Alarms · ${alarms.length}`, small: true }, h(Group, null, ...alarms.slice(0, 4).map(e => h(AlarmRow, { key: e.id, app, e })))) : null,
     h(Section, { title: 'Areas', small: true }, h(Group, null, ...AREAS.map(([id, l, icn, col]) => h(Row, { key: id, icon: icn, iconBg: col, title: l, sub: sub[id], onPress: () => app.push('hubArea', [id]) })))),
+    h(Section, null, h('div', { className: 'grid2' },
+      h(Stat, { label: 'Dispatched', icon: 'truck', value: big(K.disp.road + K.disp.rail + K.disp.sea), unit: 't', sub: `${big(K.disp.road)} road · ${big(K.disp.rail)} rail`, ellSub: true, onPress: () => app.push('hubArea', ['wh']) }),
+      h(Stat, { label: 'Blended today', icon: 'flask', value: big(K.blend.t), unit: 't', sub: `${K.blend.batches} batches`, t: 'run', onPress: () => app.push('hubArea', ['blend']) }),
+      h(Stat, { label: 'Filling lines', icon: 'box', value: `${K.lines.running}/34`, sub: `OEE ${pct(K.lines.hall.P)} packaging`, ellSub: true, t: 'run', onPress: () => app.push('hubArea', ['fill']) }),
+      h(Stat, { label: 'Warehouse', icon: 'warehouse', value: pct(K.wh.hbw), sub: `drum store ${pct(K.wh.drm)}`, t: Math.max(K.wh.hbw, K.wh.drm) >= .88 ? 'warn' : null, onPress: () => app.push('hubArea', ['wh']) }),
+      h(Stat, { label: 'ISO yard', icon: 'train', value: `${S.iso.occ}`, unit: '/250', sub: `${K.iso.fills} fills today`, onPress: () => app.push('hubArea', ['iso']) }),
+      h(Stat, { label: 'Berths', icon: 'ship', value: `${K.berths.busy}/9`, sub: `${K.berths.anchorage} at anchorage`, onPress: () => app.push('hubArea', ['marine']) }))),
+    alarms.length ? h(Section, { title: `Alarms · ${alarms.length}`, small: true }, h(Group, null, ...alarms.slice(0, 4).map(e => h(AlarmRow, { key: e.id, app, e })))) : null,
     h(Section, { title: 'Material flow today', small: true }, h('div', { className: 'card' }, h('div', { className: 'figs' },
       h(Fig, { l: 'Received by sea', v: big(K.rec.sea), u: 't' }), h(Fig, { l: 'Rail and road in', v: big(K.rec.rail + K.rec.road + K.rec.iso), u: 't' }),
       h(Fig, { l: 'Base oil re-exported', v: big(K.hub.reexp), u: 't' }), h(Fig, { l: 'Cross-dock pallets', v: big(K.hub.xd), u: 't' }),
@@ -77,7 +77,7 @@ function HubArea({ p, app }) {
     body = [
       h(Section, { key: 'k' }, h('div', { className: 'grid2' }, h(Stat, { label: 'Blenders busy', value: `${K.blend.inProcess}/23`, t: 'run' }), h(Stat, { label: 'Blended today', value: big(K.blend.t), unit: 't', sub: `${K.blend.batches} batches` }))),
       h(Section, { key: 's' }, h(Seg, { value: g, onChange: setV, label: 'Blending view', items: [['blenders', 'Blenders'], ['batches', 'Batches'], ['grease', 'Grease']] })),
-      g === 'blenders' ? h(Section, { key: 'b' }, h(Group, null, ...S.blenders.map(b => { const bt = b.batch; return h(Row, { key: b.id, onPress: () => push('blender', b.id), lead: h(Dot, { t: tone(b.fault ? 'fault' : b.state), pulse: !!bt }), title: `${b.id} · ${bt ? (prod(bt.code) || {}).short || bt.code : 'Idle'}`, sub: bt ? `${b.step || b.state}` : `${b.type} · ${b.hall}`, value: bt ? pct(bt.t ? bt.done / bt.t : 0) : null, valueSub: bt ? `${fmt(bt.t, 1)} t` : null }); })))
+      g === 'blenders' ? h(Section, { key: 'b' }, h(Group, null, ...S.blenders.map(b => { const bt = b.batch; return h(Row, { key: b.id, onPress: () => push('blender', b.id), lead: h(Dot, { t: tone(b.fault ? 'fault' : b.state), pulse: !!bt }), title: `${b.id} · ${bt ? gname(D, bt.code) : 'Idle'}`, sub: bt ? `${b.step || b.state}` : `${b.type} · ${b.hall}`, value: bt ? `${fmt(bt.t, 1)} t` : null, valueSub: bt && b.type === 'ILB' && b.step === 'Blending' && bt.t ? `${pct(bt.done / bt.t)} blended` : null }); })))
       : g === 'batches' ? h(Section, { key: 'bt' }, h(Group, null, ...S.batches.slice(0, 40).map(b => h(Row, { key: b.id, onPress: () => push('batch', b.id), lead: h(Sw, { c: b.code }), title: `${(prod(b.code) || {}).short || b.code}`, sub: `${b.id.replace('BLD-MLB-', '')} · ${b.blender} · ${fmt(b.t, 1)} t`, right: h(Pill, { t: tone(b.state) }, b.state === 'QC hold' ? 'Awaiting release' : b.state) }))))
       : h(Section, { key: 'g' }, h(Group, null, ...S.grease.units.map(u => h(Row, { key: u.id, onPress: () => push('gunit', u.id), lead: h(Dot, { t: tone(u.fault ? 'fault' : u.state), pulse: !!u.batch }), title: `${u.id} · ${u.kind}`, sub: u.batch ? `${(prod(u.batch.code) || {}).short || u.batch.code} · ${u.step}` : u.state })), ...S.grease.hoppers.map(hp => h(Row, { key: hp.id, onPress: () => push('hopper', hp.id), icon: 'drop', iconSoft: true, title: `${hp.id} · hopper`, sub: hp.code ? `${(prod(hp.code) || {}).short || hp.code} · ${hp.q}` : 'Empty', value: hp.code ? `${fmt(hp.t, 1)} t` : null })))),
     ];
@@ -116,16 +116,88 @@ function HubArea({ p, app }) {
   return h(Screen, { title: a[1], large: true, kicker: h('span', null, 'Maiza Lubrika') }, ...body);
 }
 
-// ── one asset: the console's detail content in a native screen ──
+// ── one asset: native screens for the busiest kinds, the console's detail content for the rest ──
 function HubItem({ p, app }) {
   const D = app.D; if (!ready(D)) return h(Loading);
+  const S = D.HUB.state, id = p[1], o = p[0] === 'tank' ? D.term('MLB').tanks.find(t => t.id === id) : p[0] === 'vessel' ? S.vessels.find(x => x.id === id) : p[0] === 'line' ? S.lines.find(x => x.id === id) : p[0] === 'truck' ? S.trucks.find(x => x.id === id) : null;
+  const N = o && NATIVE[p[0]];
+  return N ? h(N, { app, D, o }) : h(HubDetail, { p, app });
+}
+function HubDetail({ p, app }) {
   const [hv, setHv] = useState({});
   const parts = useParts(app, { sel: { kind: p[0], id: p[1] }, hv }, setHv);
   if (!parts) return h(Loading);
-  return h(Screen, { title: parts.title, navTitle: p[1], large: true, kicker: h(React.Fragment, null, h(Dot, { t: parts.t === 'off' ? 'idle' : parts.t }), h('span', null, parts.kicker)), sub: parts.subT },
-    h(Section, null, h('div', { className: 'hubx' }, ...parts.body)));
+  return h(Screen, { title: parts.title, navTitle: p[1], large: true, kicker: h(Fragment, null, h(Dot, { t: parts.t === 'off' ? 'idle' : parts.t }), h('span', null, parts.kicker)), sub: parts.subT },
+    h(Section, null, h(Hubx, { body: parts.body })));
 }
-function Embed({ app, st }) { const [hv, setHv] = useState({}); const parts = useParts(app, { ...st, hv }, setHv); return parts ? h('div', { className: 'hubx' }, ...parts.body) : null; }
+const Hubx = ({ body }) => h('div', { className: 'hubx' }, h('div', { className: 'hubx-in' }, ...body));
+function Embed({ app, st }) { const [hv, setHv] = useState({}); const parts = useParts(app, { ...st, hv }, setHv); return parts ? h(Hubx, { body: parts.body }) : null; }
+
+const gname = (D, c) => { const g = SU.info(D).grade(c); return (prod(c) || {}).short || g.label || c; };
+const glabel = (D, c) => SU.info(D).grade(c).label || c;
+const ring = t => t === 'run' ? 'var(--acc)' : t === 'ok' ? 'var(--ok)' : t === 'warn' ? 'var(--warn)' : t === 'crit' ? 'var(--crit)' : 'var(--ink4)';
+const pill = t => t === 'off' ? 'idle' : t;
+const ZONE_L = { BOT: 'Base oil tank', ADD: 'Additive tank', FPT: 'Finished product tank', AUX: 'Service tank' };
+
+function HubTank({ app, D, o: t }) {
+  const S = D.HUB.state, G = SU.info(D).grade(t.code), fr = t.nominal ? t.vol / t.nominal : 0, f = t.fill;
+  const hist = useMemo(() => D.tankHistory(t, 24, 30), [app.rev, t.id]), m = D.movements(t, D.dayStart(0, 'WIB'), D.NOW);
+  const users = t.zone === 'BOT' || t.zone === 'ADD' ? S.blenders.filter(b => b.batch && b.batch.comps && b.batch.comps.some(c => c.c === t.code)) : [];
+  const hold = t.q === 'On hold' || t.state === 'QC hold', st = t.free ? 'Free' : t.state === 'QC hold' ? 'Quality hold · settling' : t.status;
+  const dir = /receiv|filling|discharg/i.test(t.status) ? 'in' : /dispatch|feeding|loading|re-export/i.test(t.status) ? 'out' : null;
+  return h(Screen, { title: t.id, large: true, kicker: h(Fragment, null, t.free ? null : h(Sw, { c: t.code }), h('span', null, t.free ? 'Free · clean' : G.label)), sub: `${ZONE_L[t.zone] || 'Tank'} · Maiza Lubrika` },
+    h(Section, null, h('div', { className: 'card' }, h('div', { className: 'split', style: { gap: 20 } },
+      h(TankGlyph, { fill: fr, color: swatch(t.code), hla: t.hla / t.nominal, w: 74, ht: 112, state: dir, hold }),
+      h('div', { className: 'figs' }, h(Fig, { l: 'Fill', v: pct(fr, 1) }), h(Fig, { l: 'Volume', v: fmt(t.vol), u: 'kL' }), h(Fig, { l: 'Room to MOC', v: fmt(Math.max(0, t.moc - t.vol)), u: 'kL' }), h(Fig, { l: 'Temperature', v: t.temp != null ? fmt(t.temp, 1) : '—', u: '°C' }))),
+      h('div', { style: { display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 14 } }, h(Pill, { t: t.free ? 'idle' : pill(tone(st)) }, st), t.free ? null : h(Pill, { t: t.q === 'Released' ? 'ok' : 'warn' }, t.q), t.alarm ? h(Pill, { t: 'crit' }, t.alarm) : null))),
+    f ? h(Section, { title: 'Tank fill in progress', small: true }, h(KV, { rows: [['Target', `${fmt(f.target)} kL`], ['Batches', String(f.batches.length)], ['Opened', when(f.opened)], ['Product flowing', f.flowing ? 'Yes' : 'Not yet']] })) : null,
+    h(Section, { title: 'Last 24 hours', small: true }, h('div', { className: 'card', style: { padding: '12px 10px 6px' } }, h(TrendChart, { pts: hist.map(x => ({ t: x.t, v: x.v })), color: swatch(t.code), unit: 'kL', refs: [{ v: t.hla, label: 'High level', color: 'var(--crit)' }], y0: 0, y1: t.nominal }))),
+    h(Section, { title: 'Today since 00:00', small: true }, h('div', { className: 'card' }, h('div', { className: 'figs' }, h(Fig, { l: 'Opening', v: fmt(m.open), u: 'kL' }), h(Fig, { l: 'Received', v: fmt(m.rec), u: 'kL' }), h(Fig, { l: 'Dispatched', v: fmt(m.dis), u: 'kL' }), h(Fig, { l: 'Now', v: fmt(t.vol), u: 'kL' })))),
+    users.length ? h(Section, { title: 'Feeding blends', small: true }, h(Group, null, ...users.map(b => h(Row, { key: b.id, onPress: () => app.push('hubItem', ['blender', b.id]), lead: h(Sw, { c: b.batch.code }), title: `${b.id} · ${gname(D, b.batch.code)}`, sub: b.step || b.state, value: `${fmt(b.batch.t, 1)} t` })))) : null,
+    h(Section, { title: 'Details', small: true }, h(KV, { rows: [['Product', t.free ? 'Free, clean swing tank' : G.label], ['Batch', t.batch ? t.batch.replace('BLD-MLB-', '') : null], t.duty ? ['Working with', t.duty] : null, ['Nominal capacity', `${fmt(t.nominal)} kL`], ['Max operating (MOC)', `${fmt(t.moc)} kL`], ['High-level alarm', `${fmt(t.hla)} kL`], ['Heel', `${fmt(t.heel)} kL`], t.heated ? ['Heating', `to ${t.heated} °C`] : null, ['Shell', t.material], ['Roof', t.roof], t.zone === 'FPT' ? ['Duty', t.dedicated ? 'Dedicated to one grade' : t.use === 'swing' ? 'Swing tank for low runners' : t.use ? `Reserved for ${t.use}` : null] : null] })),
+    !t.free && SU.info(D).grade(t.code) && D.HUB.info.GRADE[t.code] ? h(Section, null, h(Group, null, h(Row, { icon: 'tag', iconSoft: true, title: G.label, sub: 'Product grade', onPress: () => app.push('hubItem', ['grade', t.code]) }))) : null);
+}
+
+function HubVessel({ app, D, o: v }) {
+  const U = SU.info(D), S = D.HUB.state, j = v.jetty ? S.jetties.find(x => x.id === v.jetty) : null, C = U.VCLS[v.cls] || {};
+  const tot = v.parcels.reduce((a, q) => a + q.t, 0), done = v.parcels.reduce((a, q) => a + q.done, 0), fr = v.moves ? v.moves.done / Math.max(1, v.moves.planned) : tot ? done / tot : 0;
+  const t = v.pause ? 'warn' : pill(tone(v.state)), st = v.pause ? `Paused · ${v.pause.reason}` : v.state, live = !!(v.berthAt != null && !v.atd);
+  const hasTrf = id => id && D.TRANSFERS.some(x => x.id === id);
+  return h(Screen, { title: v.name, large: true, kicker: h(Fragment, null, h(Dot, { t }), h('span', null, v.label)), sub: `${j ? j.name + ' · ' : ''}voyage ${v.voyage}` },
+    h(Section, null, h('div', { className: 'card' }, h('div', { className: 'split', style: { gap: 18 } },
+      h(Ring, { v: fr, size: 96, w: 9, color: ring(t), label: `${pct(fr)} done` }, h('b', { className: 'num', style: { fontSize: 21, letterSpacing: '-.02em' } }, pct(fr)), h('span', { style: { fontSize: 11.5, color: 'var(--ink3)' } }, v.moves ? 'moves' : 'cargo')),
+      h('div', { className: 'figs' }, v.moves ? h(Fig, { l: 'Moves', v: `${Math.round(v.moves.done)}/${v.moves.planned}` }) : h(Fig, { l: 'Cargo', v: fmt(tot), u: 't' }), v.moves ? h(Fig, { l: 'Size', v: fmt(v.dwt), u: 'DWT' }) : h(Fig, { l: C.dir === 'in' ? 'Discharged' : 'Loaded', v: fmt(done), u: 't' }),
+        h(Fig, { l: 'Pump rate', v: v.rate ? fmt(v.rate) : '—', u: v.rate ? 't/h' : '' }), v.atd ? h(Fig, { l: 'Departed', v: hm(v.atd) }) : v.berthAt != null && v.berthAt <= D.NOW ? h(Fig, { l: 'Berthed', v: hm(v.berthAt) }) : h(Fig, { l: 'ETA', v: when(v.eta) }))),
+      h('div', { style: { display: 'flex', alignItems: 'center', gap: 10, marginTop: 14, flexWrap: 'wrap' } }, h(Pill, { t }, st), v.step && v.step !== v.state ? h('span', { style: { fontSize: 14.5, color: 'var(--ink2)' } }, v.step) : null))),
+    v.parcels.length ? h(Section, { title: C.dir === 'in' ? 'Parcels to discharge' : 'Parcels to load', small: true }, h(Group, null, ...v.parcels.map((q, i) => h(Row, { key: i, lead: h(Sw, { c: q.code }), title: gname(D, q.code), sub: `${fmt(q.done)} of ${fmt(q.t)} t${q.tank ? ' · ' + q.tank : ''}`, sub2: h(StateText, { t: q.state === 'Pumping' ? 'run' : q.state === 'Done' ? 'ok' : 'idle' }, q.state), value: pct(q.t ? q.done / q.t : 0), onPress: hasTrf(q.trf) ? () => app.push('transfer', [q.trf]) : q.tank ? () => app.push('hubItem', ['tank', q.tank]) : undefined })))) : null,
+    h(Section, { title: 'Details', small: true }, h(KV, { rows: [['Type', v.label], ['Voyage', v.voyage, { mono: true }], ['Size', `${v.loa} m LOA · ${fmt(v.dwt)} DWT`], ['Berth', j ? `${j.name} · ${j.role}` : null], ['ETA', when(v.eta)], v.ata != null ? ['Arrived', when(v.ata)] : null, v.anchorSince && v.state === 'At anchorage' ? ['At anchorage', durS(D.NOW - v.anchorSince)] : null, v.berthAt != null && v.berthAt <= D.NOW ? ['Berthed', when(v.berthAt)] : null, v.startAt != null && v.startAt <= D.NOW ? ['Cargo started', when(v.startAt)] : null, v.atd ? ['Departed', when(v.atd)] : null] })),
+    j ? h(Section, null, h(Group, null, h(Row, { icon: 'ship', iconSoft: true, title: j.name, sub: live ? 'Berth in use' : j.role, onPress: () => app.push('hubItem', ['jetty', j.id]) }))) : null);
+}
+
+function HubLine({ app, D, o: l }) {
+  const U = SU.info(D), S = D.HUB.state, w = l.wo, o = l.oee24 || {}, os = l.oeeShift || {}, t = pill(U.lineTone(l)), fr = w ? w.done / Math.max(1, w.units) : 0;
+  const wos = S.wos.filter(x => x.line === l.id && x !== w).slice(0, 6), FAM = D.HUB.info.FAMILIES;
+  return h(Screen, { title: l.id, large: true, kicker: h(Fragment, null, h(Dot, { t }), h('span', null, U.HALLS[l.hall])), sub: `${U.FMT[l.fmt] || l.fmt} · ${fmt(l.rate)} units/h rated` },
+    h(Section, null, h('div', { className: 'card' }, h('div', { className: 'split', style: { gap: 18 } },
+      h(Ring, { v: fr, size: 96, w: 9, color: ring(t), label: w ? `Work order ${pct(fr)} done` : 'No work order' }, h('b', { className: 'num', style: { fontSize: 21, letterSpacing: '-.02em' } }, w ? pct(fr) : '—'), h('span', { style: { fontSize: 11.5, color: 'var(--ink3)' } }, w ? 'of order' : 'no order')),
+      h('div', { className: 'figs' }, h(Fig, { l: 'Units today', v: fmt(l.unitsToday) }), h(Fig, { l: 'Tonnes today', v: fmt(l.tToday, 1), u: 't' }), h(Fig, { l: 'OEE 24 h', v: pct(o.oee) }), h(Fig, { l: 'OEE this shift', v: pct(os.oee) }))),
+      h('div', { style: { display: 'flex', alignItems: 'center', gap: 10, marginTop: 14, flexWrap: 'wrap' } }, h(Pill, { t }, l.state), h('span', { style: { fontSize: 14.5, color: 'var(--ink2)' } }, l.until ? `Back ${when(l.until)}` : `Since ${when(l.since)} · ${durS(D.NOW - l.since)}`)))),
+    w ? h(Section, { title: 'Work order', small: true }, h(KV, { rows: [['Order', w.id, { mono: true }], ['Grade', w.label], ['Pack', w.packLabel], ['Units', `${fmt(w.done)} of ${fmt(w.units)}`], ['Good units', fmt(w.good)], ['Started', when(w.start)], ['Expected done', when(w.eta)], w.camp ? ['Source', 'Low-runner campaign'] : null] })) : null,
+    h(Section, { title: 'Performance, last 24 hours', small: true }, h('div', { className: 'card' }, h('div', { className: 'figs' }, h(Fig, { l: 'Availability', v: pct(o.a) }), h(Fig, { l: 'Performance', v: pct(o.p) }), h(Fig, { l: 'Quality', v: pct(o.q, 1) }), h(Fig, { l: 'Changeovers', v: l.coToday != null ? (l.coToday / 60).toFixed(1) : '—', u: 'h' })))),
+    wos.length ? h(Section, { title: 'Recent work orders', small: true }, h(Group, null, ...wos.map(x => h(Row, { key: x.id, lead: h(Sw, { c: x.code }), title: gname(D, x.code), sub: `${x.packLabel} · ${fmt(x.done)} of ${fmt(x.units)}`, sub2: h(StateText, { t: x.state === 'Running' ? 'run' : x.state === 'Done' ? 'ok' : 'warn' }, x.state), onPress: D.HUB.info.GRADE[x.code] ? () => app.push('hubItem', ['grade', x.code]) : undefined })))) : null,
+    h(Section, { title: 'Details', small: true }, h(KV, { rows: [['Hall', U.HALLS[l.hall]], ['Format', U.FMT[l.fmt] || l.fmt], ['Rated speed', `${fmt(l.rate)} units/h`], ['Families', l.fams.map(f => (FAM[f] ? FAM[f].name : f).replace(/ oils?$/, '')).join(', ')], ['Standard OEE', pct(l.oee)]] })));
+}
+
+function HubTruck({ app, D, o: x }) {
+  const U = SU.info(D), t = pill(U.truckTone(x)), gone = x.state === 'Gone';
+  return h(Screen, { title: x.plate, large: true, kicker: h(Fragment, null, h(Dot, { t }), h('span', null, U.truckType(x))), sub: x.carrier },
+    h(Section, null, h('div', { className: 'card' }, h('div', { className: 'figs' }, h(Fig, { l: 'On site', v: durS((x.gout || D.NOW) - x.arr) }), h(Fig, { l: 'Arrived', v: hm(x.arr) }), h(Fig, { l: 'Bay', v: x.bay || '—' }), h(Fig, { l: gone ? 'Left' : 'Next step', v: gone ? hm(x.gout) : x.until ? hm(x.until) : '—' })),
+      h('div', { style: { display: 'flex', alignItems: 'center', gap: 10, marginTop: 14, flexWrap: 'wrap' } }, h(Pill, { t }, gone ? 'Left the site' : x.state), h('span', { className: 'ell', style: { fontSize: 14.5, color: 'var(--ink2)', minWidth: 0 } }, U.cargoOf(x))))),
+    x.note ? h(Section, null, h('div', { className: 'callout', style: { background: 'var(--warnSoft)' } }, h('span', { style: { color: 'var(--warnInk)', marginTop: 1 } }, ic('warn', 22, { w: 2.2 })), h('div', null, x.note))) : null,
+    h(Section, { title: 'Details', small: true }, h(KV, { rows: [['Plate', x.plate, { mono: true }], ['Haulier', x.carrier], ['Type', U.truckType(x)], ['Cargo', U.cargoOf(x)], ['State', gone ? 'Left the site' : x.state], ['Arrived', when(x.arr)], x.gin != null ? ['Gate-in', when(x.gin)] : null, x.bayAt != null ? ['At bay since', when(x.bayAt)] : null, x.gout != null ? ['Gate-out', when(x.gout)] : null] })),
+    x.bay ? h(Section, null, h(Group, null, h(Row, { icon: 'warehouse', iconSoft: true, title: x.bay, sub: 'Truck bay', onPress: () => app.push('hubItem', ['bay', x.bay]) }))) : null);
+}
+const NATIVE = { tank: HubTank, vessel: HubVessel, line: HubLine, truck: HubTruck };
 function useParts(app, st, setHv) {
   const D = app.D, I = useMemo(() => D.icons(h), []);
   const ctx = { screen: 'terminal', terminalId: 'MLB', mobile: true, tablet: true, theme: app.theme, I, focus: null, embed: true };
