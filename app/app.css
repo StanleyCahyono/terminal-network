@@ -25,6 +25,7 @@
   --shadow-pop: 0 10px 34px rgba(16, 24, 32, .18), 0 2px 6px rgba(16, 24, 32, .08);
   --shadow-sheet: 0 -10px 34px rgba(16, 24, 32, .14);
   --toast: #22262b; --toastInk: #ffffff;
+  --deskBg: #dfe3e8; --deskBezel: #15171a; --deskRim: #3a3f46; --deskInk: #5d646c;
   color-scheme: light;
 }
 [data-theme="dark"] {
@@ -42,6 +43,7 @@
   --shadow-pop: 0 12px 38px rgba(0, 0, 0, .55), 0 2px 8px rgba(0, 0, 0, .4);
   --shadow-sheet: 0 -10px 34px rgba(0, 0, 0, .5);
   --toast: #eef0f2; --toastInk: #111418;
+  --deskBg: #0b0c0e; --deskBezel: #1d2024; --deskRim: #2c3036; --deskInk: #9aa1a9;
   color-scheme: dark;
 }
 
@@ -69,6 +71,18 @@ svg { display: block; flex: none; }
 
 /* ── app frame ── */
 .app { position: fixed; inset: 0; overflow: hidden; background: var(--bg); }
+
+/* on a computer or tablet the app opens as a phone view: a phone-sized frame in the middle of the window */
+.desk { display: none; }
+@media (min-width: 700px) and (min-height: 620px) {
+  html, body { background: var(--deskBg); }
+  .app, .launch { top: 50%; left: 50%; right: auto; bottom: auto; width: 402px; height: min(874px, calc(100% - 72px)); transform: translate(-50%, -50%);
+    border-radius: 46px; box-shadow: 0 0 0 11px var(--deskBezel), 0 0 0 12.5px var(--deskRim), 0 40px 90px rgba(0, 0, 0, .32); }
+  .desk { display: flex; position: fixed; top: 20px; left: 24px; right: 24px; align-items: center; justify-content: space-between; gap: 16px; font-size: 14px; color: var(--deskInk); pointer-events: none; }
+  .desk a { pointer-events: auto; display: inline-flex; align-items: center; gap: 6px; color: var(--deskInk); font-weight: 500; padding: 6px 10px; margin: -6px -10px; border-radius: 8px; }
+  .desk a:hover { color: var(--ink); background: var(--fill); }
+  .desk span { opacity: .8; }
+}
 .stack { position: absolute; inset: 0; overflow: hidden; }
 .scr { position: absolute; inset: 0; background: var(--bg); overflow: hidden; will-change: transform; }
 .scr.under { pointer-events: none; }

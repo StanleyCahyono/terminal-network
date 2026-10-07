@@ -87,7 +87,11 @@ Every terminal has a blend skid. Terminals that had no blend components got comp
 
 ## Mobile app
 
-`app/` is a phone app for the same live network, designed for one-handed use rather than squeezed from the console. Phones that open the site are sent to it automatically (add `?console` to the address to get the console instead, or `?app` to get the app on a larger screen).
+`app/` is a phone app for the same live network, designed for one-handed use rather than squeezed from the console. How to open it:
+
+- **On a phone:** open the site address (`https://<your-username>.github.io/terminal-network/`) or the console's own address; phones are sent to the app automatically. Add `?console` to either address to get the full console instead.
+- **On a computer:** press **Phone view** in the console's top bar, or open `…/terminal-network/app/`. The app opens in a phone-sized frame, with a link back to the desktop console.
+- **Install:** on Android use the install prompt; on iPhone use Share → Add to Home Screen (More → Add to Home Screen shows the steps).
 
 - **Overview**: alarm status, live transfers, ships, truck loading, stock by product, a terminal carousel, the superhub's output against plan, and live activity.
 - **Terminals**: every site with its stock, tanks (level, high-level mark, receiving or dispatching), live and next transfers, berths, blends, samples and equipment. Each tank has a 24-hour level chart you can scrub with a finger.

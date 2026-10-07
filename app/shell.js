@@ -159,9 +159,10 @@ export function App({ D }) {
 
   // ── edge-swipe back (iOS-style; the browser's own gesture handles this outside the installed app) ──
   const dragRef = useRef(null);
+  const frame = () => { const el = document.querySelector('.app'), r = el && el.getBoundingClientRect(); return r && r.width ? { l: r.left, w: r.width } : { l: 0, w: window.innerWidth }; }; // the phone frame on a computer, else the screen
   const onTouchStart = e => {
     const cur = navRef.current; if (cur.anim || sheetRef.current || cur.stacks[cur.tab].length < 2) return;
-    const t = e.touches[0]; if (t.clientX > 22 || (IOS && !STANDALONE())) return;
+    const t = e.touches[0]; if (t.clientX - frame().l > 22 || (IOS && !STANDALONE())) return;
     dragRef.current = { x0: t.clientX, y0: t.clientY, x: 0, t0: performance.now(), lock: null };
   };
   const onTouchMove = e => {
@@ -171,7 +172,7 @@ export function App({ D }) {
   };
   const onTouchEnd = () => {
     const d = dragRef.current; dragRef.current = null; if (!d || !d.lock) return;
-    const w = window.innerWidth, v = d.x / Math.max(1, performance.now() - d.t0);
+    const w = frame().w, v = d.x / Math.max(1, performance.now() - d.t0);
     if (d.x > w * .32 || v > .55) { setNav(n => ({ ...n, drag: { x: d.x, done: true } })); haptic(6); setTimeout(() => { skipAnim.current = true; history.back(); }, 230); }
     else setNav(n => ({ ...n, drag: { x: 0, cancel: true } }));
   };
@@ -184,7 +185,7 @@ export function App({ D }) {
   const ctxFor = (e, i) => ({ entry: e, depth: i, mem: memOf(e.k), prevTitle: i > 0 ? (memOf(stack[i - 1].k).title || titleOf(D, stack[i - 1])) : null });
   const A = nav.anim;
   if (nav.drag && prev) {
-    const x = nav.drag.x, w = window.innerWidth, f = Math.min(1, x / w), done = nav.drag.done, cancel = nav.drag.cancel, tr = done || cancel ? 'transform .23s cubic-bezier(.2,.8,.2,1)' : 'none';
+    const x = nav.drag.x, w = frame().w, f = Math.min(1, x / w), done = nav.drag.done, cancel = nav.drag.cancel, tr = done || cancel ? 'transform .23s cubic-bezier(.2,.8,.2,1)' : 'none';
     layers.push({ e: prev, i: stack.length - 2, under: true, style: { transform: `translate3d(${done ? 0 : -28 * (1 - f)}%,0,0)`, transition: tr }, shade: done ? 0 : .12 * (1 - f) });
     layers.push({ e: top, i: stack.length - 1, cls: 'drag-top', style: { transform: `translate3d(${done ? w : x}px,0,0)`, transition: tr } });
   } else if (A && A.type === 'push' && A.to.k === top.k && A.from && stack.some(x => x.k === A.from.k)) {

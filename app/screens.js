@@ -375,7 +375,7 @@ function More({ app }) {
     h(Section, { title: 'App', small: true }, h(Group, null,
       h(Row, { icon: 'sliders', iconBg: '#6b737c', title: 'Settings', sub: 'Appearance, motion and alerts', onPress: () => app.push('settings') }),
       app.install ? h(Row, { icon: 'install', iconBg: 'var(--acc)', title: 'Install the app', sub: 'Add to your home screen', onPress: () => app.install() }) : app.ios && !app.standalone ? h(Row, { icon: 'install', iconBg: 'var(--acc)', title: 'Add to Home Screen', sub: 'Run it full screen on your iPhone', onPress: () => app.sheet({ title: 'Install on iPhone', body: IosInstall }) }) : null,
-      h(Row, { icon: 'monitor', iconBg: '#3b4450', title: 'Desktop console', sub: 'The full operations console', onPress: () => window.open('../Terminal%20Network.dc.html', '_blank'), chevron: false, right: h('span', { style: { color: 'var(--ink4)' } }, ic('ext', 18, { w: 2 })) }))),
+      h(Row, { icon: 'monitor', iconBg: '#3b4450', title: 'Desktop console', sub: 'The full operations console', onPress: () => window.open('../Terminal%20Network.dc.html?console', '_blank'), chevron: false, right: h('span', { style: { color: 'var(--ink4)' } }, ic('ext', 18, { w: 2 })) }))),
     h(Section, { small: true, foot: `Terminal Network · live data refreshed every 3 seconds · ${D.SNAPSHOT}` }));
 }
 function RolePick({ app }) {

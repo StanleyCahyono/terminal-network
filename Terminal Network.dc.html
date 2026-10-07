@@ -3,6 +3,15 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<script>
+  // phones open the mobile app; ?console keeps the full console
+  (function () {
+    try {
+      if (/[?&](console|desktop)\b/.test(location.search)) return;
+      if (/Mobi|Android|iPhone|iPod/i.test(navigator.userAgent) && Math.min(screen.width, screen.height) < 600) location.replace('app/');
+    } catch (e) {}
+  })();
+</script>
 <script src="./support.js"></script>
 </head>
 <body>
@@ -276,6 +285,11 @@ html:has(.tn-root[data-theme="dark"]),html:has(.tn-root[data-theme="dark"]) body
             </span>
           </sc-if>
         </div>
+
+        <a href="app/" target="_blank" rel="noopener" aria-label="Phone view" title="Open the phone view (mobile app) in a new tab" class="tn-sh-tb" style="height:34px;flex:none;display:flex;align-items:center;gap:7px;padding:0 {{ phonePad }};border:1px solid var(--line);border-radius:0;background:var(--surf);color:var(--ink);font-size:12.5px;font-weight:500;text-decoration:none;white-space:nowrap">
+          <span style="flex:none;display:flex">{{ I.phone }}</span>
+          <sc-if value="{{ showPhoneText }}" hint-placeholder-val="{{ true }}"><span>Phone view</span></sc-if>
+        </a>
 
         <button onClick="{{ toggleAlarms }}" aria-label="Alarm centre" aria-expanded="{{ alarmsExp }}" title="{{ alarmTitle }}" class="tn-sh-tb" style="height:34px;flex:none;display:flex;align-items:center;gap:{{ bellGap }};padding:0 {{ bellPad }};border:1px solid var(--line);border-radius:0;background:{{ alarmBtnBg }};white-space:nowrap">
           <span style="flex:none">{{ I.bell }}</span>
@@ -708,6 +722,7 @@ class Component extends DCLogic {
       alarmTabs: tabs, alarmList, alarmEmpty: !alarmList.length, alarmListKey: s.alarmTab + '|' + s.alarmScope, toggleAlarmScope: () => this.setState({ alarmScope: s.alarmScope === 'network' ? 'terminal' : 'network', resolving: null }), alarmScopeLabel: s.alarmScope === 'network' ? 'All terminals' : 'Only ' + t.id,
       resNote: s.resNote, onResNote: e => this.setState({ resNote: e.target.value }), resDisabled: !s.resNote.trim(), resOpacity: s.resNote.trim() ? 1 : 0.4, resCursor: s.resNote.trim() ? 'pointer' : 'not-allowed', cancelResolve: () => this.setState({ resolving: null }), inputFs: mobile ? '16px' : '13px',
       userOpen: s.userOpen, userExp: s.userOpen ? 'true' : 'false', toggleUser: () => this.setState({ userOpen: !s.userOpen, scopeOpen: false, rangeOpen: false, prodOpen: false, searchExpanded: false }), userName: role.name, roleLabel: role.label, userInitials, userAria: `${role.name} · ${role.label}`,
+      showPhoneText: tier >= 3, phonePad: tier >= 3 ? '10px' : '8px',
       showUserText: tier >= 4, showUserChev: !mobile, userPad: mobile ? '0 3px' : tier >= 4 ? '0 8px 0 4px' : '0 6px 0 3px',
       roleOptions: Object.entries(roles).map(([id, r]) => ({ label: r.label, sub: r.sub, on: s.role === id ? 'true' : 'false', onClick: () => this.set({ role: id }), bd: s.role === id ? 'var(--ink)' : 'var(--line)', bg: s.role === id ? 'var(--surf2)' : 'transparent' })),
       setLight: () => this.set({ theme: 'light' }), setDark: () => this.set({ theme: 'dark' }), lightOn: s.theme === 'light' ? 'true' : 'false', darkOn: s.theme === 'dark' ? 'true' : 'false', lightBd: s.theme === 'light' ? 'var(--ink)' : 'var(--line)', darkBd: s.theme === 'dark' ? 'var(--ink)' : 'var(--line)', lightBg: s.theme === 'light' ? 'var(--surf2)' : 'transparent', darkBg: s.theme === 'dark' ? 'var(--surf2)' : 'transparent',

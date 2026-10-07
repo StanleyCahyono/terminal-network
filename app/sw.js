@@ -1,6 +1,6 @@
 // Offline cache: the app shell and the live data module are kept so the app opens without a connection.
 // Code is fetched from the network first (fresh when online) and falls back to the cache; fonts and icons are cache-first.
-const CACHE = 'tn-app-v1';
+const CACHE = 'tn-app-v2';
 const SHELL = ['./', 'index.html', 'app.css', 'main.js', 'kit.js', 'shell.js', 'screens.js', 'hub.js', 'manifest.webmanifest', 'vendor/react.production.min.js', 'vendor/react-dom.production.min.js',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png', 'icons/favicon-64.png', '../data.js', '../superhub.js', '../superhub-ui.js'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())); });

@@ -781,6 +781,7 @@ export function icons(h) {
     config: svg([p('M2.5 4h11M2.5 8h11M2.5 12h11'), c(5.5, 4, 1.4, true), c(10.5, 8, 1.4, true), c(6.5, 12, 1.4, true)]),
     search: svg([c(7, 7, 4.5), p('M10.4 10.4L14 14')]),
     bell: svg([p('M4 11V7.2a4 4 0 0 1 8 0V11l1.3 1.3H2.7zM6.6 14h2.8')]),
+    phone: svg([h('rect', { x: 4.5, y: 1.5, width: 7, height: 13, rx: 1.4 }), p('M7 12.3h2')]),
     chevD: svg([p('M4 6l4 4 4-4')]), chevR: svg([p('M6 4l4 4-4 4')]), chevL: svg([p('M10 4L6 8l4 4')]), chevU: svg([p('M4 10l4-4 4 4')]),
     close: svg([p('M4 4l8 8M12 4l-8 8')]), check: svg([p('M3 8.5l3 3 7-7')]),
     clock: svg([c(8, 8, 6), p('M8 4.6V8l2.4 1.5')]),

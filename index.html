@@ -11,7 +11,7 @@
     var q = location.search, toConsole = /[?&](console|desktop)\b/.test(q), toApp = /[?&]app\b/.test(q);
     var phone = window.matchMedia && window.matchMedia('(max-width: 760px)').matches;
     var touchPhone = /Mobi|Android|iPhone|iPod/i.test(navigator.userAgent) && Math.min(screen.width, screen.height) < 600;
-    location.replace(toApp || (!toConsole && (phone || touchPhone)) ? 'app/' + location.hash : 'Terminal%20Network.dc.html');
+    location.replace(toApp || (!toConsole && (phone || touchPhone)) ? 'app/' + location.hash : 'Terminal%20Network.dc.html' + (toConsole ? '?console' : ''));
   })();
 </script>
 </head>
