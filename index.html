@@ -4,10 +4,19 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Terminal Network Operations</title>
-<meta http-equiv="refresh" content="0; url=Terminal%20Network.dc.html">
 <link rel="icon" href="assets/logo.png">
+<script>
+  // phones open the mobile app, larger screens the console; ?console or ?app chooses explicitly
+  (function () {
+    var q = location.search, toConsole = /[?&](console|desktop)\b/.test(q), toApp = /[?&]app\b/.test(q);
+    var phone = window.matchMedia && window.matchMedia('(max-width: 760px)').matches;
+    var touchPhone = /Mobi|Android|iPhone|iPod/i.test(navigator.userAgent) && Math.min(screen.width, screen.height) < 600;
+    location.replace(toApp || (!toConsole && (phone || touchPhone)) ? 'app/' + location.hash : 'Terminal%20Network.dc.html');
+  })();
+</script>
 </head>
-<body style="font-family:sans-serif;padding:24px">
-<a href="Terminal%20Network.dc.html">Open Terminal Network Operations</a>
+<body style="font-family:sans-serif;padding:24px;line-height:1.6">
+<a href="Terminal%20Network.dc.html">Open Terminal Network Operations</a><br>
+<a href="app/">Open the mobile app</a>
 </body>
 </html>

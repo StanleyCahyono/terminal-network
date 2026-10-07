@@ -1005,7 +1005,7 @@ function dGrade(G) {
   ];
 }
 function zoneBody(id) {
-  const K = S.kpi, open = (tab, extra) => btn(`Open ${TABS.find(t => t[0] === tab)[1]}`, () => A.tab(tab, extra), { primary: true });
+  const K = S.kpi, open = (tab, extra) => ctx.embed ? null : btn(`Open ${TABS.find(t => t[0] === tab)[1]}`, () => A.tab(tab, extra), { primary: true });
   const tankRows = list => list.map(t => itemRow({ key: t.id, id: t.id, label: `${t.free ? 'Free' : shortOf(t.code)} · ${PCT(t.vol / t.nominal)}`, right: t.free ? 'Clean' : t.state === 'QC hold' ? 'Quality hold' : t.status, tone: t.free ? 'idle' : t.state === 'QC hold' || t.q === 'On hold' ? 'warn' : tone(t.status), on: isSel('tank', t.id), onClick: () => A.sel('tank', t.id) }));
   switch (id) {
     case 'marine': return [dl([['Berths in use', `${K.berths.busy} of 9`], ['At anchorage', String(K.berths.anchorage)], ['Due in 72 h', String(K.berths.expected72)], ['Received by sea today', T0(K.rec.sea)], ['Loaded today', T0(S.today.sea)]]),
@@ -1028,7 +1028,7 @@ function zoneBody(id) {
 }
 // ── equipment without a tab of its own ──
 const para = t => h('p', { style: { margin: 0, fontSize: 12.5, lineHeight: 1.45, color: 'var(--ink3)' } }, t);
-const openTab = (tab, extra) => btn(`Open ${TABS.find(t => t[0] === tab)[1]}`, () => A.tab(tab, extra), { primary: true });
+const openTab = (tab, extra) => ctx.embed ? null : btn(`Open ${TABS.find(t => t[0] === tab)[1]}`, () => A.tab(tab, extra), { primary: true });
 const YARD_BLOCKS = ['Y-A', 'Y-B', 'Y-C', 'Y-D', 'Y-E'];
 const slotName = n => { const i = n % 50; return `${YARD_BLOCKS[Math.floor(n / 50)]}-${String((i >> 1) + 1).padStart(2, '0')}-${(i % 2) + 1}`; };
 function dSc(c) {
@@ -1100,7 +1100,8 @@ function findSel(sel) {
     default: return null;
   }
 }
-function drawer() {
+// the drawer's content: kicker, title, subtitle, tone and body of the selected asset or zone
+function parts() {
   const sel = ST.sel, zone = !sel && ST.zone;
   if (!sel && !zone) return null;
   let kicker, title, subT = null, body, t = 'idle';
@@ -1136,6 +1137,11 @@ function drawer() {
       default: title = sel.id; body = [empty('No details.')];
     }
   } else { kicker = 'Zone'; title = ZONES[zone] || zone; body = zoneBody(zone); }
+  return { kicker, title, subT, t, body: body.filter(Boolean), sel, zone, mono: !!sel && sel.kind !== 'grade' && sel.kind !== 'vessel' && sel.kind !== 'instr' };
+}
+function drawer() {
+  const p = parts(); if (!p) return null;
+  const { kicker, title, subT, t, body, sel, zone } = p;
   const mob = ctx.mobile;
   return h('aside', { key: 'drawer', className: 'tn-drawer sh-drawer', role: 'complementary', 'aria-label': `${kicker}: ${title}`, style: { position: 'absolute', top: 0, right: 0, bottom: 0, width: mob ? '100%' : 'min(440px, 100%)', zIndex: 6, background: 'var(--surf)', borderLeft: '1px solid var(--pBd)', boxShadow: mob ? 'none' : '-10px 0 28px rgba(20,24,28,.12)', display: 'flex', flexDirection: 'column', minWidth: 0 } },
     div({ flex: 'none', display: 'flex', alignItems: 'flex-start', gap: 10, padding: '12px 14px 10px', borderBottom: '1px solid var(--line)', borderTop: `3px solid ${TC[t]}`, minWidth: 0 },
@@ -1150,15 +1156,21 @@ function drawer() {
 
 // ── entry point ──
 let TANKS0 = null;
-export function view(h_, D_, ctx_, st, act) {
+function prime(h_, D_, ctx_, st, act) {
   h = h_; D = D_; ctx = ctx_; I = ctx_.I; ST = st || {}; A = act; HUB = D_.HUB; S = HUB && HUB.state;
-  if (!S || !S.ready) return null;
+  if (!S || !S.ready) return false;
   if (!TANKS0) {
     TANKS0 = { BOT: [], ADD: [], FPT: [], AUX: [] }; const all = {};
     D.term('MLB').tanks.forEach(t => { TANKS0[t.zone].push(t); all[t.id] = t; });
     TANKS0.FPT.sort((a, b) => a.id < b.id ? -1 : 1); S._all = all;
   }
   S._tanks = TANKS0;
+  return true;
+}
+// details of one asset ({ sel: { kind, id } }) or zone ({ zone }) for another host, such as the mobile app (ctx.embed hides links to desktop tabs)
+export function detail(h_, D_, ctx_, st, act) { return prime(h_, D_, ctx_, st, act) ? parts() : null; }
+export function view(h_, D_, ctx_, st, act) {
+  if (!prime(h_, D_, ctx_, st, act)) return null;
   const tab = TABS.some(([id]) => id === ST.tab) ? ST.tab : 'plan';
   const tabs = { plan: planTab, marine: marineTab, tanks: tanksTab, blend: blendTab, fill: fillTab, wh: whTab, iso: isoTab, lab: labTab, products: productsTab, log: logTab };
   return { header: header(), tabs: tabBar(tab), body: h('div', { key: 'tab-' + tab, className: 'tn-fade', style: { display: 'flex', flexDirection: 'column', gap: 12, minWidth: 0 } }, tabs[tab]()), drawer: drawer() };

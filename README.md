@@ -27,6 +27,7 @@ Operations console for the fuel terminal network and the lubricant superhub: net
 | `Superhub.dc.html` | Workspace of the lubricant superhub (site plan, plant tabs, detail drawer) |
 | `superhub-ui.js` | Views of the superhub workspace |
 | `superhub.js` | Lubricant superhub: product catalogue, plant layout and live simulation |
+| `app/` | Mobile app (installable): `index.html`, `app.css`, `shell.js` (navigation), `screens.js`, `hub.js`, `kit.js`, `sw.js` (offline cache), `manifest.webmanifest`, icons |
 | `data.js` | Terminal, tank, transfer and quality data |
 | `schematic.js` | Terminal schematic renderer |
 | `support.js` | Runtime |
@@ -59,6 +60,18 @@ Every terminal has a blend skid. Terminals that had no blend components got comp
 ## All ongoing transfers
 
 **Transfers → All terminals** lists every running, paused and scheduled transfer across the network on one live board. It shows progress, quantities, flow, finish or start time and state. You can filter it by state or type and sort it by terminal, finish time, progress or flow. Click a row to open that transfer, or that blend on the Blending screen. A run plays out the same however often the page refreshes, and reopening within 24 hours continues the same run. The header shows **Live** and the time of the last update. Values move in real time but are simulated, not plant telemetry.
+
+## Mobile app
+
+`app/` is a phone app for the same live network, designed for one-handed use rather than squeezed from the console. Phones that open the site are sent to it automatically (add `?console` to the address to get the console instead, or `?app` to get the app on a larger screen).
+
+- **Overview**: alarm status, live transfers, ships, truck loading, stock by product, a terminal carousel, the superhub's output against plan, and live activity.
+- **Terminals**: every site with its stock, tanks (level, high-level mark, receiving or dispatching), live and next transfers, berths, blends, samples and equipment. Each tank has a 24-hour level chart you can scrub with a finger.
+- **Transfers**: live, scheduled and finished transfers by type and terminal, each with progress, flow, finish time and route.
+- **Alarms**: open and resolved alarms by severity. Acknowledge and resolve them according to your role. A banner slides in when a new alarm is raised.
+- **More**: quality samples with results and release or hold, blending batches with their recipe, the superhub (areas, ships, tanks, blenders, lines, trucks, trains and ISO tanks), settings (light, dark or match the phone; motion; alarm banners) and your role.
+
+It behaves like a native app: each tab keeps its own history, screens slide in and out, the phone's back button and an edge swipe go back, sheets drag down to close, and lists refresh with a pull. Add it to the home screen (Share → Add to Home Screen on iPhone, Install on Android) and it opens full screen and works offline.
 
 ## Lubricant superhub
 

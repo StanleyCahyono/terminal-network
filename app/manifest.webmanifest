@@ -1,0 +1,22 @@
+{
+  "name": "Terminal Network",
+  "short_name": "Terminals",
+  "description": "Live operations for the fuel terminal network and the Maiza Lubrika lubricant superhub.",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f2f2f5",
+  "theme_color": "#f7f7f9",
+  "categories": ["business", "productivity", "utilities"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Alarms", "url": "./#/alarms", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Transfers", "url": "./#/transfers", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] }
+  ]
+}
