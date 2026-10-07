@@ -44,18 +44,42 @@ The console runs on the real date and time (WIB, WITA and WIT per terminal). The
   - airport depots run hydrant supply and pipeline receipts, and FAME and HEFA arrive by road;
   - every terminal's blend skid schedules and runs new batches.
 - Completed receipts and blends are sampled, lab results arrive a few hours later, and batches are released (or held if a test fails).
-- Story alarms clear over time (the Biak swell, the Sambu meter). Vessel pump trips occasionally pause a discharge, and loading arm faults take a gantry bay out of service for a while.
+- Story alarms clear over time (the swell at FT Biak, the meter at FT Pulau Sambu). Vessel pump trips occasionally pause a discharge, and loading arm faults take a gantry bay out of service for a while.
 - Shifts, "Today", the scheduling horizon and chart time axes follow the real calendar.
 
-Terminal names and the starting story are unchanged.
+The starting story is unchanged.
+
+## Terminal names
+
+Sites carry Pertamina Patra Niaga's formal unit names: Integrated Terminal (IT), Fuel Terminal (FT) and Aviation Fuel Terminal (AFT). Screens with room show the full name and tight spots the short form. Internal ids (PLM, CGK and so on) are unchanged, so saved views and links keep working.
+
+| Id | Name | Short form | Formerly |
+|---|---|---|---|
+| PLM | Integrated Terminal Jakarta (Plumpang) | IT Jakarta | TBBM Plumpang |
+| SBY | Integrated Terminal Surabaya (Tanjung Perak) | IT Surabaya | TBBM Surabaya |
+| UPG | Integrated Terminal Makassar | IT Makassar | TBBM Ujung Pandang |
+| BIK | Fuel Terminal Biak | FT Biak | TBBM Biak |
+| BOY | Fuel Terminal Boyolali | FT Boyolali | TBBM Boyolali |
+| SMB | Fuel Terminal Pulau Sambu | FT Pulau Sambu | TBBM Strategis Pulau Sambu |
+| PLJ | Integrated Terminal Palembang | IT Palembang | TBBM Plaju |
+| PNJ | Integrated Terminal Panjang | IT Panjang | TBBM Lampung - Panjang |
+| JUA | Aviation Fuel Terminal Juanda | AFT Juanda | AFT Juanda |
+| CGK | Aviation Fuel Terminal Soekarno-Hatta | AFT Soekarno-Hatta | AFT soetta CGK |
+| DPS | Aviation Fuel Terminal Ngurah Rai | AFT Ngurah Rai | AFT Ngurah Rai DPS |
+| KNO | Aviation Fuel Terminal Kualanamu | AFT Kualanamu | AFT Kualanamu KNO |
+| BLG | Integrated Terminal Balongan | IT Balongan | TBBM Strategis (Jet A-1) Avtur Balongan |
+| VPK | Vopak Terminal Jakarta (PT Jakarta Tank Terminal) | Vopak Jakarta | unchanged |
+| MLB | Lubricant Superhub Maiza Lubrika | Maiza Lubrika | Terminal Lubricant Superhub Maiza Lubrika |
+
+Cross-dock pallets at the superhub come from Pertamina Lubricants' Production Units Jakarta, Cilacap and Gresik.
 
 ## Blending at every terminal
 
 Every terminal has a blend skid. Terminals that had no blend components got component tanks, appended so that existing tanks keep their numbers and values:
 
-- **Diesel B40 (B0 + FAME):** a FAME tank at Ujung Pandang, Pulau Sambu, Panjang and Vopak; B0 and FAME tanks at Biak and Boyolali.
-- **Jet A-1 (5.3% bio):** made at the airport depots from Jet A-1 (2% bio) topped up with HEFA, 96.6% / 3.4%. Juanda, Soetta CGK, Ngurah Rai and Kualanamu got a HEFA tank, and Juanda and Kualanamu also got a Jet A-1 (5.3%) tank.
-- **RON 95:** Plumpang, Surabaya and Vopak can also make RON 95 from RON 92 and RON 98, 50 / 50.
+- **Diesel B40 (B0 + FAME):** a FAME tank at IT Makassar, FT Pulau Sambu, IT Panjang and Vopak Jakarta; B0 and FAME tanks at FT Biak and FT Boyolali.
+- **Jet A-1 (5.3% bio):** made at the airport depots from Jet A-1 (2% bio) topped up with HEFA, 96.6% / 3.4%. AFT Juanda, AFT Soekarno-Hatta, AFT Ngurah Rai and AFT Kualanamu got a HEFA tank, and AFT Juanda and AFT Kualanamu also got a Jet A-1 (5.3%) tank.
+- **RON 95:** IT Jakarta, IT Surabaya and Vopak Jakarta can also make RON 95 from RON 92 and RON 98, 50 / 50.
 
 ## All ongoing transfers
 
@@ -75,7 +99,7 @@ It behaves like a native app: each tab keeps its own history, screens slide in a
 
 ## Lubricant superhub
 
-**TBBM Terminal Lubricant Superhub Maiza Lubrika** (Kendal, Jawa Tengah) is a simulated lubricant plant. Choose it in the terminal selector, or on the Network map, to open its own workspace instead of the tank schematic. Blending and Quality also open the superhub tabs for this terminal.
+**Lubricant Superhub Maiza Lubrika** (Kendal, Jawa Tengah) is a simulated lubricant plant. Choose it in the terminal selector, or on the Network map, to open its own workspace instead of the tank schematic. Blending and Quality also open the superhub tabs for this terminal.
 
 **Plant.** 2.0 Mt per year nameplate, planned at full capacity (5,479 t a day). It makes 84 products in 169 grades and 13 families, from engine oils to turbine, hydraulic and gear oils and greases. Everything is blended in house. The site is also a base-oil hub: about 6,000 t a day of base oil is re-exported by tanker, barge, ISO tank and road tanker, and about 3,000 t a day of packed lubricants from other plants passes through its cross-dock.
 

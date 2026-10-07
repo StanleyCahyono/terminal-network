@@ -1,4 +1,4 @@
-// Lubricant superhub — catalog, plant model and live simulation for TBBM Terminal Lubricant Superhub Maiza Lubrika (MLB).
+// Lubricant superhub — catalog, plant model and live simulation for the Lubricant Superhub Maiza Lubrika (MLB), Kendal.
 // Fictional demonstration data and a deterministic simulation. NOT live telemetry; no equipment is controlled.
 //
 // Interface (all used by data.js):
@@ -592,7 +592,7 @@ FPT_DEF.forEach(([id, m3, use, code], i) => {
 });
 AUX_DEF.forEach(([id, code, m3]) => addTank(mkTank(id, code, m3, 'AUX', 'AUX', 0, 'component', 'Carbon steel shell')));
 export const TERMINAL = {
-  id: 'MLB', name: 'Terminal Lubricant Superhub Maiza Lubrika', area: 'Kendal, Jawa Tengah', tz: 'WIB', lat: -6.92, lon: 110.25,
+  id: 'MLB', name: 'Lubricant Superhub Maiza Lubrika', short: 'Maiza Lubrika', area: 'Kendal, Jawa Tengah', tz: 'WIB', lat: -6.92, lon: 110.25,
   kind: 'Lubricant superhub', superhub: true, marine: JETTIES.map(j => j.name), truck: 140, rail: RMGS.length, isoCranes: ISO_CRANES.length, isoYard: 250,
   blenders: BLENDERS.length, lines: LINES.length, blend: { mode: 'In-line + batch', products: [] }, upd: 0.2, bunds: BUNDS, tanks: TANKS,
 };
@@ -1805,7 +1805,7 @@ export function createSuperhub(api) {
   // ── warehouse, dispatch picking and container stuffing ──
   // cross-dock: packaged lubricants from other lube plants, consolidated here and shipped on with the plant's own
   // pallets; kept apart from the plant's stock so they never stand in for production
-  const XD_T = 3000, XD_PAY = 18.2, XD_PLANTS = ['Lube plant Jakarta', 'Lube plant Cilacap', 'Lube plant Gresik', 'Contract filler Cikarang', 'Contract filler Surabaya'];
+  const XD_T = 3000, XD_PAY = 18.2, XD_PLANTS = ['Production Unit Jakarta', 'Production Unit Cilacap', 'Production Unit Gresik', 'Contract filler Cikarang', 'Contract filler Surabaya'];
   const XD_SHARE = XD_T / (XD_T + PLAN - BULK_D), XD_HBW = SKUS.filter(k => k.zone === 'HBW').reduce((a, k) => a + k.dPal, 0) / dPalTot;
   S.xdock = { HBW: 0, DRM: 0, t: 0 };
   function xdockIn(x) { const X = S.xdock, hb = x.pallets * XD_HBW; X.HBW += hb; X.DRM += x.pallets - hb; X.t += x.t; zonePal.HBW += hb; zonePal.DRM += x.pallets - hb; S.today.recXd += x.t; S.today.palIn += x.pallets; }

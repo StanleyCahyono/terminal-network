@@ -1,4 +1,4 @@
-// Superhub workspace views for TBBM Terminal Lubricant Superhub Maiza Lubrika (MLB).
+// Superhub workspace views for the Lubricant Superhub Maiza Lubrika (MLB), Kendal.
 // Rendered with React.createElement by Superhub.dc.html. Simulation only; no equipment is controlled.
 let h = null, D = null, ctx = null, I = null, ST = null, A = null, HUB = null, S = null, tz = 'WIB';
 const NB = ' ';

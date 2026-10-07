@@ -1,6 +1,6 @@
 // App shell: tabs with their own navigation stacks, push/pop transitions tied to browser history (so the phone's back
 // button and gestures work), edge-swipe back, bottom sheets, alarm banners, toasts, the live data loop and preferences.
-import { h, useState, useEffect, useRef, useLayoutEffect, useContext, createContext, useCallback, Ctx, useApp, cx, ic, haptic, HoldDefs, Press } from './kit.js';
+import { h, useState, useEffect, useRef, useLayoutEffect, useContext, createContext, useCallback, Ctx, useApp, cx, ic, haptic, HoldDefs, Press, keepHy } from './kit.js';
 import { SCREENS, titleOf } from './screens.js';
 
 export const ScreenCtx = createContext(null);
@@ -230,7 +230,7 @@ export function Screen({ title, large, kicker, sub, right, children, onRefresh, 
     onRefresh ? h('div', { className: 'ptr', 'aria-hidden': true }, h('div', { className: cx('ptr-ic', (pull > 8 || busy) && 'on', busy && 'busy'), style: !busy && pull ? { transform: `rotate(${pull * 3}deg)` } : null }, ic('refresh', 18, { w: 2.2 }))) : null,
     h('div', { ref, className: 'scr-scroll', onScroll, onTouchStart: ts, onTouchMove: tm, onTouchEnd: te },
       h('div', { className: 'pull', style: !app.ios && (pull || busy) ? { transform: `translate3d(0,${busy ? 48 : pull}px,0)`, transition: pr.current ? 'none' : 'transform .3s cubic-bezier(.2,.8,.2,1)' } : null },
-        large ? h('div', { className: 'lt' }, kicker ? h('div', { className: 'lt-kicker' }, kicker) : null, h('h1', { className: String(title).length > 24 ? 'long' : null }, title), sub ? h('div', { className: 'lt-sub' }, sub) : null) : null,
+        large ? h('div', { className: 'lt' }, kicker ? h('div', { className: 'lt-kicker' }, kicker) : null, h('h1', { className: String(title).length > 24 ? 'long' : null }, keepHy(title)), sub ? h('div', { className: 'lt-sub' }, sub) : null) : null,
         children)),
     foot ? h('div', { className: 'foot' }, foot) : null,
     h('div', { className: 'scr-shade', style: sc.shade != null ? { opacity: sc.shade } : null }));
@@ -260,5 +260,5 @@ function Banner({ b, onTap, onGone, onDismiss }) {
   return h('div', { className: cx('banner', b.out && 'out'), role: 'alert', style: dy ? { transform: `translate3d(0,${dy}px,0)` } : null, onAnimationEnd: () => { if (b.out) onGone(); },
     onTouchStart: ev => { y.current = ev.touches[0].clientY; }, onTouchMove: ev => { if (y.current == null) return; setDy(Math.min(0, ev.touches[0].clientY - y.current)); }, onTouchEnd: () => { if (dy < -30) onDismiss(); else if (Math.abs(dy) < 6) onTap(); setDy(0); y.current = null; }, onClick: ev => { if (!('ontouchstart' in window)) onTap(); } },
     h('span', { className: 'b-ic ' + (crit ? 'sev-critical' : 'sev-attention') }, ic(crit ? 'crit' : 'warn', 21, { w: 2.1 })),
-    h('div', { style: { minWidth: 0, flex: 1 } }, h('div', { className: 'b-k' }, h('span', null, (crit ? 'Critical alarm' : 'Alarm') + ' · ' + T.name.replace(/^TBBM |^DPPU /, '')), h('span', null, 'now')), h('div', { className: 'b-t' }, e.what), h('div', { className: 'b-s ell' }, `${e.asset} · ${e.owner}`)));
+    h('div', { style: { minWidth: 0, flex: 1 } }, h('div', { className: 'b-k' }, h('span', null, (crit ? 'Critical alarm' : 'Alarm') + ' · ' + (T.short || T.name)), h('span', null, 'now')), h('div', { className: 'b-t' }, e.what), h('div', { className: 'b-s ell' }, `${e.asset} · ${e.owner}`)));
 }

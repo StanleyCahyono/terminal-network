@@ -151,11 +151,13 @@ export function Section({ title, action, onAction, children, small, foot, id, cl
     children, foot ? h('div', { className: 'grp-f' }, foot) : null);
 }
 export const Group = ({ children, style }) => h('div', { className: 'grp', style }, children);
-export function Row({ icon, iconBg, iconSoft, lead, title, strong, sub, sub2, value, valueSub, plainValue, chevron, onPress, compact, tall, mono, right, label, two }) {
+// keeps hyphenated names such as Soekarno-Hatta on one line when a title wraps
+export const keepHy = t => typeof t !== 'string' || !/\S-\S/.test(t) ? t : t.split(/(\S+-\S+)/).map((x, i) => i % 2 ? h('span', { key: i, style: { whiteSpace: 'nowrap' } }, x) : x);
+export function Row({ icon, iconBg, iconSoft, lead, title, strong, sub, sub2, value, valueSub, plainValue, chevron, onPress, compact, tall, mono, right, label, two, wrap }) {
   const hasIc = !!(icon || lead);
   const body = [
     icon ? h('span', { key: 'ic', className: cx('row-ic', iconSoft && 'soft'), style: iconBg ? { background: iconBg } : null }, ic(icon, 18, { w: 2 })) : lead ? h('span', { key: 'ld', className: 'row-lead' }, lead) : null,
-    h('span', { key: 'm', className: 'row-main' }, h('span', { className: cx('row-t', strong && 'strong', 'ell', mono && 'mono') }, title), sub ? h('span', { className: cx('row-s', two ? 'two' : 'ell') }, sub) : null, sub2 ? h('span', { className: 'row-s ell' }, sub2) : null),
+    h('span', { key: 'm', className: 'row-main' }, h('span', { className: cx('row-t', strong && 'strong', wrap ? 'wrap' : 'ell', mono && 'mono') }, wrap ? keepHy(title) : title), sub ? h('span', { className: cx('row-s', two ? 'two' : 'ell') }, sub) : null, sub2 ? h('span', { className: 'row-s ell' }, sub2) : null),
     right ? h('span', { key: 'r', style: { flex: 'none', display: 'flex', alignItems: 'center', gap: 8 } }, right) : null,
     value != null || valueSub != null ? h('span', { key: 'v', className: 'row-v' }, value != null ? h('b', { className: 'num' }, value) : null, valueSub != null ? h('span', null, valueSub) : null) : null,
     plainValue != null ? h('span', { key: 'pv', className: 'row-v plain' }, plainValue) : null,

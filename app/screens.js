@@ -5,8 +5,7 @@ import { HUB_SCREENS, hubTitle, hubRoute } from './hub.js';
 
 // ── shared helpers ──
 export function useMem(key, init) { const sc = useContext(ScreenCtx); const [v, setV] = useState(() => (sc.mem[key] !== undefined ? sc.mem[key] : init)); return [v, x => { sc.mem[key] = x; setV(x); }]; }
-const SHORT = { PLM: 'Plumpang', SBY: 'Surabaya', UPG: 'Ujung Pandang', BIK: 'Biak', BOY: 'Boyolali', SMB: 'Pulau Sambu', PLJ: 'Plaju', PNJ: 'Panjang', JUA: 'Juanda', CGK: 'Soetta CGK', DPS: 'Ngurah Rai', KNO: 'Kualanamu', BLG: 'Balongan', VPK: 'Vopak Jakarta', MLB: 'Maiza Lubrika' };
-export const short = t => (t && (SHORT[t.id] || t.name)) || '';
+export const short = t => (t && (t.short || t.name)) || ''; // the formal short form, e.g. IT Jakarta, AFT Soekarno-Hatta
 const kindGroup = k => /lubricant/i.test(k) ? 'lube' : /aviation/i.test(k) ? 'avi' : /storage/i.test(k) ? 'store' : 'fuel';
 export const LIVE = ['In progress', 'Paused', 'Delayed'];
 const TYPE = {
@@ -126,7 +125,7 @@ function Terminals({ app }) {
     h(Section, null, list.length ? h(Group, null, ...list.map(t => {
       const s = t.superhub ? null : D.tsum(t, []), n = live.filter(x => x.term === t.id).length, a = open.filter(e => e.term === t.id).length;
       const fill = s ? s.inv / s.cap : null, S = t.superhub && D.HUB.state;
-      return h(Row, { key: t.id, onPress: () => app.push(t.superhub ? 'hub' : 'terminal', t.superhub ? [] : [t.id]), tall: true, label: t.name,
+      return h(Row, { key: t.id, onPress: () => app.push(t.superhub ? 'hub' : 'terminal', t.superhub ? [] : [t.id]), tall: true, wrap: true, label: t.name,
         lead: t.superhub ? h('span', { className: 'row-ic', style: { width: 30, height: 40, borderRadius: 8, background: '#1f8a8a' } }, ic('factory', 18, { w: 2 })) : h(TankGlyph, { fill, color: t.status === 'Operating' ? 'var(--acc)' : 'var(--warn)', w: 30, ht: 40 }),
         title: t.name, sub: `${t.area}`, sub2: t.status !== 'Operating' ? h(StateText, { t: 'warn' }, `${t.status} · ${[n ? `${n} live` : null, a ? `${a} alarm${a > 1 ? 's' : ''}` : null].filter(Boolean).join(' · ')}`) : [t.kind, n ? `${n} live` : null, a ? `${a} alarm${a > 1 ? 's' : ''}` : null].filter(Boolean).join(' · '),
         value: s ? pct(fill) : S ? pct(S.kpi.out.pct) : '', valueSub: s ? 'full' : 'of plan' });
@@ -360,7 +359,7 @@ function Search({ app }) {
     h('div', { style: { paddingTop: 6 } }, h(SearchField, { value: q, onChange: setQ, placeholder: 'Terminals, tanks, vessels, batches', autoFocus: true })),
     ql ? (res.length || alarms.length ? [alarms.length ? h(Section, { key: 'al', title: 'Alarms', small: true }, h(Group, null, ...alarms.map(e => h(AlarmRow, { key: e.id, app, e })))) : null, ...Object.entries(groups).map(([type, l]) => h(Section, { key: type, title: `${type}s`, small: true }, h(Group, null, ...l.slice(0, 12).map((x, i) => h(Row, { key: i, icon: ICON[type] || 'search', iconSoft: true, title: x.label, sub: x.sub, onPress: () => go(x) })))))]
       : h(Empty, { icon: 'search', title: 'No results', text: `Nothing matches “${q}”.` }))
-      : h(Section, { title: 'Terminals', small: true }, h(Group, null, ...D.TERMINALS.map(t => h(Row, { key: t.id, icon: t.superhub ? 'factory' : 'pin', iconSoft: true, title: t.name, sub: t.area, onPress: () => app.push(t.superhub ? 'hub' : 'terminal', t.superhub ? [] : [t.id]) })))));
+      : h(Section, { title: 'Terminals', small: true }, h(Group, null, ...D.TERMINALS.map(t => h(Row, { key: t.id, icon: t.superhub ? 'factory' : 'pin', iconSoft: true, title: t.name, wrap: true, sub: t.area, onPress: () => app.push(t.superhub ? 'hub' : 'terminal', t.superhub ? [] : [t.id]) })))));
 }
 
 // ── More and settings ──
