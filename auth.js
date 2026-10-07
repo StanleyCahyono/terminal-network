@@ -1,6 +1,6 @@
 // Sign-in shared by the console and the app. A session is kept in this browser until it expires or the person signs out.
 // The check runs in the browser: it keeps people out of the screens, not out of the files (see README "Sign-in").
-import { ACCOUNTS, ITER } from './accounts.js';
+import { ACCOUNTS as SHIPPED, ITER } from './accounts.js';
 const KEY = 'tnops:session', FAILS = 'tnops:signin-fails', HOUR = 3600000;
 export const ROLE_LABEL = { supervisor: 'Shift supervisor', operator: 'Terminal operator', quality: 'Quality officer', admin: 'Configuration admin', exec: 'Executive management', viewer: 'Viewer · read only' };
 const read = k => { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } };
@@ -8,6 +8,19 @@ const write = (k, v) => { try { v == null ? localStorage.removeItem(k) : localSt
 const norm = u => String(u || '').trim().toLowerCase();
 const hex = buf => Array.from(new Uint8Array(buf), b => b.toString(16).padStart(2, '0')).join('');
 const unhex = s => new Uint8Array((s.match(/../g) || []).map(x => parseInt(x, 16)));
+
+// The account list is read fresh from the site on every page load, so a person added or removed in accounts.js takes effect
+// at once instead of after the browser's copy expires. Offline, the copy that came with the page is used.
+let ACCOUNTS = SHIPPED;
+async function loadAccounts() {
+  try {
+    const r = await fetch(new URL('./accounts.js', import.meta.url), { cache: 'no-cache' }); if (!r.ok) return;
+    const url = URL.createObjectURL(new Blob([await r.text()], { type: 'text/javascript' }));
+    try { const m = await import(url); if (Array.isArray(m.ACCOUNTS)) ACCOUNTS = m.ACCOUNTS; } finally { URL.revokeObjectURL(url); }
+  } catch (e) {}
+}
+// pages wait for this before asking who is signed in
+export const ready = loadAccounts();
 
 // the signed-in person, or null
 export function session() {
@@ -23,6 +36,7 @@ export async function hash(password, saltHex, iter = ITER) {
 export function waitSeconds() { const f = read(FAILS); return f && f.until > Date.now() ? Math.ceil((f.until - Date.now()) / 1000) : 0; }
 // resolves to the session, or throws an Error whose message is shown to the person
 export async function signIn(user, password, keep) {
+  await ready;
   const w = waitSeconds(); if (w) throw new Error(`Too many attempts. Try again in ${w} s.`);
   if (!norm(user) || !password) throw new Error('Enter your username and password.');
   if (!(window.crypto && crypto.subtle)) throw new Error('Sign-in needs a secure (https) connection.');

@@ -79,7 +79,8 @@
   </form>
 </main>
 <script type="module">
-  import { session, signIn, waitSeconds } from './auth.js';
+  import { session, signIn, waitSeconds, ready } from './auth.js';
+  await ready;
   // only relative pages on this site may be the place to return to
   const raw = new URLSearchParams(location.search).get('next') || '', phone = /Mobi|Android|iPhone|iPod/i.test(navigator.userAgent) && Math.min(screen.width, screen.height) < 600;
   const next = /^[\w%.~-][\w%./?#=&~ -]*$/.test(raw) && !raw.includes('//') && !/^login\.html/.test(raw) ? raw : (phone ? 'app/' : 'Terminal%20Network.dc.html');

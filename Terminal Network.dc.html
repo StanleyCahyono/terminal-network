@@ -487,7 +487,7 @@ class Component extends DCLogic {
     this.mnavRef = React.createRef();
   }
   componentDidMount() {
-    Promise.all([import(new URL('./data.js', document.baseURI).href), import(new URL('./auth.js', document.baseURI).href)]).then(([m, a]) => {
+    Promise.all([import(new URL('./data.js', document.baseURI).href), import(new URL('./auth.js', document.baseURI).href).then(a => a.ready.then(() => a))]).then(([m, a]) => {
       this.A = a; const ses = a.session(); if (!ses) { location.replace(a.loginUrl()); return; } // the role and name come from the account
       this.D = m; this.I = m.icons(React.createElement); this.idx = m.searchIndex(); this.settle({ ready: true, ses, role: ses.role });
     });
