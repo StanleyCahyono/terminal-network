@@ -64,7 +64,7 @@ Every terminal has a blend skid. Terminals that had no blend components got comp
 
 **TBBM Terminal Lubricant Superhub Maiza Lubrika** (Kendal, Jawa Tengah) is a simulated lubricant plant. Choose it in the terminal selector, or on the Network map, to open its own workspace instead of the tank schematic. Blending and Quality also open the superhub tabs for this terminal.
 
-**Plant.** 2.0 Mt per year nameplate, planned at full capacity (5,479 t a day). It makes 84 products in 169 grades and 13 families, from engine oils to turbine, hydraulic and gear oils and greases. Everything is blended in house. The site is also a base-oil hub: about 5,000 t a day of base oil is re-exported by tanker, barge, ISO tank and road tanker, and about 2,000 t a day of packed lubricants from other plants passes through its cross-dock.
+**Plant.** 2.0 Mt per year nameplate, planned at full capacity (5,479 t a day). It makes 84 products in 169 grades and 13 families, from engine oils to turbine, hydraulic and gear oils and greases. Everything is blended in house. The site is also a base-oil hub: about 6,000 t a day of base oil is re-exported by tanker, barge, ISO tank and road tanker, and about 3,000 t a day of packed lubricants from other plants passes through its cross-dock.
 
 The site has:
 
@@ -74,12 +74,12 @@ The site has:
 - 18 packaging lines, 14 drum-filling lines and 2 IBC lines (34 in all), with blow moulding for bottles and cans;
 - a high-bay warehouse and a drum store, 140 truck bays and a gate with a 220-truck park;
 - 18 ISO-tank crane positions, 4 wash bays and a 250-slot ISO yard with heating points; every ISO tank is an IMO T11 portable tank coded SJIU with a random serial and its ISO 6346 check digit;
-- 4 rail cranes on three tracks and five trains a day (two Jakarta and two Surabaya liners and a base-oil ISO shuttle), a container yard and a container-stuffing hall;
+- 4 rail cranes on three tracks and seven trains a day (three Jakarta and three Surabaya liners and a base-oil ISO shuttle), a container yard and a container-stuffing hall;
 - a QC laboratory with 24 test streams.
 
 **Simulation.** Input and output run around the clock in 5-minute steps:
 
-- ships, trains, ISO tanks and road tankers bring in base oils and additives;
+- ships, trains, ISO tanks and road tankers bring in base oils and additives (Group I also comes by road tanker from the refinery);
 - receipts are sampled and released;
 - blends start when stock runs low, pass in-process and release tests, and fill dedicated tanks or swing tanks;
 - filling lines run work orders by warehouse cover, with changeovers, breaks, jams and faults;
@@ -87,7 +87,7 @@ The site has:
 
 Weather, grid outages and equipment faults raise alarms in the alarm centre. The run is deterministic: the plant is in the same state however often the page refreshes.
 
-**Workspace.** The tabs are Site plan, Marine, Tank farms, Blending, Filling, Warehouse & gate, ISO & rail, Quality lab, Products and Events. Press a zone of the site plan or any tile or row to open its details. These include tank level history, batch steps and recipe, line OEE and work orders, lab results, truck and ISO-tank status, and product stock and cover.
+**Workspace.** The tabs are Site plan, Marine, Tank farms, Blending, Filling, Warehouse & gate, ISO & rail, Quality lab, Products and Events. Press any box on the site plan to open its details: a tank, blender, kettle, hopper, filling line, stacker crane, truck bay, ISO crane, ISO tank or yard slot, wash bay, rail track or crane, jetty or ship. Press a zone for a summary of that area, or any tile, row or equipment chip in the tabs. These include tank level history, batch steps and recipe, line OEE and work orders, lab results, truck and ISO-tank status, and product stock and cover.
 
 Recipes, additive treat rates and test results are assumptions made for the simulation. They are not product disclosures or plant data.
 

@@ -65,6 +65,10 @@ button:not(:disabled):active,[role="button"]:active{transform:translateY(1px)}
 .sh-cell:active{transform:scale(.94)}
 .sh-slot{transition:stroke-width var(--t-fast) var(--ease-out)}
 .sh-slot:hover{stroke:var(--acc);stroke-width:1.6}
+.sh-hit{cursor:pointer}
+.sh-hit .sh-hitbox{transition:stroke-width var(--t-fast) var(--ease-out)}
+.sh-hit:hover .sh-hitbox{stroke:var(--acc);stroke-width:1.5px}
+.sh-hit:active .sh-hitbox{stroke:var(--acc);stroke-width:2.5px}
 .sh-link:hover{text-decoration:underline}
 .sh-flow{animation:tnflow 1.4s linear infinite}
 .sh-blink{animation:tnpulse 1.2s ease-in-out infinite}

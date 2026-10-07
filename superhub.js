@@ -499,7 +499,7 @@ export function measureFor(x, code, r, bad) {
 export const JETTIES = [
   ['J1', 'Deep-water base-oil import & re-export', 200, 12.5, '3 × 10" marine loading arms · JM-1', 'IMP CST BXP'], ['J2', 'Deep-water base-oil import & re-export', 200, 12.5, '3 × 10" marine loading arms · JM-1', 'IMP CST BXP'],
   ['J3', 'Coastal tankers in and out', 130, 8.5, '2 × 8" arms in · 2 × 6" hoses out · JM-2', 'CST FBC BXP'], ['J4', 'Coastal tankers in and out', 130, 8.5, '2 × 8" arms in · 2 × 6" hoses out · JM-2', 'CST FBC BXP'],
-  ['J5', 'Additive / chemical berth', 120, 8.0, '4 × 6" stainless steam-traced hoses · JM-3', 'ADD'],
+  ['J5', 'Additives, chemicals and base-oil barges', 120, 8.0, '4 × 6" stainless steam-traced hoses · JM-3', 'ADD BXB'],
   ['J6', 'Barges and small tankers', 80, 5.0, '6 × 3" dedicated hoses, Coriolis meters · JM-4', 'SPOB FBC BXB'], ['J7', 'Barges and small tankers', 80, 5.0, '6 × 3" dedicated hoses, Coriolis meters · JM-4', 'SPOB BXB'],
   ['J8', 'Container feeder quay', 160, 10.0, 'Ship\'s cranes 2 × 40 t · terminal-tractor apron', 'FDR'], ['J9', 'Container feeder quay', 160, 10.0, 'Ship\'s cranes 2 × 40 t · terminal-tractor apron', 'FDR'],
 ].map(([id, role, loa, draft, kit, cls], i) => ({ id, name: 'Jetty ' + (i + 1), role, loa, draft, kit, cls: cls.split(' ') }));
@@ -797,12 +797,13 @@ export function createSuperhub(api) {
   const capT = code => { let v = 0; for (const k of byCode[code] || []) v += k.moc * k.d; return v; };
   const coverD = code => useT[code] > 0 ? (stockT(code) - heelT(code)) / useT[code] : 99;
   // base-oil hub: re-export by sea, ISO and road on top of blending, sized so each grade keeps about 9 days in tank
-  const BO_EXP = { 'G1-SN150': 300, 'G1-SN500': 1700, 'G1-BS150': 800, 'G2-150N': 380, 'G2-600N': 900, 'G3-4': 440, 'G3-6': 440 }; // t/d
-  const EXP_CH = { sea: .75, iso: .12, road: .13 }, BO_CODES = Object.keys(BO_EXP), EXP_D = BO_CODES.reduce((a, c) => a + BO_EXP[c], 0);
+  const BO_EXP = { 'G1-SN150': 380, 'G1-SN500': 2320, 'G1-BS150': 1000, 'G2-150N': 480, 'G2-600N': 900, 'G3-4': 550, 'G3-6': 550 }; // t/d
+  const EXP_CH = { sea: .67, iso: .15, road: .18 }, BO_CODES = Object.keys(BO_EXP), EXP_D = BO_CODES.reduce((a, c) => a + BO_EXP[c], 0);
   const useB = { ...useT }; BO_CODES.forEach(c => { useT[c] = (useT[c] || 0) + BO_EXP[c]; }); // cover counts blending and re-export
   const expAvailT = c => Math.max(0, compAvailT(c) - (useB[c] || 0) * 2); // re-export never takes a grade below 2 days of blending
   const drawExport = (c, t, who) => { const q = Math.min(t, expAvailT(c)); return q > .01 ? drawComp(c, q, who) : 0; };
   const RAIL_G1 = 30 * 19.5;                                  // t/d of Group I by the daily ISO shuttle
+  const ROAD_G1 = 800;                                        // t/d of Group I by road tanker from the refinery
   const ISO_ADD = TANK_ADD.filter(c => useT[c] > 0); // tank additives also arrive by ISO (feeder and road)
   const BULKG = LIQG.filter(G => G.runner && G.dBulk > 0);
   const BULK_D = BULKG.reduce((a, G) => a + G.dBulk, 0);
@@ -825,9 +826,9 @@ export function createSuperhub(api) {
     const v = { id: 'V' + (++nVes), cls, label: C.label, name: vesselName(cls, r), voyage: 'V.' + (++nVoy), loa: Math.round(U(r, C.loa[0], C.loa[1])), dwt: Math.round(U(r, C.dwt[0], C.dwt[1]) / 100) * 100,
       eta: Math.round(eta / 5) * 5, ata: null, clearAt: null, berthAt: null, startAt: null, endAt: null, atd: null, jetty: null, state: 'Expected', step: 'Expected', stepUntil: null,
       pause: null, parcels: [], pi: 0, rate: C.rate ? Math.round(U(r, C.rate[0], C.rate[1])) : 0, moves: null, reject: false, delays: [], trf: false, final: false, waitAlarm: null, anchorSince: null };
-    if (cls === 'IMP') planParcels(v, G23, U(r, 5000, 8000), 2 + Math.floor(r() * 3), r);
-    else if (cls === 'CST') planParcels(v, G1, U(r, 3600, 5400), 1 + Math.floor(r() * 3), r);
-    else if (cls === 'ADD') planParcels(v, SEA_ADD, U(r, 600, 1800), 3 + Math.floor(r() * 4), r);
+    if (cls === 'IMP') planParcels(v, G23, U(r, 4000, 6400), 2 + Math.floor(r() * 3), r);
+    else if (cls === 'CST') planParcels(v, G1, U(r, 2900, 4300), 1 + Math.floor(r() * 3), r);
+    else if (cls === 'ADD') planParcels(v, SEA_ADD, U(r, 500, 1400), 3 + Math.floor(r() * 4), r);
     else if (cls === 'FBC' || cls === 'SPOB') planOut(v, r);
     else if (cls === 'BXP' || cls === 'BXB') planExport(v, r);
     S.vessels.push(v); if (cls !== 'FDR') lastEta[cls] = Math.max(lastEta[cls] ?? -1e9, v.eta);
@@ -842,33 +843,36 @@ export function createSuperhub(api) {
   function planParcels(v, codes, total, n, r) {
     let ranked = codes.filter(c => useT[c] > 0 && byCode[c]).map(c => [c, (projStock(c, v.eta) - heelT(c)) / useT[c]]).sort((a, b) => a[1] - b[1]);
     ranked = ranked.filter((x, i) => i === 0 || x[1] < (v.cls === 'ADD' ? 9 : 14)).slice(0, n); // grades already well covered stay off the nomination
-    const w = ranked.reduce((a, [c]) => a + useT[c], 0);
+    const tgt = v.cls === 'ADD' ? 7 : 6.5, need = c => Math.max(useT[c] * .5, (tgt + 1) * useT[c] - (projStock(c, v.eta) - heelT(c))); // the shortest stocks get the most
+    const w = ranked.reduce((a, [c]) => a + need(c), 0);
     v.parcels = ranked.map(([c]) => {
       const room = (capT(c) - projStock(c, v.eta)) * .85;
-      const t = Math.max(0, Math.min(total * useT[c] / w, room));
+      const t = Math.max(0, Math.min(total * need(c) / w, room));
       return { code: c, t: Math.round(t / 10) * 10, done: 0, tank: null, tanks: [], state: 'Waiting', start: null, end: null, trf: null };
     }).filter(p => p.t >= 150);
   }
-  // final nomination two days before arrival: quantities follow the cover the stocks are projected to have
+  // final nomination two days before arrival: the cargo is re-planned from the stocks projected for the arrival,
+  // the shortest grades first and sized by what each needs to reach its cover target
   function finalNomination(v, s) {
     v.final = true; if (VCLS[v.cls].dir !== 'in') return;
-    const tgt = v.cls === 'ADD' ? 7 : 6.5;
-    v.parcels.forEach(p => {
-      const cov = (projStock(p.code, v.eta) - heelT(p.code)) / useT[p.code], room = (capT(p.code) - projStock(p.code, v.eta)) * .9; // this vessel is not in its own projection
-      const want = clamp((tgt + 2 - cov) * useT[p.code], p.t * .5, p.t * 1.35);
-      p.t = Math.round(Math.max(0, Math.min(want, room)) / 10) * 10;
-    });
-    v.parcels = v.parcels.filter(p => p.t >= 100);
+    const codes = v.cls === 'IMP' ? G23 : v.cls === 'CST' ? G1 : SEA_ADD, tgt = v.cls === 'ADD' ? 7 : 6.5, nMax = v.cls === 'IMP' ? 4 : v.cls === 'CST' ? 3 : 6;
+    const planned = v.parcels.reduce((a, p) => a + p.t, 0); if (!(planned > 0)) return;
+    let st = 0, use = 0; codes.forEach(c => { st += projStock(c, v.eta) - heelT(c); use += useT[c] || 0; });
+    const total = planned * clamp(1 + (tgt - st / (use || 1)) * .1, .8, 1.35);
+    const want = codes.filter(c => useT[c] > 0 && byCode[c]).map(c => { const proj = projStock(c, v.eta); return { c, need: (tgt + 1) * useT[c] - (proj - heelT(c)), room: (capT(c) - proj) * .9 }; })
+      .filter(x => x.need > 0 && x.room > 100).sort((a, b) => b.need / useT[b.c] - a.need / useT[a.c]).slice(0, nMax);
+    const w = want.reduce((a, x) => a + x.need, 0); if (!w) { v.parcels = v.parcels.filter(p => p.t >= 100); return; }
+    v.parcels = want.map(x => ({ code: x.c, t: Math.round(Math.max(0, Math.min(total * x.need / w, x.room, x.need * 1.2)) / 10) * 10, done: 0, tank: null, tanks: [], state: 'Waiting', start: null, end: null, trf: null })).filter(p => p.t >= 100);
   }
   function planOut(v, r) {
     const isS = v.cls === 'SPOB', list = BULKG.filter(isS ? spobOK : fbcOK);
-    const n = isS ? 2 + Math.floor(r() * 3) : 6 + Math.floor(r() * 5), total = isS ? U(r, 150, 450) : U(r, 800, 2500), chosen = [];
+    const n = isS ? 2 + Math.floor(r() * 3) : 6 + Math.floor(r() * 5), total = isS ? U(r, 150, 450) : U(r, 600, 1900), chosen = [];
     for (let i = 0; i < n * 3 && chosen.length < n; i++) { const G = wpick(r, list, x => x.dBulk); if (G && !chosen.includes(G)) chosen.push(G); }
     const w = chosen.reduce((a, G) => a + G.dBulk, 0);
     v.parcels = chosen.map(G => ({ code: G.code, t: Math.max(isS ? 40 : 60, Math.round(total * G.dBulk / w / 5) * 5), done: 0, tanks: [], state: 'Waiting', start: null, end: null, trf: null }));
   }
   function planExport(v, r) { // base-oil re-export: one to three grades in the hub's re-export mix
-    const isB = v.cls === 'BXB', n = isB ? 1 + Math.floor(r() * 2) : 2 + Math.floor(r() * 2), total = isB ? U(r, 700, 1500) : U(r, 2800, 4800), chosen = [];
+    const isB = v.cls === 'BXB', n = isB ? 1 + Math.floor(r() * 2) : 2 + Math.floor(r() * 2), total = isB ? U(r, 550, 1150) : U(r, 2200, 3800), chosen = [];
     for (let i = 0; i < n * 4 && chosen.length < n; i++) { const c = wpick(r, BO_CODES, x => BO_EXP[x]); if (c && !chosen.includes(c)) chosen.push(c); }
     const w = chosen.reduce((a, c) => a + BO_EXP[c], 0);
     v.parcels = chosen.map(c => ({ code: c, t: Math.max(isB ? 150 : 300, Math.round(total * BO_EXP[c] / w / 10) * 10), done: 0, tanks: [], state: 'Waiting', start: null, end: null, trf: null }));
@@ -878,16 +882,16 @@ export function createSuperhub(api) {
     const plan = (cls, codes, parcel, perDay, tgt) => {
       if (!(perDay > 0)) return;
       const every = parcel / perDay * 1440, r = RS('lineup|' + cls + '|' + s);
-      let cover = 0, use = 0; codes.forEach(c => { cover += projStock(c, s) - heelT(c); use += useT[c] || 0; }); cover /= use || 1;
+      let cover = 0, use = 0, low = 1e9; codes.forEach(c => { const st = projStock(c, s) - heelT(c); cover += st; use += useT[c] || 0; if (useT[c] > 0) low = Math.min(low, st / useT[c]); }); cover /= use || 1; if (low < 1e9) cover = (cover + low) / 2; // the shortest grade pulls the next ship forward
       let next = (lastEta[cls] ?? (s - every * (.3 + r() * .5))) + every * clamp(1 + (cover - tgt) * .06, .7, 1.4);
       if (next < s + 90) next = s + 90 + r() * 180;
       while (next < H) { const v = nominate(cls, next + (r() - .5) * every * .3, r); next = v.eta + every; }
     };
-    plan('CST', G1, 4500, G1.reduce((a, c) => a + useT[c], 0) - RAIL_G1, 6);
-    plan('IMP', G23, 6500, G23.reduce((a, c) => a + useT[c], 0), 6.5);
-    plan('ADD', SEA_ADD, 1200, SEA_ADD.reduce((a, c) => a + useT[c], 0) * .55, 7);
-    plan('FBC', [], 1500, BULK_D * CH.FBC, 0); plan('SPOB', [], 300, BULK_D * CH.SPOB, 0);
-    plan('BXP', [], 3800, EXP_D * EXP_CH.sea * .75, 0); plan('BXB', [], 1100, EXP_D * EXP_CH.sea * .25, 0);
+    plan('CST', G1, 3600, (G1.reduce((a, c) => a + useT[c], 0) - RAIL_G1 - ROAD_G1) * 1.08, 6); // a little over use: full tanks trim the final nominations
+    plan('IMP', G23, 4800, G23.reduce((a, c) => a + useT[c], 0) * 1.12, 6.5);
+    plan('ADD', SEA_ADD, 950, SEA_ADD.reduce((a, c) => a + useT[c], 0) * .55, 7);
+    plan('FBC', [], 1250, BULK_D * CH.FBC, 0); plan('SPOB', [], 300, BULK_D * CH.SPOB, 0);
+    plan('BXP', [], 3000, EXP_D * EXP_CH.sea * .75, 0); plan('BXB', [], 850, EXP_D * EXP_CH.sea * .25, 0);
     // container feeders: service A daily 06:00, service B daily 14:00
     for (let d = dayOf(s); d < dayOf(s) + 10; d++) ['A', 'B'].forEach(svc => {
       if (S.vessels.some(v => v.cls === 'FDR' && v.fday === d && v.svc === svc)) return;
@@ -1056,7 +1060,7 @@ export function createSuperhub(api) {
     for (let i = S.vessels.length - 1; i >= 0; i--) if (S.vessels[i].state === 'Departed' && S.vessels[i].atd < s - 2880) S.vessels.splice(i, 1);
   }
 
-  // ── rail: Surabaya liners 01:00 and 13:00, Jakarta liners 03:30 and 15:30, base-oil ISO shuttle 21:00, every day ──
+  // ── rail: Surabaya liners 01:00, 09:00 and 17:00, Jakarta liners 03:30, 11:30 and 19:30, base-oil ISO shuttle 21:00, every day ──
   let nTrain = 2700;
   const SVC = { JKT: 'Jakarta liner · Cikarang dry port', SUB: 'Surabaya liner', ISO: 'Base-oil ISO shuttle · refinery railhead' };
   function railDay(d) {
@@ -1064,7 +1068,7 @@ export function createSuperhub(api) {
     const r = RS('rail|' + d);
     const late = () => { const u = r(); return u < .55 ? U(r, -10, 15) : u < .9 ? U(r, 30, 120) : u < .98 ? U(r, 120, 360) : null; };
     const mk = (svc, at, wagons, inn, out) => { const l = late(), sched = midnight(d) + at; S.trains.push({ id: 'KA ' + (++nTrain), service: svc, name: SVC[svc], day: d, sched, eta: l == null ? sched : sched + Math.round(l / 5) * 5, etd: sched + 240, ata: null, atd: null, state: l == null ? 'Cancelled' : 'Expected', step: l == null ? 'Cancelled by the operator' : 'Expected', track: null, wagons, inPlan: inn, outPlan: out, moves: 0, done: 0, cranes: svc === 'SUB' ? 2 : 4, stepUntil: null, out: 0, outIso: 0, outT: 0, inn: 0, badOrder: 0 }); };
-    mk('SUB', 60, 18, 18, 18); mk('JKT', 210, 24, 30, 30); mk('SUB', 780, 18, 18, 18); mk('JKT', 930, 24, 30, 30); mk('ISO', 1260, 18, 30, 30); // two liners each way and the base-oil shuttle, every day
+    [60, 540, 1020].forEach(at => mk('SUB', at, 24, 24, 24)); [210, 690, 1170].forEach(at => mk('JKT', at, 30, 36, 36)); mk('ISO', 1260, 18, 30, 30); // three liners each way and the base-oil shuttle
   }
   function rail(s) {
     const r = RS('rail|' + s), icy = S.rail.icy;
@@ -1084,7 +1088,7 @@ export function createSuperhub(api) {
           if (s >= tr.stepUntil) {
             tr.state = 'Working'; tr.step = 'Crane work';
             if (tr.service === 'ISO') { tr.inn = tr.inPlan; tr.outIso = Math.min(tr.outPlan, S.isos.filter(x => x.cat === 'ER' && x.ret === 'rail').length); tr.out = tr.outIso; }
-            else { const boxes = Math.min(icy.full[tr.service], tr.outPlan - tr.badOrder), isos = S.isos.filter(x => x.cat === 'FO' && x.loc === 'ICY rail staging').length; tr.out = boxes + Math.min(isos, 8); tr.outBoxes = boxes; tr.outIso = Math.min(isos, 8); tr.inn = tr.inPlan; }
+            else { const boxes = Math.min(icy.full[tr.service], tr.outPlan - tr.badOrder), isos = S.isos.filter(x => x.cat === 'FO' && x.loc === 'ICY rail staging').length; tr.out = boxes + Math.min(isos, 10); tr.outBoxes = boxes; tr.outIso = Math.min(isos, 10); tr.inn = tr.inPlan; }
             tr.moves = tr.out + tr.inn; tr.done = 0;
           }
           break;
@@ -1665,7 +1669,7 @@ export function createSuperhub(api) {
   }
 
   // ── filling lines ──
-  const PKG_SHARE = { road: .513, rail: .181, sea: .306 };
+  const PKG_SHARE = { road: .45, rail: .34, sea: .21 };
   S.lines.forEach((l, li) => {
     l.idx = li; l.skus = SKUS.filter(k => k.fmt === l.fmt && l.fams.includes(k.G.P.fam) && l.segs.includes(k.G.P.seg) && (k.G.P.visc !== 'X' || l.heated)).map(k => k.i);
     l.zone = l.skus.length ? SKUS[l.skus[0]].zone : 'HBW'; l.breakGrp = /^PL-0[1-5]$/.test(l.id) ? 0 : 1 + (li % 2);
@@ -1801,7 +1805,7 @@ export function createSuperhub(api) {
   // ── warehouse, dispatch picking and container stuffing ──
   // cross-dock: packaged lubricants from other lube plants, consolidated here and shipped on with the plant's own
   // pallets; kept apart from the plant's stock so they never stand in for production
-  const XD_T = 2000, XD_PAY = 18.2, XD_PLANTS = ['Lube plant Jakarta', 'Lube plant Cilacap', 'Lube plant Gresik', 'Contract filler Cikarang', 'Contract filler Surabaya'];
+  const XD_T = 3000, XD_PAY = 18.2, XD_PLANTS = ['Lube plant Jakarta', 'Lube plant Cilacap', 'Lube plant Gresik', 'Contract filler Cikarang', 'Contract filler Surabaya'];
   const XD_SHARE = XD_T / (XD_T + PLAN - BULK_D), XD_HBW = SKUS.filter(k => k.zone === 'HBW').reduce((a, k) => a + k.dPal, 0) / dPalTot;
   S.xdock = { HBW: 0, DRM: 0, t: 0 };
   function xdockIn(x) { const X = S.xdock, hb = x.pallets * XD_HBW; X.HBW += hb; X.DRM += x.pallets - hb; X.t += x.t; zonePal.HBW += hb; zonePal.DRM += x.pallets - hb; S.today.recXd += x.t; S.today.palIn += x.pallets; }
@@ -1832,7 +1836,7 @@ export function createSuperhub(api) {
     if (W.alarm && worst < .85) { clear(W.alarm, s, 'Warehouse supervisor', 'Fill back below 85 %.'); W.alarm = null; }
   }
   let nBox = 0;
-  const stuffQ = { JKT: 30, SUB: 18 };
+  const stuffQ = { JKT: 36, SUB: 24 };
   function stuffing(s, r) {
     const icy = S.rail.icy;
     // finish boxes
@@ -1878,7 +1882,7 @@ export function createSuperhub(api) {
     if (cls === 'XDK') { x.pallets = Math.round(U(rr, 22, 30)); x.t = +(x.pallets * U(rr, .62, .78)).toFixed(1); x.payload = x.t; x.from = pick(rr, XD_PLANTS); }
     if (cls === 'BLK') { if (job && job.slop) { x.payload = 18; x.code = 'SLOP'; } else if (job && job.base) { const c = wpick(rr, BO_CODES, y => BO_EXP[y]); x.code = c; x.base = true; x.payload = pick(rr, [16, 20, 24, 24]) * densOf(c); } else { const G = wpick(rr, BULKG, g => g.dBulk); x.code = G.code; x.payload = pick(rr, [8, 12, 16, 16, 20, 24]) * G.dens / 1000; } }
     if (cls === 'MAT') x.load = job && (job.mat || job.store) ? { mat: job.mat, qty: job.qty, store: job.store, t: job.t } : matToBring(rr);
-    if (cls === 'UNL') { x.code = job ? job.code : pick(rr, SPEC); x.payload = job ? job.t : 18; x.iso = !!(job && job.iso); }
+    if (cls === 'UNL') { x.code = job ? job.code : pick(rr, SPEC); x.payload = job ? job.t : 18; x.iso = !!(job && job.iso); if (job && job.from) x.from = job.from; }
     S.trucks.push(x); S.today.trucksIn++;
     return x;
   }
@@ -1892,9 +1896,10 @@ export function createSuperhub(api) {
     const whFill = (zonePal.HBW + zonePal.DRM) / (WH_CAP.HBW + WH_CAP.DRM), pull = clamp(1 + 2.2 * (whFill - .70), .8, 1.25);
     const pkgDay = (PLAN - BULK_D + XD_T) * PKG_SHARE.road / PAY_AVG, blkDay = BULK_D * CH.road / 13;
     const lam = { PKG: pkgDay * DOWF[dw] * pull * PROF.PKG[h] / 12, BLK: blkDay * (.85 + .15 * DOWF[dw]) * PROF.BLK[h] / 12, MAT: 6 * (dw === 6 ? .25 : 1) * PROF.MAT[h] / 12 }; // unbooked material trucks (returns, spares); the rest are booked by C7
-    lam.XDK = XD_T / XD_PAY * DOWF[dw] * PROF.MAT[h] / 12; lam.BXR = EXP_D * EXP_CH.road / 21 * PROF.BLK[h] / 12;
+    lam.XDK = XD_T / XD_PAY * DOWF[dw] * PROF.MAT[h] / 12; lam.BXR = EXP_D * EXP_CH.road / 21 * PROF.BLK[h] / 12; lam.RIN = ROAD_G1 / 24 * PROF.BLK[h] / 12;
     for (const cls of ['PKG', 'BLK', 'MAT', 'XDK']) { const n = poisson(r, lam[cls]); for (let i = 0; i < n; i++) newTruck(s, cls, r); }
     { const n = poisson(r, lam.BXR); for (let i = 0; i < n; i++) newTruck(s, 'BLK', r, { base: true }); } // base-oil re-export by road tanker
+    { const n = poisson(r, lam.RIN); for (let i = 0; i < n; i++) { const c = wpick(r, G1, y => Math.max(0, capT(y) * .9 - stockT(y)) * (useT[y] || 1)); if (c) newTruck(s, 'UNL', r, { code: c, t: 24, from: 'Cilacap refinery' }); } } // Group I base oil by road tanker
     while (PEND.length && PEND[0].at <= s) { const p = PEND.shift(); newTruck(s, p.cls, r, p.job); }
     // gate lanes (gate-in, ID, documents, safety check, weigh-in)
     if (!S.gate.outage && r() < 4 / 30 / 288) { S.gate.outage = { until: s + Math.round(U(r, 30, 90)) }; S.gate.outage.alarm = alarm(s, 'attention', 'Gate', 'Gate system', 'Gate system outage — manual check-in, service time doubled', 'Gate queue growing', 'Gate supervisor'); }
@@ -2101,7 +2106,7 @@ export function createSuperhub(api) {
     S.lab.queue = SMP_WAIT.length; S.lab.inTest = SMP_RUN.length; S.lab.doneToday = X.tatN; S.lab.tatAvg = K.lab.tatAvg; S.lab.tatP90 = K.lab.tatP90; S.lab.onTime = K.lab.onTime;
     K.grease = { inProcess: S.grease.units.filter(u => u.batch).length, t: X.greaseT, hoppers: S.grease.hoppers.reduce((a, h) => a + h.t, 0) };
     K.slop = { t: X.slopT, pct: X.out > 0 ? X.slopT / X.out : 0 };
-    K.stuffing = { boxes: X.boxes, inWork: S.bays.filter(b => b.box).length, plan: 190 }; // four liners and two feeders a day
+    K.stuffing = { boxes: X.boxes, inWork: S.bays.filter(b => b.box).length, plan: 270 }; // six liners and two feeders a day
     K.util = { steam: S.utilities.steam.demand, steamCap: S.utilities.steam.cap, mw: S.utilities.power.mw, source: S.utilities.power.source, n2: S.utilities.n2.nm3h };
     K.alarms = { open: S.alarms.filter(e => e.status !== 'Resolved').length, critical: S.alarms.filter(e => e.status !== 'Resolved' && e.sev === 'critical').length };
     K.gate = { queue: S.gate.queue, onSite: S.gate.onSite, park: S.gate.park.occ };
@@ -2230,7 +2235,7 @@ export function createSuperhub(api) {
   S.warm = false; S.ready = true;
   // days before the warm-up are synthesised around plan, flagged synthetic
   for (let i = S.days.length; i < 14; i++) { const d = (S.days.length ? S.days[S.days.length - 1].day : dayOf(REF)) - 1, r = RS('syn|' + d), w = ((d + 3) % 7 + 7) % 7, f = U(r, .94, 1.06), rf = DOWF[w];
-    S.days.push({ day: d, at: midnight(d), label: api.day(midnight(d) + 720, 'WIB'), out: PLAN * f, pkgT: (PLAN - BULK_D) * f, bulkT: BULK_D * f, road: ((PLAN - BULK_D + XD_T) * PKG_SHARE.road * rf + BULK_D * (CH.road + CH.iso * .25) + EXP_D * (EXP_CH.road + EXP_CH.iso * .4)) * f, rail: ((PLAN - BULK_D + XD_T) * PKG_SHARE.rail + BULK_D * CH.iso * .25 + EXP_D * EXP_CH.iso * .2) * f, sea: ((PLAN - BULK_D + XD_T) * PKG_SHARE.sea + BULK_D * (CH.iso * .5 + CH.FBC + CH.SPOB) + EXP_D * (EXP_CH.sea + EXP_CH.iso * .4)) * U(r, .7, 1.3), recSea: 3400 * U(r, .5, 1.5), recRail: RAIL_G1 * f, recRoad: 220 * f, blendT: (PLAN - FAMILIES.GR.share * PLAN) * U(r, .9, 1.1), reexp: EXP_D * U(r, .85, 1.1), recXd: XD_T * U(r, .85, 1.1), greaseT: FAMILIES.GR.share * PLAN * U(r, .85, 1.1), batches: Math.round(95 * U(r, .9, 1.1)), rft: U(r, .955, .99), isoFills: Math.round(19 * f), isoDisch: Math.round(16 * f), railMoves: Math.round(130 * f), trucks: Math.round(300 * rf), boxes: Math.round(88 * f), units: Math.round(320000 * f), synthetic: true }); }
+    S.days.push({ day: d, at: midnight(d), label: api.day(midnight(d) + 720, 'WIB'), out: PLAN * f, pkgT: (PLAN - BULK_D) * f, bulkT: BULK_D * f, road: ((PLAN - BULK_D + XD_T) * PKG_SHARE.road * rf + BULK_D * (CH.road + CH.iso * .25) + EXP_D * (EXP_CH.road + EXP_CH.iso * .4)) * f, rail: ((PLAN - BULK_D + XD_T) * PKG_SHARE.rail + BULK_D * CH.iso * .25 + EXP_D * EXP_CH.iso * .2) * f, sea: ((PLAN - BULK_D + XD_T) * PKG_SHARE.sea + BULK_D * (CH.iso * .5 + CH.FBC + CH.SPOB) + EXP_D * (EXP_CH.sea + EXP_CH.iso * .4)) * U(r, .7, 1.3), recSea: 9000 * U(r, .75, 1.25), recRail: RAIL_G1 * f, recRoad: (ROAD_G1 + 550) * f, blendT: (PLAN - FAMILIES.GR.share * PLAN) * U(r, .9, 1.1), reexp: EXP_D * U(r, .85, 1.1), recXd: XD_T * U(r, .85, 1.1), greaseT: FAMILIES.GR.share * PLAN * U(r, .85, 1.1), batches: Math.round(117 * U(r, .9, 1.1)), rft: U(r, .955, .99), isoFills: Math.round(75 * f), isoDisch: Math.round(50 * f), railMoves: Math.round(420 * f), trucks: Math.round(835 * rf), boxes: Math.round(255 * f), units: Math.round(580000 * f), synthetic: true }); }
   return {
     id: 'MLB', state: S, generate: boundary, advance, flow, schedule, tests: testsFor, measure: measureFor, series: seriesOf,
     info: { FAMILIES, PRODS, GRADES, GRADE, COMP, FMTS, PACKS, JETTIES, LINES, BLENDERS, HALLS, BAY_CLASSES, ISO_CRANES, ISO_BLOCKS, RMGS, VCLS, PLAN, NAMEPLATE, groupOf },

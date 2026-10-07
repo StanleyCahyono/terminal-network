@@ -37,6 +37,12 @@ const k = () => undefined; // children are passed positionally, so React matches
 const div = (style, ...kids) => { if (style && style.key != null) { const { key, ...st } = style; return h('div', { key, style: st }, ...kids); } return h('div', { style }, ...kids); };
 const span = (style, ...kids) => h('span', { style }, ...kids);
 const ell = { minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' };
+// a chip naming one piece of equipment: pressing it opens that equipment's details
+function chipBtn(label, t, onClick, on, title) {
+  const tn = t || tone(label);
+  return h('button', { onClick, title: title || label, 'aria-pressed': on ? 'true' : 'false', className: 'sh-chip sh-press', style: { display: 'inline-flex', alignItems: 'center', gap: 5, height: 24, padding: '0 7px', border: '1px solid ' + (on ? 'var(--acc)' : 'var(--line)'), boxShadow: on ? 'inset 0 0 0 1px var(--acc)' : 'none', background: TSOFT[tn], color: TINK[tn], font: 'inherit', fontSize: 12, whiteSpace: 'nowrap', maxWidth: '100%', minWidth: 0, cursor: 'pointer' } },
+    I.st[STK[tn]], span({ ...ell }, label));
+}
 function chip(label, t, title) {
   const tn = t || tone(label);
   return h('span', { title: title || label, className: 'sh-chip', style: { display: 'inline-flex', alignItems: 'center', gap: 5, height: 22, padding: '0 7px', border: '1px solid var(--line)', background: TSOFT[tn], color: TINK[tn], fontSize: 12, whiteSpace: 'nowrap', maxWidth: '100%', minWidth: 0 } },
@@ -122,21 +128,29 @@ function zoneG(id, r, title, right, kids, label) {
     right ? txt(x + w - 9, y + 18, right, { fs: 12, c: P.mute, a: 'end', mono: true }) : null,
     ...kids);
 }
+// a plan item that opens its own details; the press stops here instead of opening the zone underneath.
+// box = [x, y, w, h]; the transparent hit box on top widens tiny targets by pad and shows hover and selection
+function hit(kind, id, box, kids, o = {}) {
+  const [x, y, w, hh] = box, on = isSel(kind, id), [px, py] = Array.isArray(o.pad) ? o.pad : [o.pad ?? 1.5, o.pad ?? 1.5];
+  return h('g', { key: o.key || 'h-' + kind + id, className: 'sh-hit' + (on ? ' on' : ''), onClick: e => { e.stopPropagation(); A.sel(kind, id); } }, ...kids,
+    h('rect', { key: 'hb', x: x - px, y: y - py, width: w + 2 * px, height: hh + 2 * py, className: 'sh-hitbox', style: on ? { fill: 'transparent', stroke: P.sel, strokeWidth: 2 } : { fill: 'transparent' } }, o.title ? h('title', null, o.title) : null));
+}
 // a tank square with a level fill and its state marks
-function tankSq(x, y, s, kk, color) {
+function tankSq(x, y, s, kk, color, pad = 1.5) {
   const f = Math.max(0, Math.min(1, (kk.vol - 0) / kk.nominal)), free = kk.free || kk.state === 'Free', st = kk.state;
-  const kids = [rect(x, y, s, s, { fill: free ? P.free : P.tank, stroke: st === 'Blending' ? 'var(--acc)' : st === 'Adjusting' || kk.q === 'On hold' ? 'var(--warn)' : P.tankBd, strokeWidth: st === 'Blending' ? 1.6 : 1, strokeDasharray: free ? '2 2' : 'none' }, { title: `${kk.id} · ${free ? 'Free, clean' : shortOf(kk.code)} · ${Math.round(f * 100)} % · ${kk.status}` })];
+  const kids = [rect(x, y, s, s, { fill: free ? P.free : P.tank, stroke: st === 'Blending' ? 'var(--acc)' : st === 'Adjusting' || kk.q === 'On hold' ? 'var(--warn)' : P.tankBd, strokeWidth: st === 'Blending' ? 1.6 : 1, strokeDasharray: free ? '2 2' : 'none' })];
   if (!free) kids.push(rect(x + 1, y + s - 1 - (s - 2) * f, s - 2, (s - 2) * f, { fill: color, opacity: .9 }));
   if (st === 'QC hold' || st === 'Adjusting' || kk.q === 'On hold') kids.push(rect(x + 1, y + 1, s - 2, s - 2, { fill: 'url(#shHatch)' }));
   if (st === 'Cleaning') kids.push(h('path', { key: k(), d: `M${x + 3} ${y + s - 3}L${x + s - 3} ${y + 3}`, style: { stroke: P.mute, strokeWidth: 1.2 } }));
   if (kk.pIn > 0 || kk.state === 'Receiving') kids.push(h('circle', { key: k(), cx: x + s - 3, cy: y + 3, r: 2.4, className: 'sh-blink', style: { fill: 'var(--acc)' } }));
-  return h('g', { key: 't' + kk.id }, ...kids);
+  return hit('tank', kk.id, [x, y, s, s], kids, { key: 't' + kk.id, pad, title: `${kk.id} · ${free ? 'Free, clean' : shortOf(kk.code)} · ${Math.round(f * 100)} % · ${kk.status}` });
 }
 function stateSq(x, y, w, hh, t, frac, title, o = {}) {
-  const kids = [rect(x, y, w, hh, { fill: t === 'idle' || t === 'off' ? P.tank : stc(t), opacity: t === 'idle' || t === 'off' ? 1 : .22, stroke: t === 'idle' || t === 'off' ? P.tankBd : stc(t), strokeWidth: 1 }, { title })];
+  const kids = [rect(x, y, w, hh, { fill: t === 'idle' || t === 'off' ? P.tank : stc(t), opacity: t === 'idle' || t === 'off' ? 1 : .22, stroke: t === 'idle' || t === 'off' ? P.tankBd : stc(t), strokeWidth: 1 }, o.hit ? {} : { title })];
   if (frac != null && t !== 'idle' && t !== 'off') kids.push(rect(x, y + hh - Math.max(1.5, hh * .22), w * Math.max(0, Math.min(1, frac)), Math.max(1.5, hh * .22), { fill: stc(t) }));
   if (t === 'warn' || t === 'crit') kids.push(rect(x + 1, y + 1, w - 2, hh - 2, { fill: 'none', stroke: stc(t), strokeWidth: 1.4 }));
   if (o.dot) kids.push(h('circle', { key: k(), cx: x + w / 2, cy: y + hh / 2, r: Math.min(w, hh) * .18, style: { fill: stc(t) } }));
+  if (o.hit) return hit(o.hit[0], o.hit[1], [x, y, w, hh], kids, { key: o.key, pad: o.pad, title });
   return h('g', { key: o.key || k() }, ...kids);
 }
 const BUND_LABEL = { 'BOT-A': 'A · SN150/500', 'BOT-B': 'B · SN500', 'BOT-C': 'C · BS150', 'BOT-D': 'D · 150N/600N', 'BOT-E': 'E · Group III', 'BOT-F': 'F · specialty' };
@@ -150,21 +164,22 @@ function plan() {
   // ── sea, jetties, vessels and anchorage ──
   const seaKids = [rect(0, 0, 1200, 92, { fill: P.sea }), h('line', { key: 'coast', x1: 0, x2: 1200, y1: 92, y2: 92, style: { stroke: P.seaBd, strokeWidth: 1.5 } }), txt(680, 52, 'Java Sea', { fs: 13, c: P.faint })];
   const JX = { J1: 50, J2: 130, J3: 260, J4: 340, J5: 430, J6: 530, J7: 600, J8: 820, J9: 920 };
-  seaKids.push(rect(770, 62, 200, 30, { fill: P.pier, opacity: .55 }, { title: 'Container feeder quay · 340 m' }));
+  seaKids.push(rect(770, 62, 200, 30, { fill: P.pier, opacity: .55 }));
+  ['J8', 'J9'].forEach((id, i) => seaKids.push(hit('jetty', id, [770 + i * 100, 62, 100, 30], [], { key: 'q' + id, pad: 0, title: `${id} · container feeder quay` })));
   S.jetties.forEach(j => {
     const cx = JX[j.id], v = j.vessel ? S.vessels.find(x => x.id === j.vessel) : null;
-    if (j.id !== 'J8' && j.id !== 'J9') seaKids.push(rect(cx - 4, 30, 8, 62, { fill: P.pier }, { title: `${j.name} · ${j.role}` }));
+    if (j.id !== 'J8' && j.id !== 'J9') seaKids.push(hit('jetty', j.id, [cx - 4, 30, 8, 62], [rect(cx - 4, 30, 8, 62, { fill: P.pier })], { key: 'p' + j.id, pad: [7, 0], title: `${j.id} · ${j.role}` }));
     seaKids.push(txt(cx + (j.id === 'J8' || j.id === 'J9' ? -30 : 7), 86, j.id, { fs: 12, c: P.mute, fw: 600, mono: true }));
     if (v) {
       const w = VW[v.cls] || 50, x = cx - w / 2, y = 10, done = v.parcels.length ? v.parcels.reduce((a, p) => a + p.done, 0) / Math.max(1, v.parcels.reduce((a, p) => a + p.t, 0)) : v.moves ? v.moves.done / Math.max(1, v.moves.planned) : 0;
       const tn = v.pause ? 'warn' : /Discharging|Loading|Exchange/.test(v.state) ? 'run' : 'idle';
-      seaKids.push(h('g', { key: 'v' + v.id }, h('path', { d: `M${x} ${y}h${w - 8}l8 8l-8 8h${-(w - 8)}z`, style: { fill: VC[v.cls], stroke: P.hull, strokeWidth: 1 } }, h('title', null, `${v.name} · ${v.label} · ${v.step}`)),
-        txt(x + (w - 8) / 2, y + 12, v.cls, { fs: 10.5, c: '#fff', fw: 600, a: 'middle' }), rect(x, y + 19, w, 3.5, { fill: P.tank }), rect(x, y + 19, w * Math.min(1, done), 3.5, { fill: stc(tn) })));
+      seaKids.push(hit('vessel', v.id, [x, y, w, 22.5], [h('path', { key: 'hull', d: `M${x} ${y}h${w - 8}l8 8l-8 8h${-(w - 8)}z`, style: { fill: VC[v.cls], stroke: P.hull, strokeWidth: 1 } }),
+        txt(x + (w - 8) / 2, y + 12, v.cls, { fs: 10.5, c: '#fff', fw: 600, a: 'middle' }), rect(x, y + 19, w, 3.5, { fill: P.tank }), rect(x, y + 19, w * Math.min(1, done), 3.5, { fill: stc(tn) })], { key: 'v' + v.id, pad: 1, title: `${v.name} · ${v.label} · ${v.step}` }));
     }
   });
   const anch = S.vessels.filter(v => v.state === 'At anchorage'), exp = S.vessels.filter(v => v.state === 'Expected' && v.eta - D.NOW < 1440);
   seaKids.push(txt(1188, 18, `Anchorage · ${anch.length}`, { fs: 12, c: P.mute, a: 'end' }), txt(1188, 84, `Next 24 h · ${exp.length} arriving`, { fs: 12, c: P.mute, a: 'end' }));
-  anch.slice(0, 5).forEach((v, i) => seaKids.push(h('path', { key: 'a' + v.id, d: `M${1180 - i * 34 - 26} 34h18l6 6l-6 6h-18z`, style: { fill: VC[v.cls], opacity: .85 } }, h('title', null, `${v.name} · at anchorage since ${TM(v.anchorSince)}`))));
+  anch.slice(0, 5).forEach((v, i) => seaKids.push(hit('vessel', v.id, [1180 - i * 34 - 26, 34, 24, 12], [h('path', { key: 'a', d: `M${1180 - i * 34 - 26} 34h18l6 6l-6 6h-18z`, style: { fill: VC[v.cls], opacity: .85 } })], { key: 'a' + v.id, pad: 3, title: `${v.name} · at anchorage since ${TM(v.anchorSince)}` })));
   kids.push(zoneG('marine', [0, 0, 1200, 92], '', null, seaKids, 'Marine · 9 jetties'));
   // pipe rack
   kids.push(h('line', { key: 'rack', x1: 20, x2: 742, y1: 104, y2: 104, className: S.vessels.some(v => v.state === 'Discharging') ? 'sh-flow' : '', style: { stroke: P.pipe, strokeWidth: 3, strokeDasharray: '7 5' } }));
@@ -173,7 +188,7 @@ function plan() {
   bunds.forEach((b, i) => {
     const bx = 22 + (i % 3) * 102, by = 144 + Math.floor(i / 3) * 86, ts = BOT.filter(t => t.bund === b);
     botK.push(rect(bx, by, 96, 80, { fill: 'none', stroke: P.zoneBd, strokeDasharray: '3 2' }), txt(bx + 5, by + 13, BUND_LABEL[b], { fs: 11, c: P.mute }));
-    ts.forEach((t, j) => botK.push(tankSq(bx + 6 + (j % 3) * 30, by + 20 + Math.floor(j / 3) * 29, 24, t, famColor(t.code))));
+    ts.forEach((t, j) => botK.push(tankSq(bx + 6 + (j % 3) * 30, by + 20 + Math.floor(j / 3) * 29, 24, t, famColor(t.code), 2)));
   });
   const boCov = Math.min(...K.base.filter(b => ['G1-SN150', 'G1-SN500', 'G1-BS150', 'G2-150N', 'G2-600N'].includes(b.code)).map(b => b.days));
   kids.push(zoneG('bot', [12, 116, 320, 206], 'Base-oil tank farm', `${BOT.length} tanks · ≥ ${DAYS(boCov)}`, botK));
@@ -189,16 +204,16 @@ function plan() {
   const B = S.blenders, rowsB = [['North', B.filter(b => b.hall === 'North hall')], ['South', B.filter(b => b.hall === 'South hall')], ['Kettle', B.filter(b => b.hall === 'Kettle hall')]], bK = [];
   rowsB.forEach(([lab, list], ri) => {
     const y = 278 + ri * 38; bK.push(txt(354, y + 13, lab, { fs: 11.5, c: P.mute }));
-    let x = 404; list.forEach(b => { const w = b.type === 'ILB' ? 30 : 17, bt = b.batch, fr = bt ? (bt.t ? bt.done / bt.t : 0) : null; bK.push(stateSq(x, y, w, 18, blenderTone(b), fr, `${b.id} · ${b.state}${bt ? ' · ' + shortOf(bt.code) + ' · ' + b.step : ''}`, { key: 'b' + b.id })); x += w + 3; });
+    let x = 404; list.forEach(b => { const w = b.type === 'ILB' ? 30 : 17, bt = b.batch, fr = bt ? (bt.t ? bt.done / bt.t : 0) : null; bK.push(stateSq(x, y, w, 18, blenderTone(b), fr, `${b.id} · ${b.state}${bt ? ' · ' + shortOf(bt.code) + ' · ' + b.step : ''}`, { key: 'b' + b.id, hit: ['blender', b.id] })); x += w + 3; });
   });
   kids.push(zoneG('blend', [344, 246, 270, 154], 'Blend halls', `${K.blend.inProcess}/23 busy`, bK));
   // ── grease plant ──
   const GU = S.grease.units, gK = [];
   [['CT', GU.filter(u => u.kind === 'Contactor')], ['OK', GU.filter(u => u.kind === 'Open kettle')], ['FK', GU.filter(u => u.kind === 'Finishing kettle')]].forEach(([lab, list], ri) => {
     const y = 276 + ri * 26; gK.push(txt(632, y + 12, lab, { fs: 11, c: P.mute, mono: true }));
-    list.forEach((u, j) => gK.push(stateSq(656 + j * 13, y, 11, 16, unitTone(u), null, `${u.id} · ${u.state}${u.batch ? ' · ' + shortOf(u.batch.code) : ''}`, { key: 'g' + u.id })));
+    list.forEach((u, j) => gK.push(stateSq(656 + j * 13, y, 11, 16, unitTone(u), null, `${u.id} · ${u.state}${u.batch ? ' · ' + shortOf(u.batch.code) : ''}`, { key: 'g' + u.id, hit: ['gunit', u.id], pad: 1 })));
   });
-  S.grease.hoppers.forEach((hp, j) => { const x = 632 + j * 27, f = hp.t / hp.size; gK.push(rect(x, 362, 22, 26, { fill: P.tank, stroke: P.tankBd }, { title: `${hp.id} · ${hp.code ? shortOf(hp.code) + ' · ' + hp.t.toFixed(1) + ' t · ' + hp.q : 'empty'}` }), rect(x + 1, 388 - 1 - 24 * Math.min(1, f), 20, 24 * Math.min(1, f), { fill: hp.code ? famColor(hp.code) : 'none' })); if (hp.q === 'Awaiting test results' || hp.q === 'On hold') gK.push(rect(x + 1, 363, 20, 24, { fill: 'url(#shHatch)' })); });
+  S.grease.hoppers.forEach((hp, j) => { const x = 632 + j * 27, f = hp.t / hp.size, hk = [rect(x, 362, 22, 26, { fill: P.tank, stroke: P.tankBd }), rect(x + 1, 388 - 1 - 24 * Math.min(1, f), 20, 24 * Math.min(1, f), { fill: hp.code ? famColor(hp.code) : 'none' })]; if (hp.q === 'Awaiting test results' || hp.q === 'On hold') hk.push(rect(x + 1, 363, 20, 24, { fill: 'url(#shHatch)' })); gK.push(hit('hopper', hp.id, [x, 362, 22, 26], hk, { key: 'hp' + hp.id, title: `${hp.id} · ${hp.code ? shortOf(hp.code) + ' · ' + hp.t.toFixed(1) + ' t · ' + hp.q : 'empty'}` })); });
   gK.push(txt(632, 356, 'Hoppers', { fs: 11, c: P.mute }));
   kids.push(zoneG('grease', [622, 246, 120, 154], 'Grease plant', null, gK));
   // ── finished-product tanks ──
@@ -206,62 +221,63 @@ function plan() {
   for (let b = 0; b < 8; b++) {
     const bx = 20 + (b % 2) * 156, by = 355 + Math.floor(b / 2) * 60, ts = FPT.slice(b * 12, b * 12 + 12);
     fK.push(rect(bx, by, 150, 55, { fill: 'none', stroke: P.zoneBd, strokeDasharray: '3 2' }), txt(bx + 5, by + 12, `FPT-${b + 1}`, { fs: 10.5, c: P.mute, mono: true }));
-    ts.forEach((t, j) => fK.push(tankSq(bx + 6 + (j % 6) * 23.5, by + 16 + Math.floor(j / 6) * 19.5, 17, t, famColor(t.code))));
+    ts.forEach((t, j) => fK.push(tankSq(bx + 6 + (j % 6) * 23.5, by + 16 + Math.floor(j / 6) * 19.5, 17, t, famColor(t.code), 1)));
   }
   kids.push(zoneG('fpt', [12, 330, 320, 268], 'Finished-product tanks', `96 · ${DAYS(K.fin.days)} rel.`, fK));
   // ── filling halls ──
   const Lns = S.lines, fillK = [], rowsL = [['Packaging', Lns.filter(l => l.hall === 'P')], ['Drums & IBC', Lns.filter(l => l.hall === 'D')], ['Grease', Lns.filter(l => l.hall === 'G')]];
   rowsL.forEach(([lab, list], ri) => {
     const y = 436 + ri * 36; fillK.push(txt(354, y + 15, lab, { fs: 11.5, c: P.mute }));
-    list.forEach((l, j) => fillK.push(stateSq(432 + j * 20, y, 16, 22, lineTone(l), l.wo ? l.wo.done / Math.max(1, l.wo.units) : null, `${l.id} · ${l.state}${l.wo ? ' · ' + shortOf(l.wo.code) + ' ' + l.wo.pack : ''}`, { key: 'l' + l.id })));
+    list.forEach((l, j) => fillK.push(stateSq(432 + j * 20, y, 16, 22, lineTone(l), l.wo ? l.wo.done / Math.max(1, l.wo.units) : null, `${l.id} · ${l.state}${l.wo ? ' · ' + shortOf(l.wo.code) + ' ' + l.wo.pack : ''}`, { key: 'l' + l.id, hit: ['line', l.id], pad: 2 })));
   });
-  S.blow.forEach((m, j) => fillK.push(stateSq(560 + j * 15, 508, 11, 11, m.fault ? 'crit' : m.state === 'Running' ? 'run' : 'idle', null, `${m.id} · blow moulder · ${m.state}`, { key: 'bm' + m.id })));
+  S.blow.forEach((m, j) => fillK.push(stateSq(560 + j * 15, 508, 11, 11, m.fault ? 'crit' : m.state === 'Running' ? 'run' : 'idle', null, `${m.id} · blow moulder · ${m.state}`, { key: 'bm' + m.id, hit: ['blow', m.id], pad: 2 })));
   fillK.push(txt(684, 517, 'Blow', { fs: 11, c: P.mute }));
   kids.push(zoneG('fill', [344, 408, 398, 152], 'Filling halls', `${K.lines.running}/34 running`, fillK));
   // ── warehouse and docks ──
   const W = S.warehouse, whK = [];
   [['High-bay', K.wh.hbw, 596], ['Drum/IBC', K.wh.drm, 622]].forEach(([lab, f, y]) => { whK.push(txt(354, y + 10, lab, { fs: 11.5, c: P.mute }), rect(420, y, 270, 12, { fill: P.tank, stroke: P.tankBd }), rect(420, y, 270 * Math.min(1, f), 12, { fill: f > .88 ? 'var(--warn)' : 'var(--ink3)' }), txt(732, y + 10, PCT(f), { fs: 11.5, a: 'end', mono: true })); });
-  W.cranes.forEach((c, j) => whK.push(stateSq(420 + j * 14, 645, 10, 10, c.fault ? 'crit' : 'run', null, `${c.id} · ${c.state}`, { key: 'sc' + c.id })));
+  W.cranes.forEach((c, j) => whK.push(stateSq(420 + j * 14, 645, 10, 10, c.fault ? 'crit' : 'run', null, `${c.id} · stacker crane · ${c.state}`, { key: 'sc' + c.id, hit: ['sc', c.id], pad: 2 })));
   whK.push(txt(354, 654, 'Cranes', { fs: 11, c: P.mute }));
   kids.push(zoneG('wh', [344, 568, 398, 96], 'Warehouse', `${D.fmt(W.hbw.occ + W.drm.occ)} pallets`, whK));
   const dK = [], bays = S.bays;
-  bays.filter(b => b.cls === 'PKG').forEach((b, j) => dK.push(rect(400 + j * 4.6, 684, 3.6, 12, { fill: b.state === 'Free' ? P.tank : b.fault ? 'var(--crit)' : 'var(--acc)', stroke: P.tankBd, strokeWidth: .5 }, { key: 'd' + b.id, title: `${b.id} · ${b.state}` })));
+  bays.filter(b => b.cls === 'PKG').forEach((b, j) => dK.push(hit('bay', b.id, [400 + j * 4.6, 684, 3.6, 12], [rect(400 + j * 4.6, 684, 3.6, 12, { fill: b.state === 'Free' ? P.tank : b.fault ? 'var(--crit)' : 'var(--acc)', stroke: P.tankBd, strokeWidth: .5 })], { key: 'd' + b.id, pad: [.5, 3], title: `${b.id} · ${b.state}` })));
   dK.push(txt(352, 694, 'Docks', { fs: 11, c: P.mute }), txt(732, 694, `${K.docks.PKG || 0}/64`, { fs: 11, a: 'end', mono: true }));
   kids.push(zoneG('docks', [344, 670, 398, 32], '', null, dK, 'Packaged dispatch docks'));
   // ── bulk loading, discharge and receiving bays ──
   const bulkK = [];
   [['BT', 'BLK', 12, 14, 18, 632], ['UL', 'UNL', 12, 14, 18, 654], ['RC', 'MAT', 24, 9, 11, 678]].forEach(([lab, cls, n, sz, step, y]) => {
     bulkK.push(txt(22, y + 11, lab, { fs: 11, c: P.mute, mono: true }));
-    bays.filter(b => b.cls === cls).forEach((b, j) => bulkK.push(rect(48 + j * step + (cls === 'BLK' ? Math.floor(j / 4) * 8 : 0), y, sz, sz, { fill: b.state === 'Free' ? P.tank : b.fault ? 'var(--crit)' : 'var(--acc)', stroke: P.tankBd, strokeWidth: .7 }, { key: 'b' + b.id, title: `${b.id} · ${b.state}` })));
+    bays.filter(b => b.cls === cls).forEach((b, j) => { const x = 48 + j * step + (cls === 'BLK' ? Math.floor(j / 4) * 8 : 0); bulkK.push(hit('bay', b.id, [x, y, sz, sz], [rect(x, y, sz, sz, { fill: b.state === 'Free' ? P.tank : b.fault ? 'var(--crit)' : 'var(--acc)', stroke: P.tankBd, strokeWidth: .7 })], { key: 'b' + b.id, pad: (step - sz) / 2, title: `${b.id} · ${b.state}` })); });
   });
   kids.push(zoneG('bulk', [12, 606, 320, 96], 'Bulk & receiving bays', `${(K.docks.BLK || 0) + (K.docks.UNL || 0) + (K.docks.MAT || 0)} busy`, bulkK));
   // ── ISO station and yard ──
   const isoK = [];
-  S.isoCranes.forEach((c, j) => isoK.push(stateSq(764 + (j % 9) * 20, 142 + Math.floor(j / 9) * 22, 16, 16, c.fault ? 'crit' : c.iso ? 'run' : 'idle', null, `${c.id} · bay ${c.bay} · ${c.fault ? 'Fault' : c.step || 'Free'}${c.iso ? ' · ' + c.iso.id : ''}`, { key: 'ic' + c.id })));
+  S.isoCranes.forEach((c, j) => isoK.push(stateSq(764 + (j % 9) * 20, 142 + Math.floor(j / 9) * 22, 16, 16, c.fault ? 'crit' : c.iso ? 'run' : 'idle', null, `${c.id} · bay ${c.bay} · ${c.fault ? 'Fault' : c.step || 'Free'}${c.iso ? ' · ' + c.iso.id : ''}`, { key: 'ic' + c.id, hit: ['crane', c.id], pad: 2 })));
   const CAT = { EC: 'oklch(0.80 0.03 230)', ED: 'oklch(0.70 0.07 60)', FO: 'oklch(0.58 0.12 150)', IF: 'oklch(0.58 0.12 280)', ER: 'oklch(0.72 0.02 260)', RP: 'oklch(0.60 0.15 25)' };
   const bySlot = {}; S.isos.forEach(x => { if (x.slot >= 0) bySlot[x.slot] = x; });
   ['Y-A', 'Y-B', 'Y-C', 'Y-D', 'Y-E'].forEach((bl, bi) => {
     const bx = 764 + bi * 37; isoK.push(txt(bx + 15, 200, bl, { fs: 10.5, c: P.mute, a: 'middle', mono: true }));
-    for (let i = 0; i < 50; i++) { const slot = bi * 50 + i, x = bySlot[slot], row = i >> 1, tier = i % 2; isoK.push(rect(bx + tier * 15, 206 + row * 10.6, 14, 9.6, { fill: x ? CAT[x.cat] : P.tank, stroke: slot >= 150 && slot < 180 ? 'var(--warn)' : P.tankBd, strokeWidth: slot >= 150 && slot < 180 ? .9 : .4 }, { key: 'y' + slot, title: x ? `${x.id} · ${x.type || 'T11'} · ${x.cat} · ${x.loc}${x.code ? ' · ' + shortOf(x.code) : ''}` : `Slot ${slot + 1} · free` })); }
+    for (let i = 0; i < 50; i++) { const slot = bi * 50 + i, x = bySlot[slot], row = i >> 1, tier = i % 2, sx = bx + tier * 15, sy = 206 + row * 10.6; isoK.push(hit(x ? 'iso' : 'slot', x ? x.id : String(slot), [sx, sy, 14, 9.6], [rect(sx, sy, 14, 9.6, { fill: x ? CAT[x.cat] : P.tank, stroke: slot >= 150 && slot < 180 ? 'var(--warn)' : P.tankBd, strokeWidth: slot >= 150 && slot < 180 ? .9 : .4 })], { key: 'y' + slot, pad: [.5, .5], title: x ? `${x.id} · ${x.type || 'T11'} · ${x.cat} · ${x.loc}${x.code ? ' · ' + shortOf(x.code) : ''}` : `${bl} slot ${row + 1}/${tier + 1} · free` })); }
   });
   const bc = S.iso.byCat; [['EC', 'Clean empty'], ['ED', 'Dirty empty'], ['FO', 'Full out'], ['IF', 'Inbound full'], ['ER', 'To return'], ['RP', 'Repair']].forEach(([c, lab], i) => { const x = 764 + (i % 3) * 62, y = 486 + Math.floor(i / 3) * 18; isoK.push(rect(x, y, 9, 9, { fill: CAT[c] }), txt(x + 13, y + 9, `${c} ${bc[c] || 0}`, { fs: 11, mono: true })); });
-  S.iso.wash.forEach((w, i) => isoK.push(stateSq(764 + i * 24, 528, 20, 14, w.iso ? 'run' : 'idle', null, `${w.id} · ${w.iso ? 'washing ' + w.iso.id : 'free'}`, { key: 'tw' + i })));
+  S.iso.wash.forEach((w, i) => isoK.push(stateSq(764 + i * 24, 528, 20, 14, w.iso ? 'run' : 'idle', null, `${w.id} · ${w.iso ? 'washing ' + w.iso.id : 'free'}`, { key: 'tw' + i, hit: ['wash', w.id], pad: 2 })));
   isoK.push(txt(764, 556, `Wash ${S.iso.wash.filter(w => w.iso).length}/${S.iso.wash.length}`, { fs: 11, c: P.mute }));
   isoK.push(txt(870, 539, `Heating ${S.iso.heatUsed}/30`, { fs: 11, c: P.mute }), txt(870, 556, `Orders ${S.iso.orders.length}`, { fs: 11, c: P.mute }));
   kids.push(zoneG('iso', [754, 116, 200, 490], 'ISO station & yard', `${S.iso.occ}/250`, isoK));
   // ── container stuffing ──
-  const sK = []; bays.filter(b => b.cls === 'STF').forEach((b, j) => sK.push(stateSq(764 + (j % 14) * 13, 640 + Math.floor(j / 14) * 14, 10, 10, b.box ? 'run' : 'idle', b.box ? b.pct : null, `${b.id} · ${b.box ? b.box.size + ' for ' + b.box.dest + ' · ' + Math.round(b.pct * 100) + ' %' : 'free'}`, { key: 's' + b.id })));
+  const sK = []; bays.filter(b => b.cls === 'STF').forEach((b, j) => sK.push(stateSq(764 + (j % 14) * 13, 640 + Math.floor(j / 14) * 14, 10, 10, b.box ? 'run' : 'idle', b.box ? b.pct : null, `${b.id} · ${b.box ? b.box.size + ' for ' + b.box.dest + ' · ' + Math.round(b.pct * 100) + ' %' : 'free'}`, { key: 's' + b.id, hit: ['bay', b.id], pad: [1.5, 2] })));
   const icy = S.rail.icy; sK.push(txt(764, 694, `Staged JKT ${icy.full.JKT} · SUB ${icy.full.SUB} · FDR ${icy.full.FDR}`, { fs: 11, c: P.mute, mono: true }));
   kids.push(zoneG('stuff', [754, 614, 200, 88], 'Container stuffing', `${K.stuffing.inWork}/28`, sK));
   // ── rail terminal and container yard ──
   const rK = [], TX = { 'RT-1': 984, 'RT-2': 1004, 'RT-3': 1024 };
-  Object.entries(TX).forEach(([id, x]) => rK.push(h('line', { key: id, x1: x, x2: x, y1: 158, y2: 696, style: { stroke: P.rail, strokeWidth: 2 } }), txt(x, 153, id.slice(3), { fs: 10.5, c: P.mute, a: 'middle', mono: true })));
+  Object.entries(TX).forEach(([id, x]) => rK.push(txt(x, 153, id.slice(3), { fs: 10.5, c: P.mute, a: 'middle', mono: true })));
   S.rail.tracks.forEach((tk, ti) => {
-    const tr = tk.train ? S.trains.find(x => x.id === tk.train) : null, x = TX[tk.id];
-    if (tr) { const n = Math.min(24, tr.wagons || 18); for (let i = 0; i < n; i++) rK.push(rect(x - 5, 162 + i * 22, 10, 18, { fill: tr.state === 'Working' ? 'var(--acc)' : P.idle, opacity: tr.state === 'Working' ? .55 : 1, stroke: P.tankBd, strokeWidth: .6 }, { key: 'w' + ti + '-' + i, title: `${tr.id} · ${tr.name} · ${tr.step}` })); }
+    const tr = tk.train ? S.trains.find(x => x.id === tk.train) : null, x = TX[tk.id], col = [h('line', { key: 'rl', x1: x, x2: x, y1: 158, y2: 696, style: { stroke: P.rail, strokeWidth: 2 } })];
+    if (tr) { const n = Math.min(24, tr.wagons || 18); for (let i = 0; i < n; i++) col.push(rect(x - 5, 162 + i * 22, 10, 18, { fill: tr.state === 'Working' ? 'var(--acc)' : P.idle, opacity: tr.state === 'Working' ? .55 : 1, stroke: P.tankBd, strokeWidth: .6 }, { key: 'w' + i })); }
+    rK.push(hit(tr ? 'train' : 'track', tr ? tr.id : tk.id, [x - 5, 158, 10, 538], col, { key: 'trk' + tk.id, pad: [4, 0], title: tr ? `${tr.id} · ${tr.name} · ${tr.step}` : `${tk.id} · ${tk.role} · free` }));
     const y = 160 + ti * 52; rK.push(txt(1046, y, `${tk.id}${tr ? ' · ' + tr.id : ' · free'}`, { fs: 11.5, fw: 600, mono: true }), txt(1046, y + 16, tr ? `${tr.service} · ${tr.state === 'Working' ? Math.round(tr.done) + '/' + tr.moves + ' moves' : tr.state}` : '—', { fs: 11, c: P.mute }));
   });
-  S.rail.cranes.forEach((c, i) => { const y = 340 + i * 54; rK.push(rect(976, y, 206, 6, { fill: c.fault ? 'var(--crit)' : c.state === 'Working' ? 'var(--acc)' : P.idle, opacity: .9 }, { key: 'rmg' + i, title: `${c.id} · ${c.state}` }), txt(1046, y + 22, `${c.id} · ${c.fault ? 'Fault' : c.state}`, { fs: 11, mono: true, c: c.fault ? 'var(--critInk)' : P.txt })); });
+  S.rail.cranes.forEach((c, i) => { const y = 340 + i * 54; rK.push(hit('rmg', c.id, [976, y, 206, 6], [rect(976, y, 206, 6, { fill: c.fault ? 'var(--crit)' : c.state === 'Working' ? 'var(--acc)' : P.idle, opacity: .9 })], { key: 'rmg' + i, pad: [0, 4], title: `${c.id} · rail-mounted gantry · ${c.state}` }), txt(1046, y + 22, `${c.id} · ${c.fault ? 'Fault' : c.state}`, { fs: 11, mono: true, c: c.fault ? 'var(--critInk)' : P.txt })); });
   const nextT = S.trains.filter(t => t.state === 'Expected').sort((a, b) => a.eta - b.eta)[0];
   rK.push(txt(1046, 588, `Dry empties ${icy.dryEmpty}`, { fs: 11, mono: true }), txt(1046, 605, `Staged ISO ${S.isos.filter(x => /^ICY/.test(x.loc)).length}`, { fs: 11, mono: true }), txt(1046, 622, `Yard ${icy.teu}/900 TEU`, { fs: 11, mono: true }), txt(1046, 646, 'Next train', { fs: 11, c: P.mute }), txt(1046, 662, nextT ? `${nextT.service} ${D.tm(nextT.eta, tz, { tz: false })}` : '—', { fs: 11.5, mono: true }));
   kids.push(zoneG('rail', [966, 116, 222, 586], 'Rail & container yard', null, rK));
@@ -348,7 +364,7 @@ function flowStrip() {
     span({ fontSize: 12.5, fontWeight: 600 }, title),
     ...rows.map(([l, v]) => div({ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8, minWidth: 0, fontSize: 12.5 }, span({ ...ell, color: 'var(--ink2)' }, l), span({ fontFamily: 'var(--fnum)', flex: 'none' }, v))));
   const st = [
-    stage('Received', [['By sea', T0(K.rec.sea)], ['Rail ISO tanks', T0(K.rec.rail)], ['Road & feeder ISO', T0(K.rec.road + K.rec.iso)], ['Cross-dock pallets', T0(K.hub.xd)]], 'var(--ink3)', 'marine'),
+    stage('Received', [['By sea', T0(K.rec.sea)], ['Rail ISO tanks', T0(K.rec.rail)], ['Road tankers & ISO', T0(K.rec.road + K.rec.iso)], ['Cross-dock pallets', T0(K.hub.xd)]], 'var(--ink3)', 'marine'),
     stage('In stock', [['Base oils', T0(base)], ['Additives', T0(add)], ['Finished, released', T0(K.fin.rel)], ['Cross-dock floor', T0(K.hub.xdStock)]], 'var(--ink3)', 'tanks'),
     stage('Blended', [['Liquid blends', T0(K.blend.t)], ['Grease', T0(K.grease.t, 1)], ['Batches started', D.fmt(K.blend.batches)], ['Blenders busy', `${K.blend.inProcess}/23`]], 'var(--acc)', 'blend'),
     stage('Filled', [['Packed', T0(K.out.pkg)], ['Units', D.fmt(X.units)], ['Bulk & ISO loaded', T0(K.out.bulk)], ['Lines running', `${K.lines.running}/34`]], 'var(--acc)', 'fill'),
@@ -371,7 +387,7 @@ function planTab() {
     flowStrip(),
     div({ display: 'grid', gridTemplateColumns: ctx.tablet ? 'minmax(0,1fr)' : 'minmax(0,1.2fr) minmax(0,1fr)', gap: 12, minWidth: 0 },
       section('Output, last 24 h', span({ fontSize: 12, color: 'var(--ink3)' }, 'packaged + bulk, t/h'), [hourly('out', 24, 'var(--acc)', 'Output')], { key: 'outc' }),
-      section('Dispatch today by mode', span({ fontSize: 12, color: 'var(--ink3)', fontFamily: 'var(--fnum)' }, `${T0(K.disp.road + K.disp.rail + K.disp.sea)} shipped`), [...disp, kv('Base-oil re-export', `${T0(K.hub.reexp)} of ${T0(K.hub.plan)} plan`), kv('Re-export by sea · ISO · road', `${T0(K.hub.sea)} · ${T0(K.hub.iso)} · ${T0(K.hub.road)}`), kv('Cross-dock pallets received', T0(K.hub.xd)), kv('Receipts by sea', T0(K.rec.sea)), kv('Receipts by rail ISO', T0(K.rec.rail)), kv('Receipts by road and feeder ISO', T0(K.rec.road + K.rec.iso), { last: true })], { key: 'dispc' })),
+      section('Dispatch today by mode', span({ fontSize: 12, color: 'var(--ink3)', fontFamily: 'var(--fnum)' }, `${T0(K.disp.road + K.disp.rail + K.disp.sea)} shipped`), [...disp, kv('Base-oil re-export', `${T0(K.hub.reexp)} of ${T0(K.hub.plan)} plan`), kv('Re-export by sea · ISO · road', `${T0(K.hub.sea)} · ${T0(K.hub.iso)} · ${T0(K.hub.road)}`), kv('Cross-dock pallets received', T0(K.hub.xd)), kv('Receipts by sea', T0(K.rec.sea)), kv('Receipts by rail ISO', T0(K.rec.rail)), kv('Receipts by road tanker and ISO', T0(K.rec.road + K.rec.iso), { last: true })], { key: 'dispc' })),
     section('Latest events', btn('All events', () => A.tab('log')), ev.length ? ev : [empty('No events yet.')], { key: 'evc' }));
 }
 
@@ -386,7 +402,7 @@ function marineTab() {
   const jet = S.jetties.map(j => { const v = j.vessel ? S.vessels.find(x => x.id === j.vessel) : null; return v ? vesselCard(v) : tile({ key: 'j' + j.id, id: j.id, state: j.closed ? 'Closed' : 'Free', tone: 'idle', line1: j.role, line2: `${j.loa} m LOA · ${j.draft} m draft`, onClick: () => A.zone('marine') }); });
   return div({ display: 'flex', flexDirection: 'column', gap: 12, minWidth: 0 },
     grid(170, [kpi('Berths in use', `${K.berths.busy}/9`), kpi('At anchorage', String(K.berths.anchorage), null, K.berths.anchorage > 2 ? 'warn' : null), kpi('Due in 72 h', String(K.berths.expected72)), kpi('Received by sea today', T0(K.rec.sea)), kpi('Loaded to ships today', T0(S.today.sea))], 8),
-    section('Jetties', span({ fontSize: 12, color: 'var(--ink3)' }, 'J1–J4 base oil in & re-export · J5 additives · J6–J7 barges · J8–J9 feeders'), [grid(250, jet, 8)]),
+    section('Jetties', span({ fontSize: 12, color: 'var(--ink3)' }, 'J1–J4 base oil in & re-export · J5 additives & barges · J6–J7 barges · J8–J9 feeders'), [grid(250, jet, 8)]),
     section('Line-up · next 10 days', span({ fontSize: 12, color: 'var(--ink3)' }, `${vs.length} vessels`), [table([
       { label: 'ETA', w: '118px', f: v => TM(v.ata || v.eta), mono: true }, { label: 'Vessel', w: 'minmax(140px,1.4fr)', f: v => [span({ width: 8, height: 8, display: 'inline-block', background: VC[v.cls], flex: 'none' }), span({ ...ell }, v.name)] },
       { label: 'Type', w: 'minmax(110px,1fr)', f: v => v.label }, { label: 'Cargo', w: 'minmax(140px,1.4fr)', f: v => v.cls === 'FDR' ? 'Containers and ISO tanks' : v.parcels.map(p => `${shortOf(p.code)} ${D.fmt(p.t)}`).join(' · ') },
@@ -509,7 +525,7 @@ function blendTab() {
       grid(196, S.grease.units.map(greaseTile), 8),
       div({ fontSize: 12.5, fontWeight: 600, marginTop: 4 }, 'Hoppers to the grease filling lines'),
       grid(196, S.grease.hoppers.map(hopperTile), 8),
-      div({ display: 'flex', gap: 6, flexWrap: 'wrap' }, ...S.grease.aux.map(x => chip(`${x.id} · ${x.fault ? 'Fault' : x.state}`, x.fault ? 'crit' : x.state === 'Running' ? 'run' : 'idle', `${x.kind} ${x.id}`))),
+      div({ display: 'flex', gap: 6, flexWrap: 'wrap' }, ...S.grease.aux.map(x => chipBtn(`${x.id} · ${x.fault ? 'Fault' : x.state}`, x.fault ? 'crit' : x.state === 'Running' ? 'run' : 'idle', () => A.sel('gaux', x.id), isSel('gaux', x.id), `${x.kind} ${x.id}`))),
     ], { key: 'grease' }),
     section('Dedicated tank fills', note('several batches run into one tank, then one release test'), [fills.length ? table([
       { label: 'Tank', w: '72px', f: k => k.id, mono: true },
@@ -583,7 +599,7 @@ function cargoOf(x) {
   if (x.cls === 'PKG') return x.palGot ? `${Math.round(x.palGot)} pallets · ${T0(x.t, 1)}` : `${x.pallets} pallets booked`;
   if (x.cls === 'BLK') return `${shortOf(x.code)} · ${T0(x.done || 0, 1)} of ${T0(x.payload, 1)}${x.base ? ' · base-oil re-export' : ''}`;
   if (x.cls === 'XDK') return `${x.pallets} pallets · ${T0(x.t, 1)} from ${x.from}`;
-  if (x.cls === 'UNL') return `${shortOf(x.code)} · ${T0(x.done || 0, 1)} of ${T0(x.payload, 1)}${x.iso ? ' · ISO' : ''}`;
+  if (x.cls === 'UNL') return `${shortOf(x.code)} · ${T0(x.done || 0, 1)} of ${T0(x.payload, 1)}${x.iso ? ' · ISO' : ''}${x.from ? ' from ' + x.from : ''}`;
   if (x.cls === 'MAT') { const L = x.load || {}; return L.store ? `${shortOf(L.store)} · ${T0(L.t, 1)}` : L.mat && S.materials[L.mat] ? `${S.materials[L.mat].label} · ${D.fmt(L.qty)}` : 'Delivery'; }
   if (x.cls === 'ISO') return x.note || ((x.job || {}).drop ? 'Dropping a clean empty ISO' : 'Collecting an ISO tank');
   if (x.cls === 'BOX') return 'Empty 20/40 ft box to the container yard';
@@ -617,7 +633,7 @@ function whTab() {
     div({ display: 'grid', gridTemplateColumns: ctx.tablet ? 'minmax(0,1fr)' : 'minmax(0,1fr) minmax(0,1fr)', gap: 12, minWidth: 0 },
       section('Stores', note('automated high-bay with 10 stacker cranes; block-stacked drum and IBC store'), [
         store('High-bay store · small packs and pails', W.hbw, K.wh.coverHBW, 8), store('Drum & IBC store', W.drm, K.wh.coverDRM, 4.8),
-        div({ display: 'flex', gap: 6, flexWrap: 'wrap' }, ...W.cranes.map(c => chip(`${c.id} ${c.fault ? 'Fault' : 'OK'}`, c.fault ? 'crit' : 'ok', `Stacker crane ${c.id}`))),
+        div({ display: 'flex', gap: 6, flexWrap: 'wrap' }, ...W.cranes.map(c => chipBtn(`${c.id} ${c.fault ? 'Fault' : 'OK'}`, c.fault ? 'crit' : 'ok', () => A.sel('sc', c.id), isSel('sc', c.id), `Stacker crane ${c.id}`))),
       ], { key: 'stores' }),
       section('Gate', note('6 in-lanes, 6 out-lanes, 8 weighbridges, 220-truck park'), [
         kv('Queue outside', `${G_.queue} trucks`, { color: G_.queue >= 20 ? 'var(--warnInk)' : 'var(--ink)' }), kv('In the park', `${G_.park.occ} of 220`), kv('On site', `${G_.onSite} trucks`),
@@ -677,9 +693,9 @@ function yardMap() {
   ['Y-A', 'Y-B', 'Y-C', 'Y-D', 'Y-E'].forEach((bl, bi) => {
     const y0 = 8 + bi * 50; kids.push(h('text', { key: 't' + bl, x: 0, y: y0 + 20, style: { fontSize: 11, fill: P2.mute, fontFamily: 'var(--fnum)' } }, bl));
     for (let i = 0; i < 50; i++) {
-      const slot = bi * 50 + i, x = bySlot[slot], row = i >> 1, tier = i % 2, heat = slot >= 150 && slot < 180, on = x && isSel('iso', x.id);
-      kids.push(h('rect', { key: 's' + slot, x: 34 + row * (cw + gap), y: y0 + tier * (ch + 3), width: cw, height: ch, className: x ? 'sh-slot' : '', onClick: x ? () => A.sel('iso', x.id) : undefined,
-        style: { fill: x ? ISO_CAT[x.cat][1] : P2.tank, stroke: on ? P2.sel : heat ? 'var(--warn)' : P2.tankBd, strokeWidth: on ? 2 : heat ? 1 : .5, cursor: x ? 'pointer' : 'default' } },
+      const slot = bi * 50 + i, x = bySlot[slot], row = i >> 1, tier = i % 2, heat = slot >= 150 && slot < 180, on = x ? isSel('iso', x.id) : isSel('slot', String(slot));
+      kids.push(h('rect', { key: 's' + slot, x: 34 + row * (cw + gap), y: y0 + tier * (ch + 3), width: cw, height: ch, className: 'sh-slot', onClick: () => x ? A.sel('iso', x.id) : A.sel('slot', String(slot)),
+        style: { fill: x ? ISO_CAT[x.cat][1] : P2.tank, stroke: on ? P2.sel : heat ? 'var(--warn)' : P2.tankBd, strokeWidth: on ? 2 : heat ? 1 : .5, cursor: 'pointer' } },
         h('title', null, x ? `${x.id} · ${x.type || 'T11'} · ${ISO_CAT[x.cat][0]}${x.code ? ' · ' + shortOf(x.code) : ''} · ${x.loc}` : `${bl} slot ${row + 1}/${tier + 1} · free${heat ? ' · steam heating point' : ''}`)));
     }
   });
@@ -707,7 +723,7 @@ function isoTab() {
       section('ISO yard · 5 blocks × 25 rows × 2 tiers', note('SJIU T11 tanks · press a tank'), [
         div({ overflowX: 'auto', minWidth: 0 }, div({ minWidth: 420 }, yardMap())),
         div({ display: 'flex', gap: '6px 14px', flexWrap: 'wrap', fontSize: 12 }, ...Object.entries(ISO_CAT).map(([c, [label, col]]) => span({ display: 'inline-flex', alignItems: 'center', gap: 5 }, span({ width: 10, height: 10, background: col, display: 'inline-block' }), `${label} ${Y.byCat[c] || 0}`)), span({ display: 'inline-flex', alignItems: 'center', gap: 5, color: 'var(--ink3)' }, span({ width: 10, height: 10, border: '1px solid var(--warn)', display: 'inline-block' }), 'Steam heating point')),
-        div({ display: 'flex', gap: 6, flexWrap: 'wrap' }, ...Y.wash.map(w => chip(`${w.id} ${w.iso ? 'washing ' + w.iso.id : 'free'}`, w.iso ? 'run' : 'idle')), Y.divert ? chip(`${Y.divert} diverted to the depot`, 'warn') : null),
+        div({ display: 'flex', gap: 6, flexWrap: 'wrap' }, ...Y.wash.map(w => chipBtn(`${w.id} ${w.iso ? 'washing ' + w.iso.id : 'free'}`, w.iso ? 'run' : 'idle', () => A.sel('wash', w.id), isSel('wash', w.id), `Wash bay ${w.id}`)), Y.divert ? chip(`${Y.divert} diverted to the depot`, 'warn') : null),
       ], { key: 'yard' }),
       section('Fill orders', note(`${Y.orders.length} waiting for a crane`), [table([
         { label: 'Order', w: '104px', f: o => o.id.replace('ISO-ORD-', 'ORD '), mono: true },
@@ -725,7 +741,7 @@ function isoTab() {
       { label: 'Status', w: 'minmax(150px,1.3fr)', f: x => x.cat === 'IF' ? isoInbound(x) : x.cat === 'FO' ? `${({ road: 'Road', rail: 'Rail', sea: 'Feeder' })[x.mode] || ''} · due ${hh(x.due)}` : x.cat === 'RP' ? (x.repairUntil ? `Back ${hh(x.repairUntil)}` : 'Repair') : '—' },
     ], inYard, { onRow: x => A.sel('iso', x.id), selected: x => isSel('iso', x.id), key: x => x.id, scroll: true, minW: 820, max: 420, sticky: true, empty: 'No ISO tanks in this category.' })], { key: 'isos', pad: 0 }),
     div({ display: 'grid', gridTemplateColumns: ctx.tablet ? 'minmax(0,1fr)' : 'minmax(0,1.4fr) minmax(0,1fr)', gap: 12, minWidth: 0 },
-      section('Trains', note('every day · SUB liners 01:00 and 13:00 · JKT liners 03:30 and 15:30 · ISO shuttle 21:00'), [table([
+      section('Trains', note('every day · SUB liners 01:00, 09:00, 17:00 · JKT liners 03:30, 11:30, 19:30 · ISO shuttle 21:00'), [table([
         { label: 'Train', w: '78px', f: t => t.id, mono: true },
         { label: 'Service', w: 'minmax(130px,1.3fr)', f: t => svc[t.service] || t.name },
         { label: 'Due', w: '96px', f: t => hh(t.ata || t.eta), mono: true, color: t => t.eta - t.sched > 120 && !t.ata ? 'var(--warnInk)' : 'var(--ink)' },
@@ -760,7 +776,7 @@ function labTab() {
       kpi('Right first time', K.blend.rft == null ? '—' : PCT(K.blend.rft, 1), 'release and grease tests', K.blend.rft != null && K.blend.rft < .95 ? 'warn' : null),
     ], 8),
     trend('Samples in the lab, last 24 h', [{ key: 'labQ', label: 'Queued and in test', color: 'var(--acc)' }], { unit: 'samples', sub: '24 parallel test streams', wide: true }),
-    section('Instruments', note('an instrument out of service slows the tests that need it'), [div({ display: 'flex', gap: 6, flexWrap: 'wrap' }, ...Lb.instruments.map(x => chip(`${x.label} · ${x.n - x.down}/${x.n}${x.down ? ' · back ' + hh(x.until) : ''}`, x.down ? 'warn' : 'ok')))], { key: 'inst' }),
+    section('Instruments', note('an instrument out of service slows the tests that need it'), [div({ display: 'flex', gap: 6, flexWrap: 'wrap' }, ...Lb.instruments.map(x => chipBtn(`${x.label} · ${x.n - x.down}/${x.n}${x.down ? ' · back ' + hh(x.until) : ''}`, x.down ? 'warn' : 'ok', () => A.sel('instr', x.id), isSel('instr', x.id), `${x.label}: ${x.n} units`)))], { key: 'inst' }),
     section('Awaiting release', note(`${holds.length} tanks and ${hop.length} hoppers held for results`), [holds.length || hop.length ? table([
       { label: 'Where', w: '72px', f: r => r.id, mono: true },
       { label: 'Product', w: 'minmax(150px,1.6fr)', f: r => [sw(famColor(r.code), !GRD(r.code)), span({ ...ell }, (GRD(r.code) || HUB.info.COMP[r.code] || {}).label || r.code)] },
@@ -836,7 +852,7 @@ function logTab() {
 }
 
 // ── detail drawer: a zone of the site plan or one asset ──
-const KIND = { vessel: 'Vessel', tank: 'Tank', blender: 'Blender', gunit: 'Grease unit', hopper: 'Grease hopper', batch: 'Batch', line: 'Filling line', blow: 'Blow moulder', sample: 'Sample', truck: 'Truck', bay: 'Truck bay', box: 'Container', crane: 'ISO crane position', iso: 'ISO tank', train: 'Train', rmg: 'Rail crane', grade: 'Product grade' };
+const KIND = { vessel: 'Vessel', tank: 'Tank', blender: 'Blender', gunit: 'Grease unit', hopper: 'Grease hopper', batch: 'Batch', line: 'Filling line', blow: 'Blow moulder', sample: 'Sample', truck: 'Truck', bay: 'Truck bay', box: 'Container', crane: 'ISO crane position', iso: 'ISO tank', train: 'Train', rmg: 'Rail crane', grade: 'Product grade', sc: 'Stacker crane', wash: 'Wash bay', jetty: 'Jetty', track: 'Rail track', slot: 'ISO yard slot', gaux: 'Grease plant', instr: 'Lab instrument' };
 function dl(rows) {
   const list = rows.filter(Boolean);
   return div({ display: 'flex', flexDirection: 'column', minWidth: 0 }, ...list.map((r, i) => kv(r[0], r[1] == null || r[1] === '' ? '—' : r[1], { w: 118, ...(r[2] || {}), last: i === list.length - 1 })));
@@ -1010,6 +1026,50 @@ function zoneBody(id) {
     default: return [empty('No details for this zone.')];
   }
 }
+// ── equipment without a tab of its own ──
+const para = t => h('p', { style: { margin: 0, fontSize: 12.5, lineHeight: 1.45, color: 'var(--ink3)' } }, t);
+const openTab = (tab, extra) => btn(`Open ${TABS.find(t => t[0] === tab)[1]}`, () => A.tab(tab, extra), { primary: true });
+const YARD_BLOCKS = ['Y-A', 'Y-B', 'Y-C', 'Y-D', 'Y-E'];
+const slotName = n => { const i = n % 50; return `${YARD_BLOCKS[Math.floor(n / 50)]}-${String((i >> 1) + 1).padStart(2, '0')}-${(i % 2) + 1}`; };
+function dSc(c) {
+  const W = S.warehouse, up = W.cranes.filter(x => !x.fault).length;
+  return [dl([['State', c.fault ? 'Fault · out of service' : 'In service', { f: 'sans', color: c.fault ? 'var(--critInk)' : 'var(--ink)' }], c.fault ? ['Back in service', TM(c.fault.until)] : null, ['Store', 'High-bay · small packs and pails', { f: 'sans' }], ['Store fill', `${PCT(S.kpi.wh.hbw)} · ${D.fmt(W.hbw.occ)} pallets`], ['Cranes in service', `${up} of ${W.cranes.length}`], ['Pallets stored today', D.fmt(S.today.palIn)], ['Pallets picked today', D.fmt(S.today.palOut)]]),
+    para('Each aisle of the high-bay store has one stacker crane. With three or more cranes down, the packaging lines that feed the store stop.'), openTab('wh')];
+}
+function dWash(w) {
+  const x = w.iso, wait = S.isos.filter(y => y.cat === 'ED' && y.slot >= 0).length;
+  return [dl([['State', x ? 'Washing' : 'Free', { f: 'sans' }], x ? ['ISO tank', link(x.id, () => A.sel('iso', x.id)), { f: 'sans' }] : null, x && x.code ? ['Last product', shortOf(x.code), { f: 'sans' }] : null, x ? ['Clean by', TM(w.until)] : null, ['Dirty empties waiting', String(wait)], ['Wash bays busy', `${S.iso.wash.filter(y => y.iso).length} of ${S.iso.wash.length}`]]),
+    para('Hot-water and steam wash with a detergent rinse. A washed tank returns to the yard as a clean empty, ready for the next fill.'), openTab('iso')];
+}
+function dJetty(j) {
+  const v = j.vessel ? S.vessels.find(x => x.id === j.vessel) : null, VC_ = HUB.info.VCLS;
+  const next = S.vessels.filter(x => (x.state === 'Expected' || x.state === 'At anchorage') && j.cls.includes(x.cls)).sort((a, b) => a.eta - b.eta).slice(0, 4);
+  return [dl([['Berth', j.name, { f: 'sans' }], ['Role', j.role, { f: 'sans', wrap: true }], ['Max LOA', `${j.loa} m`], ['Draft', `${j.draft} m`], ['Equipment', j.kit, { f: 'sans', wrap: true }], ['Takes', j.cls.map(c => VC_[c].label).join(', '), { f: 'sans', wrap: true }], ['State', j.closed ? 'Closed' : v ? (v.pause ? 'Paused' : v.state) : 'Free', { f: 'sans' }]]),
+    v ? sub('Alongside', itemRow({ key: v.id, id: v.cls, label: v.name, right: v.pause ? 'Paused' : v.state, tone: v.pause ? 'warn' : 'run', onClick: () => A.sel('vessel', v.id) })) : null,
+    next.length ? sub('Next ships that can use this berth', ...next.map(x => itemRow({ key: x.id, id: x.cls, label: x.name, right: x.state === 'At anchorage' ? 'At anchorage' : TM(x.eta), tone: x.state === 'At anchorage' ? 'warn' : 'idle', onClick: () => A.sel('vessel', x.id) }))) : null,
+    openTab('marine')];
+}
+function dTrack(tk) {
+  const tr = tk.train ? S.trains.find(t => t.id === tk.train) : null, next = S.trains.filter(t => t.state === 'Expected').sort((a, b) => a.eta - b.eta).slice(0, 4);
+  return [dl([['Track', tk.role, { f: 'sans' }], ['State', tr ? 'Occupied' : 'Free', { f: 'sans' }], ['Rail cranes working', `${S.rail.cranes.filter(c => c.state === 'Working').length} of ${S.rail.cranes.length}`]]),
+    tr ? sub('On the track', itemRow({ key: tr.id, id: tr.service, label: `${tr.id} · ${tr.name}`, right: tr.state, tone: 'run', onClick: () => A.sel('train', tr.id) })) : null,
+    next.length ? sub('Next trains', ...next.map(t => itemRow({ key: t.id, id: t.service, label: `${t.id} · ${t.name}`, right: hh(t.eta), tone: 'idle', onClick: () => A.sel('train', t.id) }))) : null,
+    openTab('iso')];
+}
+function dSlot(n) {
+  const i = n % 50, heat = n >= 150 && n < 180, x = S.isos.find(y => y.slot === n);
+  return [dl([['Block', YARD_BLOCKS[Math.floor(n / 50)]], ['Row · tier', `${(i >> 1) + 1} · ${(i % 2) + 1}`], ['Steam heating point', heat ? 'Yes' : 'No', { f: 'sans' }], ['State', x ? 'Occupied' : 'Free', { f: 'sans' }], ['Yard', `${S.iso.occ} of 250 slots in use`]]),
+    x ? sub('ISO tank in this slot', itemRow({ key: x.id, id: x.cat, label: x.id, right: x.code ? shortOf(x.code) : '', tone: 'run', onClick: () => A.sel('iso', x.id) })) : null, openTab('iso')];
+}
+const GAUX_NOTE = { Homogeniser: 'Mills finished grease on its way to a holding hopper. With both homogenisers down, the kettles wait.', Deaerator: 'Draws entrained air out of the grease before it is filled.', 'Thermal-oil heater': 'Heats the contactors and kettles of the grease plant.' };
+function dGaux(x) {
+  return [dl([['Equipment', x.kind, { f: 'sans' }], ['State', x.fault ? 'Fault' : x.state, { f: 'sans', color: x.fault ? 'var(--critInk)' : 'var(--ink)' }], x.fault ? ['Back in service', TM(x.fault.until)] : null, ['Grease units busy', String(S.kpi.grease.inProcess)], ['Made today', T0(S.kpi.grease.t, 1)]]),
+    GAUX_NOTE[x.kind] ? para(GAUX_NOTE[x.kind]) : null, openTab('blend')];
+}
+function dInstr(x) {
+  return [dl([['Units in service', `${x.n - x.down} of ${x.n}`], x.down ? ['Back in service', TM(x.until)] : null, ['Lab queue', `${S.kpi.lab.queue} samples`], ['In test', `${S.kpi.lab.inTest} of ${S.lab.cap}`], ['Turnaround', `${HRS(S.kpi.lab.tatAvg)} · P90 ${HRS(S.kpi.lab.tatP90)}`]]),
+    para('Tests that need this instrument wait while units are out of service.'), openTab('lab')];
+}
 function findSel(sel) {
   const id = sel.id;
   switch (sel.kind) {
@@ -1030,6 +1090,13 @@ function findSel(sel) {
     case 'train': return S.trains.find(x => x.id === id);
     case 'rmg': return S.rail.cranes.find(x => x.id === id);
     case 'grade': return GRD(id);
+    case 'sc': return S.warehouse.cranes.find(x => x.id === id);
+    case 'wash': return S.iso.wash.find(x => x.id === id);
+    case 'jetty': return S.jetties.find(x => x.id === id);
+    case 'track': return S.rail.tracks.find(x => x.id === id);
+    case 'slot': { const n = +id; return Number.isInteger(n) && n >= 0 && n < 250 ? { id: n } : null; }
+    case 'gaux': return S.grease.aux.find(x => x.id === id);
+    case 'instr': return S.lab.instruments.find(x => x.id === id);
     default: return null;
   }
 }
@@ -1059,6 +1126,13 @@ function drawer() {
       case 'train': title = o.id; subT = o.name; t = o.state === 'Working' ? 'run' : tone(o.state); body = dTrain(o); break;
       case 'rmg': title = o.id; subT = 'Rail-mounted gantry crane'; t = o.fault ? 'crit' : o.state === 'Working' ? 'run' : 'idle'; body = [dl([['State', o.fault ? 'Fault' : o.state, { f: 'sans' }], ['Train', o.train || '—'], ['Moves today', D.fmt(o.movesToday)]])]; break;
       case 'grade': title = o.short; subT = o.label; body = dGrade(o); break;
+      case 'sc': title = o.id; subT = 'Stacker crane · high-bay store'; t = o.fault ? 'crit' : 'run'; body = dSc(o); break;
+      case 'wash': title = o.id; subT = 'ISO tank wash bay'; t = o.iso ? 'run' : 'idle'; body = dWash(o); break;
+      case 'jetty': title = o.id; subT = `${o.name} · ${o.role}`; t = o.closed ? 'warn' : o.vessel ? 'run' : 'idle'; body = dJetty(o); break;
+      case 'track': title = o.id; subT = o.role; t = o.train ? 'run' : 'idle'; body = dTrack(o); break;
+      case 'slot': title = slotName(o.id); subT = `ISO yard slot${o.id >= 150 && o.id < 180 ? ' · steam heating point' : ''}`; t = S.isos.some(y => y.slot === o.id) ? 'run' : 'idle'; body = dSlot(o.id); break;
+      case 'gaux': title = o.id; subT = o.kind; t = o.fault ? 'crit' : o.state === 'Running' ? 'run' : 'idle'; body = dGaux(o); break;
+      case 'instr': title = o.label; subT = 'QC laboratory instrument'; t = o.down ? 'warn' : 'ok'; body = dInstr(o); break;
       default: title = sel.id; body = [empty('No details.')];
     }
   } else { kicker = 'Zone'; title = ZONES[zone] || zone; body = zoneBody(zone); }
@@ -1067,7 +1141,7 @@ function drawer() {
     div({ flex: 'none', display: 'flex', alignItems: 'flex-start', gap: 10, padding: '12px 14px 10px', borderBottom: '1px solid var(--line)', borderTop: `3px solid ${TC[t]}`, minWidth: 0 },
       div({ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0, flex: 1 },
         span({ fontSize: 11.5, color: 'var(--ink3)', letterSpacing: '.02em', ...ell }, kicker),
-        h('h2', { style: { margin: 0, fontSize: 18, fontWeight: 600, lineHeight: 1.25, fontFamily: sel && sel.kind !== 'grade' && sel.kind !== 'vessel' ? 'var(--fid)' : 'var(--fsans)', overflowWrap: 'anywhere' } }, title),
+        h('h2', { style: { margin: 0, fontSize: 18, fontWeight: 600, lineHeight: 1.25, fontFamily: sel && sel.kind !== 'grade' && sel.kind !== 'vessel' && sel.kind !== 'instr' ? 'var(--fid)' : 'var(--fsans)', overflowWrap: 'anywhere' } }, title),
         subT ? span({ fontSize: 12.5, color: 'var(--ink2)', overflowWrap: 'anywhere' }, subT) : null),
       sel && ST.zone ? h('button', { onClick: () => A.back(), title: 'Back to the zone', 'aria-label': 'Back to the zone', className: 'sh-press', style: { flex: 'none', height: 32, padding: '0 10px', border: '1px solid var(--line)', background: 'var(--surf)', color: 'var(--ink)', fontSize: 12.5, cursor: 'pointer' } }, 'Back') : null,
       h('button', { onClick: () => A.close(), title: 'Close (Esc)', 'aria-label': 'Close details', className: 'sh-press', style: { flex: 'none', width: 32, height: 32, border: '1px solid var(--line)', background: 'var(--surf)', color: 'var(--ink)', fontSize: 18, lineHeight: 1, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' } }, '×')),
@@ -1105,5 +1179,15 @@ export function resolve(D_, id) {
   if (S2.batches.some(b => b.id === id)) return { kind: 'batch', id };
   if (S2.samples.some(b => b.id === id)) return { kind: 'sample', id };
   if (D_.HUB.info.GRADE[id]) return { kind: 'grade', id };
+  if (S2.warehouse.cranes.some(c => c.id === x)) return { kind: 'sc', id: x };
+  if (S2.grease.aux.some(u => u.id === x)) return { kind: 'gaux', id: x };
+  if (S2.iso.wash.some(w => w.id === x)) return { kind: 'wash', id: x };
+  if (S2.jetties.some(j => j.id === x)) return { kind: 'jetty', id: x };
+  if (S2.rail.tracks.some(t => t.id === x)) return { kind: 'track', id: x };
+  const jn = S2.jetties.find(j => j.name === id); if (jn) return { kind: 'jetty', id: jn.id };
+  const ins = S2.lab.instruments.find(i => i.label === id || i.id === x); if (ins) return { kind: 'instr', id: ins.id };
+  const ves = S2.vessels.find(v => v.name === id); if (ves) return { kind: 'vessel', id: ves.id };
+  if (S2.trains.some(t => t.id === id)) return { kind: 'train', id };
+  if (S2.isos.some(t => t.id === id)) return { kind: 'iso', id };
   return null;
 }
