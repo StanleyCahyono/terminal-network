@@ -71,7 +71,7 @@ Every terminal has a blend skid. Terminals that had no blend components got comp
 - 3 in-line blenders, 10 automated and 10 simple batch blenders, and a grease plant with contactors, kettles and hoppers;
 - 18 packaging lines, 14 drum-filling lines and 2 IBC lines (34 in all), with blow moulding for bottles and cans;
 - a high-bay warehouse and a drum store, 140 truck bays and a gate with a 220-truck park;
-- 18 ISO-tank crane positions and a 250-slot ISO yard with heating points;
+- 18 ISO-tank crane positions and a 250-slot ISO yard with heating points; every ISO tank is an IMO T11 portable tank coded SJIU with a random serial and its ISO 6346 check digit;
 - 4 rail cranes on three tracks, a container yard and a container-stuffing hall;
 - a QC laboratory with 24 test streams.
 

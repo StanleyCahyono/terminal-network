@@ -615,7 +615,7 @@ const BARGES = ['SPOB Kendal Jaya 3', 'SPOB Tirta Lube 7', 'SPOB Bintang Laut 9'
 const FEEDERS = ['KM Nusantara Ekspres 7', 'KM Selat Karimata', 'KM Laut Jawa Satu', 'KM Kendal Raya', 'KM Muria Ekspres'];
 const CARRIERS = ['PT Kendal Lintas Logistik', 'PT Weleri Mitra Logistik', 'PT Pantura Cargo Logistik', 'PT Semarang Raya Logistik', 'PT Muria Trans Logistik', 'PT Jati Kencana Logistik', 'PT Sinar Pelumas Logistik', 'PT Ungaran Jaya Logistik', 'PT Batang Prima Logistik', 'PT Demak Sentosa Logistik'];
 const PLATES = [['H', 35], ['B', 15], ['L', 10], ['K', 8], ['G', 8], ['D', 8], ['AD', 6], ['AB', 5], ['R', 5]];
-const ISO_OWNERS = [['MLKU', 40], ['SRTU', 15], ['NBLU', 15], ['KTNU', 15], ['ARKU', 15]];
+const ISO_OWNER = 'SJIU', ISO_TYPE = 'T11'; // every ISO tank is an SJIU-coded IMO T11 portable tank
 const BOX_OWNERS = ['TGHU', 'MRKU', 'SEGU', 'CAIU', 'TCLU', 'BMOU', 'FCIU'];
 const VCLS = {
   IMP: { label: 'Base-oil import tanker', pre: 240, post: 180, rate: [300, 420], loa: [165, 195], dwt: [15000, 25000], dir: 'in' },
@@ -1110,10 +1110,12 @@ export function createSuperhub(api) {
   const isoSeaQueue = [];          // inbound ISO tanks booked on the next feeder (component codes)
   const pendIso = {};              // t ordered by ISO and not yet discharged, by component
   const needsHeat = code => code === 'G1-BS150' || code === 'PAO-40' || (COMP[code] && COMP[code].kind === 'additive' && code !== 'AF-SIL');
-  let nIsoSerial = 0;
-  function newIsoId(r, own) {
-    const o = own || wpick(r, ISO_OWNERS, x => x[1])[0];
-    return { own: o, id: iso6346(o, String(200000 + ((Math.floor(r() * 650000) + (++nIsoSerial) * 7919) % 790000)).padStart(6, '0')) };
+  const isoSerials = new Set();
+  function newIsoId(r) { // a random six-digit serial, unique in the fleet, with its ISO 6346 check digit
+    let serial;
+    do { serial = String(Math.floor(r() * 1e6)).padStart(6, '0'); } while (isoSerials.has(serial));
+    isoSerials.add(serial);
+    return { own: ISO_OWNER, id: iso6346(ISO_OWNER, serial) };
   }
   function slotTake(heat) {
     const sl = S.iso.slots;
@@ -1128,10 +1130,10 @@ export function createSuperhub(api) {
     S.iso.slots[i] = ++nIsoObj; x.key = nIsoObj; x.slot = i; x.loc = yardLoc(i); x.since = s; return true;
   }
   function isoUnslot(x) { if (x.slot >= 0) { S.iso.slots[x.slot] = -1; x.slot = -1; } }
-  function isoAdd(x, s, heat) { if (!isoPlace(x, s, heat)) return null; S.isos.push(x); return x; }
+  function isoAdd(x, s, heat) { x.type = x.type || ISO_TYPE; if (!isoPlace(x, s, heat)) return null; S.isos.push(x); return x; }
   function isoGone(x, s) { isoUnslot(x); const i = S.isos.indexOf(x); if (i >= 0) S.isos.splice(i, 1); }
   function isoArrive(s, r, mode, code) { // inbound full ISO into the yard
-    const c = code || pick(r, ISO_ADD), { own, id } = newIsoId(r, mode === 'rail' ? 'KTNU' : null), heat = needsHeat(c);
+    const c = code || pick(r, ISO_ADD), { own, id } = newIsoId(r), heat = needsHeat(c);
     const x = { id, own, cat: 'IF', code: c, t: +U(r, 18.5, 21).toFixed(1), tempC: heat ? Math.round(U(r, 28, 36)) : 31, heat, heatUntil: heat ? s + Math.round(U(r, 480, 960) + (r() < .1 ? U(r, 240, 480) : 0)) : s + Math.round(U(r, 0, 240)), slot: -1, loc: '', since: s, mode, ret: mode === 'rail' ? 'rail' : r() < .6 ? 'sea' : 'road', arrived: s };
     if (!isoAdd(x, s, heat)) return null;
     labSubmit(s, 'Receipt', c, x.id, x.id, mode === 'rail' ? 'Rail shuttle' : mode === 'sea' ? 'Feeder' : 'Road', { kind: 'isoOK', iso: x.id });
