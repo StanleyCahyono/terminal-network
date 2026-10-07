@@ -11,6 +11,11 @@
       if (/Mobi|Android|iPhone|iPod/i.test(navigator.userAgent) && Math.min(screen.width, screen.height) < 600) location.replace('app/');
     } catch (e) {}
   })();
+  // sign-in first: without a session in this browser, go to the sign-in page and come back here afterwards
+  (function () {
+    try { var s = JSON.parse(localStorage.getItem('tnops:session')); if (s && s.exp > Date.now()) return; } catch (e) {}
+    location.replace('login.html?next=' + encodeURIComponent(location.pathname.split('/').pop() + location.search + location.hash));
+  })();
 </script>
 <script src="./support.js"></script>
 </head>
@@ -311,12 +316,7 @@ html:has(.tn-root[data-theme="dark"]),html:has(.tn-root[data-theme="dark"]) body
                 <span style="width:32px;height:32px;flex:none;background:var(--ink);color:var(--surf);display:grid;place-items:center;font-size:12px;font-weight:600">{{ userInitials }}</span>
                 <span style="display:flex;flex-direction:column;min-width:0;line-height:1.25"><span style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ userName }}</span><span style="font-size:12px;color:var(--ink3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ roleLabel }}</span></span>
               </div>
-              <div style="font-size:12.5px;color:var(--ink3)">Role</div>
-              <div style="display:flex;flex-direction:column;gap:3px">
-                <sc-for list="{{ roleOptions }}" as="o" hint-placeholder-count="5">
-                  <button onClick="{{ o.onClick }}" aria-pressed="{{ o.on }}" class="tn-sh-seg" style="min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:1px;padding:7px 9px;border:1px solid {{ o.bd }};border-radius:0;background:{{ o.bg }};text-align:left"><span style="max-width:100%;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ o.label }}</span><span style="max-width:100%;font-size:11px;color:var(--ink3)">{{ o.sub }}</span></button>
-                </sc-for>
-              </div>
+              <div style="display:flex;flex-direction:column;gap:2px;font-size:12.5px;color:var(--ink3);line-height:1.35;min-width:0"><span>{{ roleSub }}</span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Signed in as <b style="font-weight:600;color:var(--ink2)">{{ userId }}</b></span></div>
               <div style="font-size:12.5px;color:var(--ink3)">Display</div>
               <div role="group" aria-label="Theme" style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:4px">
                 <button onClick="{{ setLight }}" aria-pressed="{{ lightOn }}" class="tn-sh-seg" style="height:32px;min-width:0;display:flex;align-items:center;justify-content:center;gap:7px;border:1px solid {{ lightBd }};border-radius:0;background:{{ lightBg }};font-weight:500;white-space:nowrap">{{ I.sun }}<span>Light</span></button>
@@ -326,6 +326,7 @@ html:has(.tn-root[data-theme="dark"]),html:has(.tn-root[data-theme="dark"]) body
                 <span style="display:flex;flex-direction:column;min-width:0;line-height:1.25"><span>Reduced motion</span><span style="font-size:11px;color:var(--ink3)">{{ motionLabel }}</span></span>
                 <span style="flex:none;position:relative;width:30px;height:16px;border:1px solid {{ swBd }};background:{{ swBg }};transition:background-color var(--t-med) var(--ease-out),border-color var(--t-med) var(--ease-out)"><span style="position:absolute;top:2px;left:2px;width:10px;height:10px;background:{{ swKnob }};transform:translateX({{ swX }});transition:transform var(--t-med) var(--ease-out),background-color var(--t-med) var(--ease-out)"></span></span>
               </button>
+              <button onClick="{{ signOut }}" class="tn-sh-seg" style="height:34px;min-width:0;display:flex;align-items:center;justify-content:center;border:1px solid var(--line);border-radius:0;background:transparent;font-weight:600;white-space:nowrap" style-hover="background:var(--surf2)">Sign out</button>
             </div>
           </sc-if>
         </div>
@@ -486,10 +487,14 @@ class Component extends DCLogic {
     this.mnavRef = React.createRef();
   }
   componentDidMount() {
-    import(new URL('./data.js', document.baseURI).href).then(m => { this.D = m; this.I = m.icons(React.createElement); this.idx = m.searchIndex(); this.settle({ ready: true }); });
+    Promise.all([import(new URL('./data.js', document.baseURI).href), import(new URL('./auth.js', document.baseURI).href)]).then(([m, a]) => {
+      this.A = a; const ses = a.session(); if (!ses) { location.replace(a.loginUrl()); return; } // the role and name come from the account
+      this.D = m; this.I = m.icons(React.createElement); this.idx = m.searchIndex(); this.settle({ ready: true, ses, role: ses.role });
+    });
     this.onResize = () => this.setState({ vw: window.innerWidth });
     window.addEventListener('resize', this.onResize);
     this.timer = setInterval(() => {
+      if (this.A && !this.A.session()) { location.replace(this.A.loginUrl()); return; } // signed out elsewhere or the session ended
       const ev = this.D ? this.D.tick() : [];
       if (ev.length) {
         this.idx = this.D.searchIndex();
@@ -592,13 +597,13 @@ class Component extends DCLogic {
       admin: { label: 'Configuration admin', name: 'T. Prasetyo', sub: 'Edit terminal configuration', perm: { act: false, ack: false, resolve: false, release: false, config: true } },
       viewer: { label: 'Viewer · read only', name: 'Head office', sub: 'View only — actions are disabled', perm: { act: false, ack: false, resolve: false, release: false, config: false } },
     };
-    const role = roles[s.role] || roles.supervisor;
+    const ses = s.ses, roleId = ses ? ses.role : s.role, role = { ...(roles[roleId] || roles.supervisor), ...(ses ? { name: ses.name } : {}) };
     const disc = s.demo === 'disconnected';
     const perm = disc ? { act: false, ack: role.perm.ack, resolve: false, release: false, config: false } : role.perm;
     const shift = s.shift || D.shiftNow();
     const upd = (s.scope === 'network' && s.screen === 'network') ? 0.4 : t.upd;
     const stale = s.demo === 'stale' || (upd > 10 && s.scope === 'terminal');
-    const ctx = { screen: s.screen, terminalId: s.terminalId, scope: s.scope, products: s.products, range: s.range, shift, role: s.role, roleLabel: role.label, user: role.name, perm, demo: s.demo, stale, focus: s.focus, vw: s.vw, mobile, tablet, theme: s.theme, rev: s.rev, bump: this.bump, I, now: D.NOW };
+    const ctx = { screen: s.screen, terminalId: s.terminalId, scope: s.scope, products: s.products, range: s.range, shift, role: roleId, roleLabel: role.label, user: role.name, perm, demo: s.demo, stale, focus: s.focus, vw: s.vw, mobile, tablet, theme: s.theme, rev: s.rev, bump: this.bump, I, now: D.NOW };
 
     // Top bar density: chosen from the width the bar actually gets (viewport minus the rail), so nothing is ever pushed off-screen.
     // 4 = everything; 3 = range shows its short label, user shows initials; 2 = no scope kicker, compact freshness; 1 = search behind a button; 0 = phone.
@@ -724,7 +729,7 @@ class Component extends DCLogic {
       userOpen: s.userOpen, userExp: s.userOpen ? 'true' : 'false', toggleUser: () => this.setState({ userOpen: !s.userOpen, scopeOpen: false, rangeOpen: false, prodOpen: false, searchExpanded: false }), userName: role.name, roleLabel: role.label, userInitials, userAria: `${role.name} · ${role.label}`,
       showPhoneText: tier >= 3, phonePad: tier >= 3 ? '10px' : '8px',
       showUserText: tier >= 4, showUserChev: !mobile, userPad: mobile ? '0 3px' : tier >= 4 ? '0 8px 0 4px' : '0 6px 0 3px',
-      roleOptions: Object.entries(roles).map(([id, r]) => ({ label: r.label, sub: r.sub, on: s.role === id ? 'true' : 'false', onClick: () => this.set({ role: id }), bd: s.role === id ? 'var(--ink)' : 'var(--line)', bg: s.role === id ? 'var(--surf2)' : 'transparent' })),
+      userId: ses ? ses.user : '', roleSub: role.sub, signOut: () => { if (this.A) this.A.signOut(); location.replace('login.html'); },
       setLight: () => this.set({ theme: 'light' }), setDark: () => this.set({ theme: 'dark' }), lightOn: s.theme === 'light' ? 'true' : 'false', darkOn: s.theme === 'dark' ? 'true' : 'false', lightBd: s.theme === 'light' ? 'var(--ink)' : 'var(--line)', darkBd: s.theme === 'dark' ? 'var(--ink)' : 'var(--line)', lightBg: s.theme === 'light' ? 'var(--surf2)' : 'transparent', darkBg: s.theme === 'dark' ? 'var(--surf2)' : 'transparent',
       toggleMotion: () => this.set({ motion: s.motion === 'on' ? 'off' : 'on' }), motionLabel: s.motion === 'off' ? 'On · animations off' : 'Off · follows system setting', motionOffAria: s.motion === 'off' ? 'true' : 'false',
       swBd: s.motion === 'off' ? 'var(--ink)' : 'var(--ink4)', swBg: s.motion === 'off' ? 'var(--ink)' : 'transparent', swKnob: s.motion === 'off' ? 'var(--surf)' : 'var(--ink3)', swX: s.motion === 'off' ? '14px' : '0',

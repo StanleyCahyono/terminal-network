@@ -29,6 +29,8 @@ Operations console for the fuel terminal network and the lubricant superhub: net
 | `superhub.js` | Lubricant superhub: product catalogue, plant layout and live simulation |
 | `app/` | Mobile app (installable): `index.html`, `app.css`, `shell.js` (navigation), `screens.js`, `hub.js`, `kit.js`, `sw.js` (offline cache), `manifest.webmanifest`, icons |
 | `data.js` | Terminal, tank, transfer and quality data |
+| `login.html`, `auth.js`, `accounts.js` | Sign-in page for the console, sign-in and session logic, and the accounts (salted password hashes) |
+| `tools/password.html` | Makes an `accounts.js` line for a new person or a new password |
 | `schematic.js` | Terminal schematic renderer |
 | `support.js` | Runtime |
 | `assets/logo.png` | Logo |
@@ -100,6 +102,30 @@ Every terminal has a blend skid. Terminals that had no blend components got comp
 - **More**: quality samples with results and release or hold, blending batches with their recipe, the superhub (areas, ships, tanks, blenders, lines, trucks, trains and ISO tanks), settings (light, dark or match the phone; motion; alarm banners) and your role.
 
 It behaves like a native app: each tab keeps its own history, screens slide in and out, the phone's back button and an edge swipe go back, sheets drag down to close, and lists refresh with a pull. Add it to the home screen (Share → Add to Home Screen on iPhone, Install on Android) and it opens full screen and works offline.
+
+## Sign-in
+
+Everyone signs in before they see the console or the app. One sign-in covers both on the same browser. Without "Keep me signed in" a session lasts 12 hours (one shift); with it, 30 days. After five wrong passwords in a row, sign-in pauses for 30 seconds. **Sign out** is in the console's user menu (top right) and in the app under More → your name.
+
+Each account has one role, and the role decides what that person can do:
+
+| Role | Can |
+|---|---|
+| Shift supervisor | acknowledge and resolve alarms, operate transfers |
+| Terminal operator | acknowledge alarms, operate transfers |
+| Quality officer | acknowledge alarms, release or hold batches |
+| Configuration admin | edit terminal configuration in the console |
+| Viewer | view only |
+
+Starting accounts: `r.hakim` (shift supervisor), `a.nugroho` (operator), `s.wulandari` (quality officer), `t.prasetyo` (configuration admin) and `headoffice` (viewer). Their passwords were handed over separately and are not in this repository.
+
+**Add a person or change a password.** Open `tools/password.html` on the site (for example `https://<your-username>.github.io/terminal-network/tools/password.html`), fill in the name, username, role and password, and copy the line it makes into `accounts.js` on GitHub (replace the person's old line to change a password; delete a line to remove someone). Commit, and the change is live in about a minute. `accounts.js` keeps only a random salt and a PBKDF2-SHA-256 hash (600,000 rounds) per person, never the password.
+
+**What this protects, and what it does not.** The site is static files on GitHub Pages with no server, so the password check runs in the browser. It keeps people out of the screens, but anyone technical can still read the files directly, and while the repository is public its code is visible on GitHub. The data here is simulated, so that is fine for a demonstration. Before connecting real operational data, put the site behind real access control, for example:
+
+- **Cloudflare Access** (free for small teams): serve the site on your own domain through Cloudflare and allow only listed email addresses; Cloudflare checks every request before any file is sent.
+- **A private host with sign-in**, such as Netlify or Vercel password protection, or an internal web server behind the company's single sign-on.
+- Make the repository **private** so the code and the accounts file are not public (GitHub Pages from a private repository needs a paid GitHub plan, and the published site is still public unless you use GitHub Enterprise).
 
 ## Lubricant superhub
 

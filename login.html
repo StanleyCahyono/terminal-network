@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sign in · Terminal Network Operations</title>
+<link rel="icon" href="assets/logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&display=swap">
+<script>
+  // same theme as the console: its saved choice, else the system setting
+  (function () { var t = null; try { t = (JSON.parse(localStorage.getItem('tnops:shell')) || {}).theme; } catch (e) {}
+    if (t !== 'light' && t !== 'dark') t = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    document.documentElement.setAttribute('data-theme', t); })();
+</script>
+<style>
+  :root { --bg: #e9ebee; --surf: #ffffff; --line: #d3d8de; --pBd: #dde1e6; --ink: #1e2226; --ink2: #3d444c; --ink3: #69717b; --acc: #2f6fc0; --accSoft: #e7effa; --crit: #d23b2e; --critSoft: #fbeceb; --critInk: #a8281d; --side: #1e2226; --btn: #1e2226; --btnInk: #ffffff; --btnHover: #343a41; color-scheme: light; }
+  [data-theme="dark"] { --bg: #16191c; --surf: #1f2327; --line: #363c43; --pBd: #2c3136; --ink: #e9ebed; --ink2: #c3c8ce; --ink3: #8d959e; --acc: #6ea6f0; --accSoft: #22324a; --crit: #e5544a; --critSoft: #3a1f1d; --critInk: #f3a59f; --side: #0f1113; --btn: #e9ebed; --btnInk: #16191c; --btnHover: #ffffff; color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; background: var(--bg); color: var(--ink); font-family: 'Barlow', system-ui, sans-serif; font-size: 15px; line-height: 1.4; -webkit-font-smoothing: antialiased; }
+  body { min-height: 100vh; display: grid; grid-template-columns: minmax(0, 1fr); }
+  @media (min-width: 900px) { body { grid-template-columns: minmax(320px, 440px) minmax(0, 1fr); } .brand { display: flex !important; } }
+  .brand { display: none; flex-direction: column; justify-content: space-between; padding: 40px 44px; background: var(--side); color: #e9ebed; }
+  .brand img { width: 44px; height: auto; display: block; }
+  .brand h2 { margin: 28px 0 10px; font-size: 30px; line-height: 1.15; font-weight: 600; letter-spacing: -.01em; }
+  .brand p { margin: 0; color: #a7afb8; font-size: 15px; max-width: 32ch; }
+  .brand small { color: #7f8892; font-size: 12.5px; }
+  main { display: flex; align-items: center; justify-content: center; padding: 32px 16px; }
+  .card { width: 100%; max-width: 400px; background: var(--surf); border: 1px solid var(--pBd); padding: 32px 28px 26px; }
+  .head { display: flex; align-items: center; gap: 12px; margin-bottom: 26px; }
+  .head img { width: 34px; height: auto; display: block; }
+  .head b { display: block; font-size: 17px; font-weight: 600; }
+  .head span { display: block; font-size: 13px; color: var(--ink3); }
+  h1 { margin: 0 0 4px; font-size: 24px; font-weight: 600; letter-spacing: -.01em; }
+  .lead { margin: 0 0 22px; color: var(--ink3); }
+  label { display: block; font-size: 13px; font-weight: 600; color: var(--ink2); margin: 0 0 6px; }
+  .field { margin-bottom: 16px; }
+  .inp { position: relative; }
+  input[type=text], input[type=password] { width: 100%; height: 44px; padding: 0 12px; border: 1px solid var(--line); border-radius: 0; background: var(--surf); color: var(--ink); font: inherit; font-size: 16px; outline: none; transition: border-color .15s, box-shadow .15s; }
+  input[type=text]:focus, input[type=password]:focus { border-color: var(--acc); box-shadow: 0 0 0 3px var(--accSoft); }
+  .inp input { padding-right: 64px; }
+  .show { position: absolute; right: 4px; top: 4px; height: 36px; padding: 0 10px; border: 0; background: transparent; color: var(--acc); font: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer; }
+  .show:hover { text-decoration: underline; }
+  .row { display: flex; align-items: center; gap: 10px; margin: 4px 0 20px; }
+  .row input { width: 18px; height: 18px; margin: 0; accent-color: var(--acc); }
+  .row label { margin: 0; font-weight: 500; color: var(--ink); font-size: 14.5px; cursor: pointer; }
+  button.go { width: 100%; height: 46px; display: flex; align-items: center; justify-content: center; gap: 10px; border: 0; border-radius: 0; background: var(--btn); color: var(--btnInk); font: inherit; font-size: 16px; font-weight: 600; cursor: pointer; transition: background-color .15s; }
+  button.go:hover:not(:disabled) { background: var(--btnHover); }
+  button.go:disabled { opacity: .7; cursor: progress; }
+  .spin { width: 16px; height: 16px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: spin .7s linear infinite; display: none; }
+  .busy .spin { display: block; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .err { display: none; margin: 0 0 16px; padding: 10px 12px; background: var(--critSoft); color: var(--critInk); border-left: 3px solid var(--crit); font-size: 14px; }
+  .err.on { display: block; }
+  .foot { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--pBd); font-size: 13px; color: var(--ink3); display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .foot a { color: var(--acc); text-decoration: none; }
+  .foot a:hover { text-decoration: underline; }
+  :focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
+  .vh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+</style>
+</head>
+<body>
+<aside class="brand" aria-hidden="true">
+  <div><img src="assets/logo.png" alt=""><h2>Terminal Network Operations</h2><p>Live stock, transfers, blending, quality and alarms for the fuel terminal network and the Maiza Lubrika lubricant superhub.</p></div>
+  <small>Authorised staff only. Activity is logged.</small>
+</aside>
+<main>
+  <form class="card" id="f" novalidate>
+    <div class="head"><img src="assets/logo.png" alt=""><div><b>Terminal Network</b><span>Operations console</span></div></div>
+    <h1>Sign in</h1>
+    <p class="lead">Use the username and password your administrator gave you.</p>
+    <div class="err" id="err" role="alert" aria-live="assertive"></div>
+    <div class="field"><label for="u">Username</label><input type="text" id="u" name="username" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" required></div>
+    <div class="field"><label for="p">Password</label><div class="inp"><input type="password" id="p" name="password" autocomplete="current-password" required><button type="button" class="show" id="show" aria-controls="p" aria-pressed="false">Show</button></div></div>
+    <div class="row"><input type="checkbox" id="k" name="keep"><label for="k">Keep me signed in on this device for 30 days</label></div>
+    <button class="go" id="go" type="submit"><span class="spin" aria-hidden="true"></span><span id="goL">Sign in</span></button>
+    <div class="foot"><span>Forgot your password? Ask your configuration admin.</span><a href="app/">Phone app</a></div>
+  </form>
+</main>
+<script type="module">
+  import { session, signIn, waitSeconds } from './auth.js';
+  // only relative pages on this site may be the place to return to
+  const raw = new URLSearchParams(location.search).get('next') || '', phone = /Mobi|Android|iPhone|iPod/i.test(navigator.userAgent) && Math.min(screen.width, screen.height) < 600;
+  const next = /^[\w%.~-][\w%./?#=&~ -]*$/.test(raw) && !raw.includes('//') && !/^login\.html/.test(raw) ? raw : (phone ? 'app/' : 'Terminal%20Network.dc.html');
+  if (session()) location.replace(next);
+  const $ = id => document.getElementById(id), f = $('f'), u = $('u'), p = $('p'), err = $('err'), go = $('go'), goL = $('goL');
+  try { const last = localStorage.getItem('tnops:last-user'); if (last) { u.value = last; p.focus(); } else u.focus(); } catch (e) { u.focus(); }
+  const say = m => { err.textContent = m || ''; err.classList.toggle('on', !!m); };
+  $('show').addEventListener('click', () => { const on = p.type === 'password'; p.type = on ? 'text' : 'password'; $('show').textContent = on ? 'Hide' : 'Show'; $('show').setAttribute('aria-pressed', on ? 'true' : 'false'); p.focus(); });
+  let timer = null;
+  const tick = () => { const w = waitSeconds(); if (w) { go.disabled = true; goL.textContent = `Try again in ${w} s`; timer = setTimeout(tick, 1000); } else { go.disabled = false; goL.textContent = 'Sign in'; } };
+  tick();
+  f.addEventListener('submit', async e => {
+    e.preventDefault(); if (go.disabled) return; say('');
+    go.disabled = true; go.classList.add('busy'); goL.textContent = 'Signing in…';
+    try {
+      const s = await signIn(u.value, p.value, $('k').checked);
+      try { localStorage.setItem('tnops:last-user', s.user); } catch (x) {}
+      goL.textContent = `Welcome, ${s.name}`; location.replace(next);
+    } catch (x) {
+      say(x.message); p.value = ''; p.focus(); go.classList.remove('busy'); clearTimeout(timer); tick();
+    }
+  });
+</script>
+</body>
+</html>

@@ -3,6 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<script>
+  // sign-in first: without a session in this browser, go to the sign-in page and come back here afterwards
+  (function () {
+    try { var s = JSON.parse(localStorage.getItem('tnops:session')); if (s && s.exp > Date.now()) return; } catch (e) {}
+    location.replace('login.html?next=' + encodeURIComponent(location.pathname.split('/').pop() + location.search + location.hash));
+  })();
+</script>
 <script src="./support.js"></script>
 </head>
 <body>

@@ -1,6 +1,6 @@
 // Screens of the mobile app for the fuel network: overview, terminals, tanks, transfers, alarms, quality, blending, search, more.
 import { h, useState, useContext, useMemo, useEffect, ic, fmt, kL, pct, big, hm, when, today, ago, durS, prod, plabel, swatch, plural, toneOf, Pill, Dot, StateText, Sw, Bar, StackBar, Ring, TankGlyph, Press, Section, Group, Row, KV, Stat, Fig, Seg, Chips, SearchField, Btn, Empty, TrendChart, cx, haptic } from './kit.js';
-import { Screen, ScreenCtx, ROLES } from './shell.js';
+import { Screen, ScreenCtx } from './shell.js';
 import { HUB_SCREENS, hubTitle, hubRoute } from './hub.js';
 
 // ── shared helpers ──
@@ -366,7 +366,7 @@ function Search({ app }) {
 function More({ app }) {
   const D = app.D, wait = D.SAMPLES.filter(x => x.decision === 'Pending').length, act = D.BLENDS.filter(b => b.state === 'In progress' || b.state === 'Awaiting test results').length, S = D.HUB.state, initials = app.role.name.split(/[ .]+/).filter(Boolean).map(x => x[0]).join('').slice(0, 2).toUpperCase();
   return h(Screen, { title: 'More', large: true },
-    h(Section, null, h(Press, { className: 'card press', onPress: () => app.sheet({ title: 'Signed-in role', body: () => h(RolePick, { app }) }), label: 'Change role' }, h('div', { style: { display: 'flex', gap: 14, alignItems: 'center' } }, h('span', { className: 'avatar' }, initials),
+    h(Section, null, h(Press, { className: 'card press', onPress: () => app.sheet({ title: 'Account', body: () => h(Account, { app }) }), label: 'Account' }, h('div', { style: { display: 'flex', gap: 14, alignItems: 'center' } }, h('span', { className: 'avatar' }, initials),
       h('div', { style: { flex: 1, minWidth: 0 } }, h('div', { className: 'row-t strong', style: { fontSize: 19 } }, app.role.name), h('div', { className: 'row-s' }, app.role.label)), h('span', { className: 'chev' }, ic('chevR', 18, { w: 2.2 }))))),
     h(Section, { title: 'Operations', small: true }, h(Group, null,
       h(Row, { icon: 'shield', iconBg: '#3d9638', title: 'Quality', sub: 'Samples, results and release', value: wait ? String(wait) : null, valueSub: wait ? 'waiting' : null, onPress: () => app.push('quality') }),
@@ -378,10 +378,14 @@ function More({ app }) {
       h(Row, { icon: 'monitor', iconBg: '#3b4450', title: 'Desktop console', sub: 'The full operations console', onPress: () => window.open('../Terminal%20Network.dc.html?console', '_blank'), chevron: false, right: h('span', { style: { color: 'var(--ink4)' } }, ic('ext', 18, { w: 2 })) }))),
     h(Section, { small: true, foot: `Terminal Network · live data refreshed every 3 seconds · ${D.SNAPSHOT}` }));
 }
-function RolePick({ app }) {
-  return h('div', null, h('div', { className: 'grp' }, ...Object.entries(ROLES).map(([id, r]) => h('button', { key: id, className: 'opt', onClick: () => { app.setPref('role', id); app.closeSheet(); app.toast(`Signed in as ${r.label.split(' ·')[0].toLowerCase()}`); } },
-    h('span', { style: { display: 'flex', flexDirection: 'column', gap: 1, minWidth: 0 } }, h('span', null, r.label), h('span', { style: { fontSize: 13.5, color: 'var(--ink3)' } }, r.name)), app.roleId === id ? h('span', { className: 'ck' }, ic('check', 20, { w: 2.4 })) : null))),
-    h('div', { className: 'grp-f' }, 'The role decides which actions you can take, such as acknowledging alarms or releasing batches.'));
+const PERMS = { supervisor: 'Acknowledge and resolve alarms', operator: 'Acknowledge alarms', quality: 'Acknowledge alarms and release batches', admin: 'Edit terminal configuration in the console', viewer: 'View only' };
+function Account({ app }) {
+  const u = app.user, until = new Date(u.exp), days = Math.round((u.exp - Date.now()) / 864e5);
+  const signOut = () => { haptic(12); app.closeSheet(); setTimeout(() => app.signOut(), 380); };
+  return h('div', null,
+    h(KV, { rows: [['Name', u.name], ['Username', u.user], ['Role', u.roleLabel], ['Can', PERMS[u.role] || '—'], ['Signed in until', days >= 2 ? `${until.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })} · ${days} days` : until.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })]] }),
+    h('div', { className: 'grp-f' }, 'Your role comes with your account. Ask your configuration admin to change it or to reset your password.'),
+    h('div', { style: { padding: '14px var(--gut) 4px' } }, h(Btn, { kind: 'danger', icon: 'close', onPress: signOut }, 'Sign out')));
 }
 function Settings({ app }) {
   const pr = app.prefs, opt = (k, v, l, sub) => h('button', { key: v, className: 'opt', onClick: () => { haptic(4); app.setPref(k, v); } }, h('span', { style: { display: 'flex', flexDirection: 'column', gap: 1, minWidth: 0 } }, h('span', null, l), sub ? h('span', { style: { fontSize: 13.5, color: 'var(--ink3)' } }, sub) : null), pr[k] === v ? h('span', { className: 'ck' }, ic('check', 20, { w: 2.4 })) : null);
@@ -389,7 +393,7 @@ function Settings({ app }) {
     h(Section, { title: 'Appearance', small: true }, h('div', { className: 'grp' }, opt('theme', 'system', 'Match the phone', `Now ${app.theme}`), opt('theme', 'light', 'Light'), opt('theme', 'dark', 'Dark'))),
     h(Section, { title: 'Motion', small: true, foot: 'Reduced motion swaps slides and springs for quick fades.' }, h('div', { className: 'grp' }, opt('motion', 'system', 'Match the phone'), opt('motion', 'on', 'Full motion'), opt('motion', 'off', 'Reduced motion'))),
     h(Section, { title: 'Alerts', small: true, foot: 'A banner slides in when a new alarm is raised anywhere in the network.' }, h('div', { className: 'grp' }, h('button', { className: 'opt', role: 'switch', 'aria-checked': pr.banners ? 'true' : 'false', onClick: () => { haptic(5); app.setPref('banners', !pr.banners); } }, h('span', null, 'Alarm banners'), h(Switch, { on: pr.banners })))),
-    h(Section, { title: 'Role', small: true }, h(RolePick, { app })));
+    h(Section, { title: 'Account', small: true, foot: `Signed in as ${app.user.user} · ${app.user.roleLabel}` }, h(Group, null, h(Row, { icon: 'user', iconBg: 'var(--acc)', title: app.user.name, sub: 'Account details and sign out', onPress: () => app.sheet({ title: 'Account', body: () => h(Account, { app }) }) }))));
 }
 export function Switch({ on }) { return h('span', { className: 'switch', 'aria-checked': on ? 'true' : 'false', 'aria-hidden': true, style: { marginLeft: 'auto' } }, h('i')); }
 

@@ -2,6 +2,7 @@
 // button and gestures work), edge-swipe back, bottom sheets, alarm banners, toasts, the live data loop and preferences.
 import { h, useState, useEffect, useRef, useLayoutEffect, useContext, createContext, useCallback, Ctx, useApp, cx, ic, haptic, HoldDefs, Press, keepHy } from './kit.js';
 import { SCREENS, titleOf } from './screens.js';
+import { session } from '../auth.js';
 
 export const ScreenCtx = createContext(null);
 export const TABS = [
@@ -15,6 +16,7 @@ export const ROLES = {
   operator: { label: 'Terminal operator', name: 'A. Nugroho', perm: { act: true, ack: true, resolve: false, release: false } },
   supervisor: { label: 'Shift supervisor', name: 'R. Hakim', perm: { act: true, ack: true, resolve: true, release: false } },
   quality: { label: 'Quality officer', name: 'S. Wulandari', perm: { act: false, ack: true, resolve: false, release: true } },
+  admin: { label: 'Configuration admin', name: 'T. Prasetyo', perm: { act: false, ack: false, resolve: false, release: false } },
   viewer: { label: 'Viewer · read only', name: 'Head office', perm: { act: false, ack: false, resolve: false, release: false } },
 };
 const IOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
@@ -31,7 +33,7 @@ function loadPrefs() {
   return { theme: p.theme || 'system', motion: p.motion || 'system', banners: p.banners !== false, role: ROLES[p.role] ? p.role : ROLES[sh.role] ? sh.role : 'supervisor', installSeen: !!p.installSeen };
 }
 
-export function App({ D }) {
+export function App({ D, ses, onSignOut }) {
   const seqRef = useRef(0), seq = () => ++seqRef.current;
   const rootOf = id => ({ s: TABS.find(t => t.id === id).root, p: [], k: TABS.find(t => t.id === id).root + ':' + seq() });
   const parse = hash => {
@@ -72,6 +74,7 @@ export function App({ D }) {
   // ── live data: advance the network every 3 s and when the app returns to the foreground ──
   const seen = useRef(null);
   const step = useCallback(() => {
+    if (!session()) { onSignOut(); return; } // signed out in the console or another tab, or the session ended
     const ev = D.tick();
     if (ev && ev.length) setEvents(list => [...ev.slice(0, 6).map((text, i) => ({ id: D.NOW + ':' + i + ':' + text.length, at: D.NOW, text })), ...list].slice(0, 60));
     if (!seen.current) seen.current = new Set(D.EXCEPTIONS.map(e => e.id));
@@ -153,8 +156,8 @@ export function App({ D }) {
   useEffect(() => { if (!toast) return; const t = toast.out ? setTimeout(() => setToast(x => x && x.out ? null : x), 300) : setTimeout(() => setToast(x => x && { ...x, out: true }), 2600); return () => clearTimeout(t); }, [toast]);
   const onTop = useCallback(f => { topListeners.current.add(f); return () => topListeners.current.delete(f); }, []);
 
-  const role = ROLES[prefs.role];
-  const app = { D, rev, now: D.NOW, push, pop, switchTab, goTab, sheet: openSheet, closeSheet, toast: showToast, prefs, setPref, role, roleId: prefs.role, perm: role.perm, events, theme, reduced, onTop, refresh: step,
+  const role = { ...(ROLES[ses.role] || ROLES.viewer), name: ses.name };
+  const app = { D, rev, now: D.NOW, push, pop, switchTab, goTab, sheet: openSheet, closeSheet, toast: showToast, prefs, setPref, role, roleId: ses.role, perm: role.perm, user: ses, signOut: onSignOut, events, theme, reduced, onTop, refresh: step,
     install: installEvt ? async () => { installEvt.prompt(); const r = await installEvt.userChoice.catch(() => null); setInstallEvt(null); if (r && r.outcome === 'accepted') showToast('Installed on your home screen'); } : null, ios: IOS, standalone: STANDALONE() };
 
   // ── edge-swipe back (iOS-style; the browser's own gesture handles this outside the installed app) ──
