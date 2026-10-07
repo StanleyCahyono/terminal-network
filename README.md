@@ -115,9 +115,10 @@ Each account has one role, and the role decides what that person can do:
 | Terminal operator | acknowledge alarms, operate transfers |
 | Quality officer | acknowledge alarms, release or hold batches |
 | Configuration admin | edit terminal configuration in the console |
+| Executive management | monitor the whole network and the superhub: stock, transfers, quality, alarms and output, view only |
 | Viewer | view only |
 
-Starting accounts: `r.hakim` (shift supervisor), `a.nugroho` (operator), `s.wulandari` (quality officer), `t.prasetyo` (configuration admin) and `headoffice` (viewer). Their passwords were handed over separately and are not in this repository.
+Starting accounts: `r.hakim` (shift supervisor), `a.nugroho` (operator), `s.wulandari` (quality officer), `t.prasetyo` (configuration admin), `management` (executive management) and `headoffice` (viewer). Their passwords were handed over separately and are not in this repository.
 
 **Add a person or change a password.** Open `tools/password.html` on the site (for example `https://<your-username>.github.io/terminal-network/tools/password.html`), fill in the name, username, role and password, and copy the line it makes into `accounts.js` on GitHub (replace the person's old line to change a password; delete a line to remove someone). Commit, and the change is live in about a minute. `accounts.js` keeps only a random salt and a PBKDF2-SHA-256 hash (600,000 rounds) per person, never the password.
 

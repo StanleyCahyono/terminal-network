@@ -261,7 +261,7 @@ function Alarm({ p, app }) {
   const ack = () => { D.ackEx(e.id, who, D.NOW); haptic(12); app.toast(`${e.id} acknowledged`); };
   const resolve = () => app.sheet({ title: 'Resolve alarm', body: () => h(ResolveSheet, { app, e }) });
   const canAck = perm.ack && !e.ack && !e.res, canRes = perm.resolve && !e.res;
-  const foot = e.res ? null : h('div', null, canAck || canRes ? h('div', { className: 'btns' }, canAck ? h(Btn, { kind: 'primary', icon: 'check', onPress: ack }, 'Acknowledge') : null, canRes ? h(Btn, { kind: canAck ? 'secondary' : 'primary', onPress: resolve }, 'Resolve') : null)
+  const foot = e.res || app.monitor ? null : h('div', null, canAck || canRes ? h('div', { className: 'btns' }, canAck ? h(Btn, { kind: 'primary', icon: 'check', onPress: ack }, 'Acknowledge') : null, canRes ? h(Btn, { kind: canAck ? 'secondary' : 'primary', onPress: resolve }, 'Resolve') : null)
     : h('div', { className: 'lock' }, ic('lock', 16, { w: 2 }), !perm.ack ? 'Acknowledging needs the operator role' : 'Resolving needs the shift supervisor role'));
   return h(Screen, { title: e.what, navTitle: e.id, large: true, kicker: h(React.Fragment, null, h(Pill, { t: sevTone(e.sev) }, SEV[e.sev]), h('span', { className: 'mono' }, e.id)), sub: `${short(T)} · ${e.asset}`, foot },
     h(Section, null, h('div', { className: 'callout', style: { background: crit ? 'var(--critSoft)' : e.sev === 'attention' ? 'var(--warnSoft)' : 'var(--fill)' } }, h('span', { style: { color: crit ? 'var(--crit)' : 'var(--warnInk)', marginTop: 1 } }, ic(crit ? 'crit' : 'warn', 22, { w: 2.2 })), h('div', null, h('b', null, e.op), h('div', { style: { color: 'var(--ink2)', marginTop: 3 } }, `Owner: ${e.owner}`)))),
@@ -311,7 +311,7 @@ function Sample({ p, app }) {
   const release = () => { if (k && k.batch === x.batch) k.q = 'Released'; const b = D.BLENDS.find(y => y.id === x.batch); if (b) b.state = 'Released'; decide('Released', `${x.batch} released`); };
   const hold = () => { const kk = T.tanks.find(y => y.batch === x.batch); if (kk) kk.q = 'On hold'; const b = D.BLENDS.find(y => y.id === x.batch); if (b) b.state = 'On hold'; decide('On hold', `${x.batch} placed on hold`); };
   const canRel = perm.release && pending && x.status === 'Passed', canHold = perm.release && pending && x.status !== 'Pending';
-  const foot = pending ? h('div', null, canRel || canHold ? h('div', { className: 'btns' }, canHold ? h(Btn, { kind: canRel ? 'secondary' : 'danger', icon: 'hold', onPress: hold }, 'Hold') : null, canRel ? h(Btn, { kind: 'ok', icon: 'check', onPress: release }, 'Release') : null)
+  const foot = pending && !app.monitor ? h('div', null, canRel || canHold ? h('div', { className: 'btns' }, canHold ? h(Btn, { kind: canRel ? 'secondary' : 'danger', icon: 'hold', onPress: hold }, 'Hold') : null, canRel ? h(Btn, { kind: 'ok', icon: 'check', onPress: release }, 'Release') : null)
     : h('div', { className: 'lock' }, ic('lock', 16, { w: 2 }), perm.release ? 'Results are still coming in' : 'Releasing needs the quality officer role')) : null;
   const passed = x.tests.filter(t => t.status === 'Passed').length;
   return h(Screen, { title: plabel(x.code), navTitle: x.id.replace(/^S-/, ''), large: true, kicker: h('span', { className: 'mono' }, x.id), sub: `${T.name} · ${x.loc}`, foot },
@@ -378,7 +378,7 @@ function More({ app }) {
       h(Row, { icon: 'monitor', iconBg: '#3b4450', title: 'Desktop console', sub: 'The full operations console', onPress: () => window.open('../Terminal%20Network.dc.html?console', '_blank'), chevron: false, right: h('span', { style: { color: 'var(--ink4)' } }, ic('ext', 18, { w: 2 })) }))),
     h(Section, { small: true, foot: `Terminal Network · live data refreshed every 3 seconds · ${D.SNAPSHOT}` }));
 }
-const PERMS = { supervisor: 'Acknowledge and resolve alarms', operator: 'Acknowledge alarms', quality: 'Acknowledge alarms and release batches', admin: 'Edit terminal configuration in the console', viewer: 'View only' };
+const PERMS = { supervisor: 'Acknowledge and resolve alarms', operator: 'Acknowledge alarms', quality: 'Acknowledge alarms and release batches', admin: 'Edit terminal configuration in the console', exec: 'Monitor the network and the superhub (view only)', viewer: 'View only' };
 function Account({ app }) {
   const u = app.user, until = new Date(u.exp), days = Math.round((u.exp - Date.now()) / 864e5);
   const signOut = () => { haptic(12); app.closeSheet(); setTimeout(() => app.signOut(), 380); };

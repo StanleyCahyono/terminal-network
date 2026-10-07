@@ -2,7 +2,7 @@
 // The check runs in the browser: it keeps people out of the screens, not out of the files (see README "Sign-in").
 import { ACCOUNTS, ITER } from './accounts.js';
 const KEY = 'tnops:session', FAILS = 'tnops:signin-fails', HOUR = 3600000;
-export const ROLE_LABEL = { supervisor: 'Shift supervisor', operator: 'Terminal operator', quality: 'Quality officer', admin: 'Configuration admin', viewer: 'Viewer · read only' };
+export const ROLE_LABEL = { supervisor: 'Shift supervisor', operator: 'Terminal operator', quality: 'Quality officer', admin: 'Configuration admin', exec: 'Executive management', viewer: 'Viewer · read only' };
 const read = k => { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } };
 const write = (k, v) => { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} };
 const norm = u => String(u || '').trim().toLowerCase();

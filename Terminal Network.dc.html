@@ -595,9 +595,10 @@ class Component extends DCLogic {
       supervisor: { label: 'Shift supervisor', name: 'R. Hakim', sub: 'Operate, acknowledge and resolve exceptions', perm: { act: true, ack: true, resolve: true, release: false, config: false } },
       quality: { label: 'Quality officer', name: 'S. Wulandari', sub: 'Record results and release batches', perm: { act: false, ack: true, resolve: false, release: true, config: false } },
       admin: { label: 'Configuration admin', name: 'T. Prasetyo', sub: 'Edit terminal configuration', perm: { act: false, ack: false, resolve: false, release: false, config: true } },
+      exec: { label: 'Executive management', name: 'Executive management', sub: 'Monitor stock, transfers, quality and alarms — view only', perm: { act: false, ack: false, resolve: false, release: false, config: false } },
       viewer: { label: 'Viewer · read only', name: 'Head office', sub: 'View only — actions are disabled', perm: { act: false, ack: false, resolve: false, release: false, config: false } },
     };
-    const ses = s.ses, roleId = ses ? ses.role : s.role, role = { ...(roles[roleId] || roles.supervisor), ...(ses ? { name: ses.name } : {}) };
+    const ses = s.ses, roleId = ses ? ses.role : s.role, role = { ...(roles[roleId] || (ses ? roles.viewer : roles.supervisor)), ...(ses ? { name: ses.name } : {}) };
     const disc = s.demo === 'disconnected';
     const perm = disc ? { act: false, ack: role.perm.ack, resolve: false, release: false, config: false } : role.perm;
     const shift = s.shift || D.shiftNow();

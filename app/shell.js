@@ -17,6 +17,7 @@ export const ROLES = {
   supervisor: { label: 'Shift supervisor', name: 'R. Hakim', perm: { act: true, ack: true, resolve: true, release: false } },
   quality: { label: 'Quality officer', name: 'S. Wulandari', perm: { act: false, ack: true, resolve: false, release: true } },
   admin: { label: 'Configuration admin', name: 'T. Prasetyo', perm: { act: false, ack: false, resolve: false, release: false } },
+  exec: { label: 'Executive management', name: 'Executive management', perm: { act: false, ack: false, resolve: false, release: false } },
   viewer: { label: 'Viewer · read only', name: 'Head office', perm: { act: false, ack: false, resolve: false, release: false } },
 };
 const IOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
@@ -157,7 +158,7 @@ export function App({ D, ses, onSignOut }) {
   const onTop = useCallback(f => { topListeners.current.add(f); return () => topListeners.current.delete(f); }, []);
 
   const role = { ...(ROLES[ses.role] || ROLES.viewer), name: ses.name };
-  const app = { D, rev, now: D.NOW, push, pop, switchTab, goTab, sheet: openSheet, closeSheet, toast: showToast, prefs, setPref, role, roleId: ses.role, perm: role.perm, user: ses, signOut: onSignOut, events, theme, reduced, onTop, refresh: step,
+  const app = { D, rev, now: D.NOW, push, pop, switchTab, goTab, sheet: openSheet, closeSheet, toast: showToast, prefs, setPref, role, roleId: ses.role, perm: role.perm, monitor: ses.role === 'exec', user: ses, signOut: onSignOut, events, theme, reduced, onTop, refresh: step,
     install: installEvt ? async () => { installEvt.prompt(); const r = await installEvt.userChoice.catch(() => null); setInstallEvt(null); if (r && r.outcome === 'accepted') showToast('Installed on your home screen'); } : null, ios: IOS, standalone: STANDALONE() };
 
   // ── edge-swipe back (iOS-style; the browser's own gesture handles this outside the installed app) ──
